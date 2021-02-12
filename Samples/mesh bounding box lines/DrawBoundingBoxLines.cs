@@ -54,14 +54,12 @@ namespace Segments.Samples
 
 		void Update ()
 		{
-			Dependency.Complete();
-
 			var job = new JustPlotABoxJob{
 				bounds		= _meshRenderer.bounds ,
 				segments	= _segments
 			};
 
-			Dependency = job.Schedule();
+			Dependency = job.Schedule( Dependency );
 			_segmentsSystem.Dependencies.Add( Dependency );
 		}
 

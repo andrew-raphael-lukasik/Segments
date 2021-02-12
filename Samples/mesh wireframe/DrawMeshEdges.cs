@@ -69,16 +69,14 @@ namespace Segments.Samples
 
 		void Update ()
 		{
-			Dependency.Complete();
-
 			var job = new UpdateSegmentsJob{
 				edges		= _edges.AsReadOnly() ,
 				vertices	= _vertices.AsReadOnly() ,
 				matrix		= transform.localToWorldMatrix ,
 				segments	= _segments
 			};
-			Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 );
 			
+			Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 , dependsOn:Dependency );
 			_segmentsSystem.Dependencies.Add( Dependency );
 		}
 

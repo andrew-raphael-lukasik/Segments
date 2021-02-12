@@ -7,17 +7,18 @@ namespace Segments.Samples
 	{
 
 		[SerializeField] bool _onDrawGizmos = true;
+		[SerializeField] Vector3 _degreesPerSecond = new Vector3{ y=33f };
 
 		#if UNITY_EDITOR
 		void OnDrawGizmos ()
 		{
 			if( _onDrawGizmos && !Application.isPlaying )
-				Update();
+				FixedUpdate();
 		}
 		#endif
 		
-		void Update ()
-			=> transform.Rotate( 0f , 33f * Time.deltaTime , 0f );
+		void FixedUpdate ()
+			=> transform.Rotate( _degreesPerSecond*Time.fixedDeltaTime );
 		
 	}
 }
