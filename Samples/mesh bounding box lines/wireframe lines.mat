@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 32
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: wireframe lines
+  m_Shader: {fileID: -6465566751694194690, guid: 428148a32dad64d419483e1b767d979f,
+    type: 3}
+  m_ShaderKeywords: UVCORRECTION_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses:
+  - SHADOWCASTER
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: c28544402f30f674aa593707d4542bef, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: c28544402f30f674aa593707d4542bef, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - UVCORRECTION: 1
+    - VIGNETTE: 0
+    - Vector1_b2bc354c63b94e308403d4683845d983: 0
+    - _AlphaClip: 0
+    - _AspectRatio: 1
+    - _Blend: 0
+    - _BumpScale: 1
+    - _Cull: 0
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 10
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
+    - _GlossyReflections: 1
+    - _Metallic: 0
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Overlap: 0.1
+    - _Parallax: 0.02
+    - _QueueOffset: 0
+    - _RectHeight: 0.563
+    - _RectHeightMax: 1
+    - _RectHeightMin: 0.59
+    - _RectInflation: 0.438
+    - _RectSizeX: 0.2
+    - _RectSizeY: 1
+    - _RectWidth: 0.468
+    - _RectX: 0.5
+    - _RectY: 0.5
+    - _SampleGI: 0
+    - _SegmentOverlap: 0.2
+    - _Sharpness: 0.95
+    - _SharpnessMax: 1
+    - _SmoothnessTextureChannel: 0
+    - _Smoothstep: 0.533
+    - _SmoothstepMin: 0.482
+    - _SpecularHighlights: 1
+    - _SrcBlend: 5
+    - _Surface: 1
+    - _UVSec: 0
+    - _ZWrite: 0
+    m_Colors:
+    - Vector2_c80a53d91c7843899933e627e1cebdb1: {r: 0, g: 0, b: 0, a: 0}
+    - Vector3_4a53a06f0e5c4f45a345e1004dcbff8a: {r: 0, g: 0, b: 0, a: 0}
+    - Vector3_f46222195d364048b814f1e578e8a189: {r: 0, g: 0, b: 0, a: 0}
+    - Vector4_6fa4853f26784ad581891add898630bb: {r: 0, g: 0, b: 0, a: 0}
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 0.7038364, b: 0.0047169924, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _RectSize: {r: 0.75, g: 0.75, b: 0, a: 0}
+    - _SegmentOffset: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
+--- !u!114 &1532484212802381824
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 2
