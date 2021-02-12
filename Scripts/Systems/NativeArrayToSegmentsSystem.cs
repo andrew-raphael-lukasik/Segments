@@ -11,11 +11,11 @@ using Unity.Mathematics;
 namespace Segments
 {
 	[WorldSystemFilter(0)]
-	[UpdateInGroup( typeof(InitializationSystemGroup) )]
+	[UpdateInGroup( typeof(UpdatePresentationSystemGroup) )]
+	[UpdateBefore( typeof(SegmentTransformSystem) )]
 	public class NativeArrayToSegmentsSystem : SystemBase
 	{
 		
-		EndSimulationEntityCommandBufferSystem _endSimulationEcbSystem;
 		List<Batch> _batches = new List<Batch>();
 
 		public NativeList<JobHandle> Dependencies;
@@ -24,7 +24,6 @@ namespace Segments
 
 		protected override void OnCreate ()
 		{
-			_endSimulationEcbSystem = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			Dependencies = new NativeList<JobHandle>( Allocator.Persistent );
 		}
 
@@ -50,16 +49,16 @@ namespace Segments
 
 		protected override void OnUpdate ()
 		{
-			var entityManager = EntityManager;
-			var cmd = _endSimulationEcbSystem.CreateCommandBuffer();
-			var segmentData = GetComponentDataFromEntity<Segment>( isReadOnly:true );
-
 			if( Dependencies.Length!=0 )
 			{
 				Dependencies.Add( Dependency );
 				Dependency = JobHandle.CombineDependencies( Dependencies );
 				Dependencies.Clear();
 			}
+			if( _batches.Count==0 ) return;
+
+			var entityManager = EntityManager;
+			var segmentData = GetComponentDataFromEntity<Segment>( isReadOnly:false );
 
 			for( int batchIndex=_batches.Count-1 ; batchIndex!=-1 ; batchIndex-- )
 			{
@@ -73,10 +72,11 @@ namespace Segments
 					Job
 						.WithName("component_data_update_job")
 						.WithReadOnly( buffer ).WithNativeDisableContainerSafetyRestriction( buffer )
+						.WithNativeDisableContainerSafetyRestriction( segmentData )
 						.WithCode( () =>
 						{
 							for( int i=0 ; i<length ; i++ )
-								cmd.SetComponent( entities[i] , new Segment{ start=buffer[i].c0 , end=buffer[i].c1 } );
+								segmentData[ entities[i] ] = new Segment{ start=buffer[i].c0 , end=buffer[i].c1 };
 						} )
 						.WithBurst().Schedule();
 				}
@@ -86,8 +86,6 @@ namespace Segments
 					entityManager.DestroyEntity( entities );
 				}
 			}
-
-			_endSimulationEcbSystem.AddJobHandleForProducer( Dependency );
 		}
 
 
