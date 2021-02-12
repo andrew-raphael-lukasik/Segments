@@ -1,5 +1,21 @@
-# description
+# Segments
 Segments is a line renderer for Unity.Entities tech stack
+---
+```csharp
+SegmentTransformSystem : SystemBase
+```
+The fundamental system that makes all this work. Transforms meshes for rendering.
+---
+```csharp
+NativeArrayToSegmentsSystem : SystemBase
+```
+Fill NativeArray < float3x2 > with data, this system will do the rest.
+---
+```csharp
+NativeListToSegmentsSystem : SystemBase
+```
+Fill NativeList < float3x2 > with data, this system will do the rest.
+---
 
 # requirements
 Unity 2020.x
