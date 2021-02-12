@@ -1,0 +1,26 @@
+{
+    "name": "Segments",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.Mathematics.Extensions",
+        "Unity.Mathematics.Extensions.Hybrid",
+        "Unity.Rendering.Hybrid",
+        "Unity.Transforms",
+        "Unity.Transforms.Hybrid"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
