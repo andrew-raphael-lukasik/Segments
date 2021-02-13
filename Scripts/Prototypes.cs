@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 
-using Segments.Internal;
+using ResourceProvider = Segments.Internal.ResourceProvider;
 
 namespace Segments
 {
