@@ -247,9 +247,19 @@ namespace Segments
 			int numSegments
 		)
 		{
-			int bufferSizeRequired = index + numSegments + 2;
+			int bufferSizeRequired = index + numSegments;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
+			Hyperbola( segments.AsArray().Slice(index,bufferSizeRequired) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+		public static void Hyperbola (
+			NativeSlice<float3x2> segments ,
+			float a , float b , float xrange ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
 			float Asymptote ( float x ) => (b/a)*x;
 			float c = math.sqrt( a*a + b*b );
 			float2 vertex = new float2{ y=a };
@@ -258,10 +268,11 @@ namespace Segments
 			float3 fmirror = new float3{ x=1 , y=-1f , z=1 };
 			float xmin = vertex.x - xrange;
 			float xmax = vertex.x + xrange;
-			for( int i=0 ; i<numSegments ; i++ )
+			int index = 0;
+			for( ; index<numSegments-2 ; )
 			{
-				float x0 = math.lerp( xmin , xmax , (float)i / (float)numSegments );
-				float x1 = math.lerp( xmin , xmax , (float)(i+1) / (float)numSegments );
+				float x0 = math.lerp( xmin , xmax , (float)index / (float)numSegments );
+				float x1 = math.lerp( xmin , xmax , (float)(index+1) / (float)numSegments );
 				
 				float3 p0 = new float3{ x=x0 , y=(b*math.sqrt(a*a+x0*x0))/a };
 				float3 p1 = new float3{ x=x1 , y=(b*math.sqrt(a*a+x1*x1))/a };
@@ -301,25 +312,51 @@ namespace Segments
 			int numSegments
 		)
 		{
-			int bufferSizeRequired = index + numSegments + 1;
+			int bufferSizeRequired = index + numSegments;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
+			Parabola( segments.AsArray().Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void Parabola (
+			NativeArray<float3x2> segments , ref int index ,
+			float a , float b ,
+			float xmin , float xmax ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
+			int bufferSizeRequired = index + numSegments;
+			if( segments.Length<bufferSizeRequired ) return;
+
+			Parabola( segments.Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+		/// <inheritdoc/> <remarks> Will throw exception if length < 12. </remarks>
+		public static void Parabola (
+			NativeSlice<float3x2> segments ,
+			float a , float b ,
+			float xmin , float xmax ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
 			const float c = 0;
 			float2 vertex = new float2{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b)) / (4 * a) };
 			float3 focus = new float3{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b) + 1) / (4 * a) };
 			float directrix_y = c - ((b*b) + 1) * 4 * a;
 
-			for( int i=0 ; i<numSegments ; i++ )
+			int index = 0;
+			for( ; index<numSegments-1 ;  )
 			{
-				float x0 = math.lerp( xmin , xmax , (float)i / (float)numSegments );
-				float x1 = math.lerp( xmin , xmax , (float)(i+1) / (float)numSegments );
+				float x0 = math.lerp( xmin , xmax , (float)index / (float)numSegments );
+				float x1 = math.lerp( xmin , xmax , (float)(index+1) / (float)numSegments );
 				float3 v0 = math.mul( rot , new float3{ x=x0 , y=a*x0*x0+b*x0+c } );
 				float3 v1 = math.mul( rot , new float3{ x=x1 , y=a*x1*x1+b*x1+c } );
-
-				segments[index++] = new float3x2{ c0=pos+v0 , c1=pos+v1 };
+				segments[ index++ ] = new float3x2{ c0=pos+v0 , c1=pos+v1 };
 			}
-			
-			segments[index++] = new float3x2{
+			segments[ index++ ] = new float3x2{
 				c0	= pos + math.mul( rot , new float3{ x=xmin , y=directrix_y } ) ,
 				c1	= pos + math.mul( rot , new float3{ x=xmax , y=directrix_y } )
 			};
