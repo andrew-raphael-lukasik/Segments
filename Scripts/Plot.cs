@@ -1,5 +1,6 @@
 ﻿using Unity.Mathematics;
 using Unity.Collections;
+using Unity.Jobs;
 
 namespace Segments
 {
@@ -8,6 +9,8 @@ namespace Segments
 
 
 
+		/// <summary> Plots a ellipse shape. </summary>
+		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void Ellipse (
 			NativeList<float3x2> segments , ref int index ,
 			float rx , float ry ,
@@ -18,22 +21,50 @@ namespace Segments
 			int bufferSizeRequired = index + numSegments;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 			
+			Ellipse( segments.AsArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void Ellipse (
+			NativeArray<float3x2> segments , ref int index ,
+			float rx , float ry ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
+			int bufferSizeRequired = index + numSegments;
+			if( segments.Length<bufferSizeRequired ) return;
+			
+			Ellipse( segments.Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+		
+		/// <inheritdoc/> <remarks> Will throw exception if length < numSegments. </remarks>
+		public static void Ellipse (
+			NativeSlice<float3x2> segments ,
+			float rx , float ry ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
 			float theta = ( 2f * math.PI ) / (float)numSegments;
-			for( int i=0 ; i<numSegments ; i++ )
+			int index = 0;
+			for( ; index<numSegments ; )
 			{
-				float f0 = theta * (float)i;
-				float f1 = theta * (float)(i+1);
+				float f0 = theta * (float)index;
+				float f1 = theta * (float)(index+1);
 				float3 v0 = math.mul( rot , ( new float3{ x=math.cos(f0)*rx , y=math.sin(f0)*ry } ) );
 				float3 v1 = math.mul( rot , ( new float3{ x=math.cos(f1)*rx , y=math.sin(f1)*ry } ) );
 				
 				segments[index++] = new float3x2{ c0=pos+v0 , c1=pos+v1 };
 			}
 
-			float a = math.max(rx,ry);
-			float b = math.min(rx,ry);
-			float ecc = math.sqrt( 1f - (b*b)/(a*a) );
-			float c = a * ecc;
-			float3 focus = rx>ry ? new float3{x=c} : new float3{y=c};
+			// float a = math.max(rx,ry);
+			// float b = math.min(rx,ry);
+			// float ecc = math.sqrt( 1f - (b*b)/(a*a) );
+			// float c = a * ecc;
+			// float3 focus = rx>ry ? new float3{x=c} : new float3{y=c};
 			
 			// foci( pos + math.mul(rot,focus) );
 			// foci( pos + math.mul(rot,-focus) );
@@ -41,6 +72,8 @@ namespace Segments
 
 
 
+		/// <summary> Plots a ellipse shape at foci point. </summary>
+		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void EllipseAtFoci (
 			NativeList<float3x2> segments , ref int index ,
 			float rx , float ry ,
@@ -51,6 +84,33 @@ namespace Segments
 			int bufferSizeRequired = index + numSegments;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
+			EllipseAtFoci( segments.AsArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void EllipseAtFoci (
+			NativeArray<float3x2> segments , ref int index ,
+			float rx , float ry ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
+			int bufferSizeRequired = index + numSegments;
+			if( segments.Length<bufferSizeRequired ) return;
+
+			EllipseAtFoci( segments.Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will throw exception if length < numSegments. </remarks>
+		public static void EllipseAtFoci (
+			NativeSlice<float3x2> segments ,
+			float rx , float ry ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
 			float a = math.max(rx,ry);
 			float b = math.min(rx,ry);
 			float ecc = math.sqrt( 1f - (b*b)/(a*a) );
@@ -58,13 +118,14 @@ namespace Segments
 			float3 focus = rx>ry ? new float3{x=c} : new float3{y=c};
 
 			float theta = ( 2f * math.PI ) / (float)numSegments;
-			for( int i=0 ; i<numSegments ; i++ )
+			int index = 0;
+			for( ; index<numSegments ; )
 			{
-				float f0 = theta * (float)i;
-				float f1 = theta * (float)(i+1);
+				float f0 = theta * (float)index;
+				float f1 = theta * (float)(index+1);
 				float3 v0 = math.mul( rot , new float3{ x=math.cos(f0)*rx , y=math.sin(f0)*ry } + focus );
 				float3 v1 = math.mul( rot , new float3{ x=math.cos(f1)*rx , y=math.sin(f1)*ry } + focus );
-				
+
 				segments[index++] = new float3x2{ c0=pos+v0 , c1=pos+v1 };
 			}
 		}
@@ -101,7 +162,11 @@ namespace Segments
 		}
 
 		/// <inheritdoc/> <remarks> Will throw exception if length < numSegments. </remarks>
-		public static void Circle ( NativeSlice<float3x2> segments , float r , float3 pos , quaternion rot , int numSegments )
+		public static void Circle (
+			NativeSlice<float3x2> segments ,
+			float r , float3 pos , quaternion rot ,
+			int numSegments
+		)
 		{
 			float theta = ( 2f * math.PI ) / (float)numSegments;
 			for( int i=0 ; i<numSegments ; i++ )
@@ -126,6 +191,7 @@ namespace Segments
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
 			segments[index++] = new float3x2{ c0=start , c1=end };
+			index = bufferSizeRequired;
 		}
 		
 		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
@@ -146,15 +212,40 @@ namespace Segments
 
 
 
+		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void DashedLine (
 			NativeList<float3x2> segments , ref int index ,
-			float3 start , float3 end , int numDashes
+			float3 start , float3 end , int numSegments
 		)
 		{
-			int bufferSizeRequired = index + math.max( numDashes , 0 );
+			int bufferSizeRequired = index + numSegments;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-			int max = math.max( numDashes*2-1 , 0 );
+			DashedLine( segments.AsArray().Slice(index,numSegments) , start:start , end:end , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void DashedLine (
+			NativeArray<float3x2> segments , ref int index ,
+			float3 start , float3 end , int numSegments
+		)
+		{
+			int bufferSizeRequired = index + numSegments;
+			if( segments.Length<bufferSizeRequired ) return;
+
+			DashedLine( segments.Slice(index,numSegments) , start:start , end:end , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will throw exception if length < numDashes. </remarks>
+		public static void DashedLine (
+			NativeSlice<float3x2> segments ,
+			float3 start , float3 end , int numSegments
+		)
+		{
+			int index = 0;
+			int max = math.max( numSegments*2-1 , 0 );
 			for( int i=0 ; i<max ; i+=2 )
 			{
 				segments[index++] = new float3x2{
@@ -166,6 +257,7 @@ namespace Segments
 
 
 
+		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void Arrow (
 			NativeList<float3x2> segments , ref int index ,
 			float2 p1 , float2 p2
@@ -174,6 +266,29 @@ namespace Segments
 			int bufferSizeRequired = index + 4;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 			
+			Arrow( segments.AsArray().Slice(index,4) , p1:p1 , p2:p2 );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void Arrow (
+			NativeArray<float3x2> segments , ref int index ,
+			float2 p1 , float2 p2
+		)
+		{
+			int bufferSizeRequired = index + 4;
+			if( segments.Length<bufferSizeRequired ) return;
+			
+			Arrow( segments.Slice(index,4) , p1:p1 , p2:p2 );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will throw exception if length < 4. </remarks>
+		public static void Arrow (
+			NativeSlice<float3x2> segments ,
+			float2 p1 , float2 p2
+		)
+		{
 			float d = math.distance( p1 , p2 );
 			float3 v1 = new float3{ x=p1.x , y=p1.y };
 			float3 v2 = new float3{ x=p2.x , y=p2.y };
@@ -181,12 +296,15 @@ namespace Segments
 			float3 v3 = v2 + math.mul( quaternion.Euler( 0 , 0 , math.PI/14f ) , arrowLen );
 			float3 v4 = v2 + math.mul( quaternion.Euler( 0 , 0 , -math.PI/14f ) , arrowLen );
 			
-			segments[index++] = new float3x2{ c0=v1 , c1=v2 };
-			segments[index++] = new float3x2{ c0=v2 , c1=v3 };
-			segments[index++] = new float3x2{ c0=v3 , c1=v4 };
-			segments[index++] = new float3x2{ c0=v4 , c1=v2 };
+			segments[0] = new float3x2{ c0=v1 , c1=v2 };
+			segments[1] = new float3x2{ c0=v2 , c1=v3 };
+			segments[2] = new float3x2{ c0=v3 , c1=v4 };
+			segments[3] = new float3x2{ c0=v4 , c1=v2 };
 		}
 
+
+
+		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void Arrow (
 			NativeList<float3x2> segments , ref int index ,
 			float3 v1 , float3 v2 , float3 cameraPos
@@ -195,19 +313,43 @@ namespace Segments
 			int bufferSizeRequired = index + 4;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
+			Arrow( segments.AsArray().Slice(index,4) , v1:v1 , v2:v2 , cameraPos:cameraPos );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void Arrow (
+			NativeArray<float3x2> segments , ref int index ,
+			float3 v1 , float3 v2 , float3 cameraPos
+		)
+		{
+			int bufferSizeRequired = index + 4;
+			if( segments.Length<bufferSizeRequired ) return;
+
+			Arrow( segments.Slice(index,4) , v1:v1 , v2:v2 , cameraPos:cameraPos );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will throw exception if length < 4. </remarks>
+		public static void Arrow (
+			NativeSlice<float3x2> segments ,
+			float3 v1 , float3 v2 , float3 cameraPos
+		)
+		{
 			float3 arrowLen = math.normalize(v1-v2) * math.distance(v1,v2) * 0.06f;
 			float3 camAxis = math.normalize( v2 - cameraPos );
 			float3 v3 = v2 + math.mul( quaternion.AxisAngle( camAxis , math.PI/14f ) , arrowLen );
 			float3 v4 = v2 + math.mul( quaternion.AxisAngle( camAxis , -math.PI/14f ) , arrowLen );
 			
-			segments[index++] = new float3x2{ c0=v1 , c1=v2 };
-			segments[index++] = new float3x2{ c0=v2 , c1=v3 };
-			segments[index++] = new float3x2{ c0=v3 , c1=v4 };
-			segments[index++] = new float3x2{ c0=v4 , c1=v2 };
+			segments[0] = new float3x2{ c0=v1 , c1=v2 };
+			segments[1] = new float3x2{ c0=v2 , c1=v3 };
+			segments[2] = new float3x2{ c0=v3 , c1=v4 };
+			segments[3] = new float3x2{ c0=v4 , c1=v2 };
 		}
 
 
 
+		/// <remarks> Will add list elements if necessary. </remarks>
 		/// <param name="a"> +-y = ( b * math.sqrt( **a**^2 + x^2 ) ) / **a** </param>
 		/// <param name="b"> +-y = ( **b** * math.sqrt( a^2 + x^2 ) ) / a </param>
 		public static void HyperbolaAtFoci (
@@ -220,24 +362,52 @@ namespace Segments
 			int bufferSizeRequired = index + numSegments;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
+			HyperbolaAtFoci( segments.AsArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void HyperbolaAtFoci (
+			NativeArray<float3x2> segments , ref int index ,
+			float a , float b , float xrange ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
+			int bufferSizeRequired = index + numSegments;
+			if( segments.Length<bufferSizeRequired ) return;
+
+			HyperbolaAtFoci( segments.Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will throw exception if length < numSegments. </remarks>
+		public static void HyperbolaAtFoci (
+			NativeSlice<float3x2> segments ,
+			float a , float b , float xrange ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
 			float c = math.sqrt( a*a + b*b );
 			float2 vertex = new float2{ y=a };
 			float3 focus = new float3{ x=0 , y=c };
 			float xmin = vertex.x - xrange;
 			float xmax = vertex.x + xrange;
-			for( int i=0 ; i<numSegments ; i++ )
+			int index = 0;
+			for( ; index<numSegments ; )
 			{
-				float x0 = math.lerp( xmin , xmax , (float)i / (float)numSegments );
-				float x1 = math.lerp( xmin , xmax , (float)(i+1) / (float)numSegments );
+				float x0 = math.lerp( xmin , xmax , (float)index / (float)numSegments );
+				float x1 = math.lerp( xmin , xmax , (float)(index+1) / (float)numSegments );
 				float3 v0 = math.mul( rot , ( new float3{ x=x0 , y=(b*math.sqrt(a*a+x0*x0))/a } - focus ) );
 				float3 v1 = math.mul( rot , ( new float3{ x=x1 , y=(b*math.sqrt(a*a+x1*x1))/a } - focus ) );
-
 				segments[index++] = new float3x2{ c0=pos+v0 , c1=pos+v1 };
 			}
 		}
 
 
 
+		/// <remarks> Will add list elements if necessary. </remarks>
 		/// <param name="a"> +-y = ( b * math.sqrt( **a**^2 + x^2 ) ) / **a** </param>
 		/// <param name="b"> +-y = ( **b** * math.sqrt( a^2 + x^2 ) ) / a </param>
 		public static void Hyperbola (
@@ -253,6 +423,23 @@ namespace Segments
 			Hyperbola( segments.AsArray().Slice(index,bufferSizeRequired) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
 			index = bufferSizeRequired;
 		}
+
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void Hyperbola (
+			NativeArray<float3x2> segments , ref int index ,
+			float a , float b , float xrange ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
+			int bufferSizeRequired = index + numSegments;
+			if( segments.Length<bufferSizeRequired ) return;
+
+			Hyperbola( segments.Slice(index,bufferSizeRequired) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will throw exception if length < numSegments. </remarks>
 		public static void Hyperbola (
 			NativeSlice<float3x2> segments ,
 			float a , float b , float xrange ,
@@ -301,6 +488,7 @@ namespace Segments
 
 
 
+		/// <remarks> Will add list elements if necessary. </remarks>
 		/// <param name="a"> y = **a**xx + bx + c </param>
 		/// <param name="b"> y = axx + **b**x + c </param>
 		/// <param name="c"> y = axx + bx + **c** </param>
@@ -318,6 +506,7 @@ namespace Segments
 			Parabola( segments.AsArray().Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot , numSegments:numSegments );
 			index = bufferSizeRequired;
 		}
+
 		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
 		public static void Parabola (
 			NativeArray<float3x2> segments , ref int index ,
@@ -333,6 +522,7 @@ namespace Segments
 			Parabola( segments.Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot , numSegments:numSegments );
 			index = bufferSizeRequired;
 		}
+
 		/// <inheritdoc/> <remarks> Will throw exception if length < 12. </remarks>
 		public static void Parabola (
 			NativeSlice<float3x2> segments ,
@@ -348,7 +538,7 @@ namespace Segments
 			float directrix_y = c - ((b*b) + 1) * 4 * a;
 
 			int index = 0;
-			for( ; index<numSegments-1 ;  )
+			for( ; index<numSegments-1 ; )
 			{
 				float x0 = math.lerp( xmin , xmax , (float)index / (float)numSegments );
 				float x1 = math.lerp( xmin , xmax , (float)(index+1) / (float)numSegments );
@@ -364,6 +554,7 @@ namespace Segments
 
 
 
+		/// <remarks> Will add list elements if necessary. </remarks>
 		/// <param name="a"> y = **a**xx + bx + c </param>
 		/// <param name="b"> y = axx + **b**x + c </param>
 		/// <param name="c"> y = axx + bx + **c** </param>
@@ -374,9 +565,36 @@ namespace Segments
 			int numSegments
 		)
 		{
-			int bufferSizeRequired = index + numSegments + 1;
+			int bufferSizeRequired = index + numSegments;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
+			ParabolaAtFoci( segments.AsArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+		public static void ParabolaAtFoci (
+			NativeArray<float3x2> segments , ref int index ,
+			float a , float b , float xrange ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
+			int bufferSizeRequired = index + numSegments;
+			if( segments.Length<bufferSizeRequired ) return;
+
+			ParabolaAtFoci( segments.Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+			index = bufferSizeRequired;
+		}
+
+		/// <inheritdoc/> <remarks> Will throw exception if length < 12. </remarks>
+		public static void ParabolaAtFoci (
+			NativeSlice<float3x2> segments ,
+			float a , float b , float xrange ,
+			float3 pos , quaternion rot ,
+			int numSegments
+		)
+		{
 			const float c = 0;
 			float2 vertex = new float2{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b)) / (4 * a) };
 			float3 focus = new float3{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b) + 1) / (4 * a) };
@@ -384,10 +602,11 @@ namespace Segments
 			
 			float xmin = vertex.x - xrange;
 			float xmax = vertex.x + xrange;
-			for( int i=0 ; i<numSegments ; i++ )
+			int index = 0;
+			for( ; index<numSegments-1 ; )
 			{
-				float x0 = math.lerp( xmin , xmax , (float)i / (float)numSegments );
-				float x1 = math.lerp( xmin , xmax , (float)(i+1) / (float)numSegments );
+				float x0 = math.lerp( xmin , xmax , (float)index / (float)numSegments );
+				float x1 = math.lerp( xmin , xmax , (float)(index+1) / (float)numSegments );
 				float3 v0 = math.mul( rot , ( new float3{ x=x0 , y=a*x0*x0+b*x0+c } - focus ) );
 				float3 v1 = math.mul( rot , ( new float3{ x=x1 , y=a*x1*x1+b*x1+c } - focus ) );
 
@@ -403,6 +622,7 @@ namespace Segments
 
 
 		/// <summary> Plots a cube with 12 segments. </summary>
+		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void Cube ( NativeList<float3x2> segments , ref int index , float a , float3 pos , quaternion rot )
 			=> Box( segments , ref index , new float3{x=a,y=a,z=a} , pos , rot );
 		
