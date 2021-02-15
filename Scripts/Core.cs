@@ -26,6 +26,16 @@ namespace Segments
 			else
 			{
 				world = World.DefaultGameObjectInjectionWorld;
+				
+				#if UNITY_EDITOR
+				if( world==null )
+				{
+					// create editor world:
+					DefaultWorldInitialization.DefaultLazyEditModeInitialize();
+					world = World.All[0];
+				}
+				#endif
+
 				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , Prototypes.worldSystems );
 				
 				entityManager = world.EntityManager;
