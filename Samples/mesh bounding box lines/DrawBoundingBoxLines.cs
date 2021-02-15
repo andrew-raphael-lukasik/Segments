@@ -16,6 +16,7 @@ namespace Segments.Samples
 		[SerializeField] float _widthOverride = 0.003f;
 
 		MeshRenderer _meshRenderer = null;
+		
 		NativeArray<float3x2> _segments;
 		Segments.NativeArrayToSegmentsSystem _segmentsSystem;
 		public JobHandle Dependency;
@@ -54,28 +55,18 @@ namespace Segments.Samples
 
 		void Update ()
 		{
-			var job = new JustPlotABoxJob{
-				bounds		= _meshRenderer.bounds ,
-				segments	= _segments
-			};
+			var bounds = _meshRenderer.bounds;
+			int index = 0;
+			var job = new Segments.Plot.BoxJob(
+				segments:	_segments ,
+				index:		ref index ,
+				size:		bounds.size ,
+				pos:		bounds.center ,
+				rot:		quaternion.identity
+			);
 
 			Dependency = job.Schedule( Dependency );
 			_segmentsSystem.Dependencies.Add( Dependency );
-		}
-
-		public struct JustPlotABoxJob : IJob
-		{
-			[ReadOnly] public Bounds bounds;
-			public NativeArray<float3x2> segments;
-			void IJob.Execute ()
-			{
-				Segments.Plot.Box(
-					segments:	segments.Slice( start:0 , length:12 ) ,
-					size:		bounds.size ,
-					pos:		bounds.center ,
-					rot:		quaternion.identity
-				);
-			}
 		}
 
 	}

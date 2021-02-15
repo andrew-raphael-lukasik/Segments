@@ -10,7 +10,7 @@ using Unity.Mathematics;
 
 namespace Segments
 {
-	[WorldSystemFilter(0)]
+	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(UpdatePresentationSystemGroup) )]
 	[UpdateBefore( typeof(SegmentTransformSystem) )]
 	public class NativeListToSegmentsSystem : SystemBase

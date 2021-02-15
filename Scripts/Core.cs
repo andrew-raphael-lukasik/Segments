@@ -27,8 +27,8 @@ namespace Segments
 			{
 				world = World.DefaultGameObjectInjectionWorld;
 				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , Prototypes.worldSystems );
-				entityManager = world.EntityManager;
 				
+				entityManager = world.EntityManager;
 				defaultPrefab = entityManager.CreateEntity( GetSegmentArchetype() );
 				entityManager.SetComponentData<Segment>( defaultPrefab , Prototypes.segment );
 				entityManager.SetComponentData<SegmentWidth>( defaultPrefab , Prototypes.segmentWidth );
@@ -38,7 +38,7 @@ namespace Segments
 				
 				var renderMesh = Prototypes.renderMesh;
 				entityManager.SetSharedComponentData<RenderMesh>( defaultPrefab , renderMesh );
-				// commander.SetComponentData<MaterialColor>( _defaultPrefab , new MaterialColor{ Value=new float4{x=1,y=1,z=1,w=1} } );// change: initialize manually
+				// entityManager.SetComponentData<MaterialColor>( _defaultPrefab , new MaterialColor{ Value=new float4{x=1,y=1,z=1,w=1} } );// change: initialize manually
 				
 				#if ENABLE_HYBRID_RENDERER_V2
 				entityManager.SetComponentData( defaultPrefab , new BuiltinMaterialPropertyUnity_RenderingLayer{ Value = new uint4{ x=(uint)renderMesh.layer } } );

@@ -1,4 +1,6 @@
-﻿using Unity.Mathematics;
+﻿using Debug = UnityEngine.Debug;
+
+using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Jobs;
 
@@ -6,6 +8,7 @@ namespace Segments
 {
 	public static class Plot
 	{
+		#region ellipses
 
 
 
@@ -72,6 +75,37 @@ namespace Segments
 
 
 
+		public struct EllipseJob : IJob
+		{
+			[WriteOnly] NativeSlice<float3x2> segments;
+			float rx, ry;
+			float3 pos;
+			quaternion rot;
+			int numSegments;
+			public EllipseJob (
+				NativeList<float3x2> segments , ref int index ,
+				float rx , float ry ,
+				float3 pos , quaternion rot ,
+				int numSegments
+			)
+			{
+				int bufferSizeRequired = index + numSegments;
+				if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
+
+				this.segments = segments.AsArray().Slice(index,numSegments);
+				this.rx = rx;
+				this.ry = ry;
+				this.pos = pos;
+				this.rot = rot;
+				this.numSegments = numSegments;
+				
+				index = bufferSizeRequired;
+			}
+			void IJob.Execute () => Ellipse( segments:segments , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+		}
+
+
+
 		/// <summary> Plots a ellipse shape at foci point. </summary>
 		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void EllipseAtFoci (
@@ -132,6 +166,11 @@ namespace Segments
 
 
 
+		#endregion
+		#region circles
+
+
+
 		/// <summary> Plots a circle. </summary>
 		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void Circle (
@@ -178,6 +217,38 @@ namespace Segments
 				segments[i] = new float3x2{ c0 = pos+v0 , c1 = pos+v1 };
 			}
 		}
+
+		public struct CircleJob : IJob
+		{
+			[WriteOnly] NativeSlice<float3x2> segments;
+			float r;
+			float3 pos;
+			quaternion rot;
+			int numSegments;
+			public CircleJob (
+				NativeList<float3x2> segments , ref int index ,
+				float r , float3 pos , quaternion rot ,
+				int numSegments
+			)
+			{
+				int bufferSizeRequired = index + numSegments;
+				if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
+				
+				this.segments = segments.AsArray().Slice( index , numSegments );
+				this.r = r;
+				this.pos = pos;
+				this.rot = rot;
+				this.numSegments = numSegments;
+				
+				index = bufferSizeRequired;
+			}
+			void IJob.Execute () => Circle( segments:segments , r:r , pos:pos , rot:rot , numSegments:numSegments );
+		}
+
+
+
+		#endregion
+		#region lines
 
 
 
@@ -349,6 +420,11 @@ namespace Segments
 
 
 
+		#endregion
+		#region hyperbolas
+
+
+
 		/// <remarks> Will add list elements if necessary. </remarks>
 		/// <param name="a"> +-y = ( b * math.sqrt( **a**^2 + x^2 ) ) / **a** </param>
 		/// <param name="b"> +-y = ( **b** * math.sqrt( a^2 + x^2 ) ) / a </param>
@@ -486,6 +562,41 @@ namespace Segments
 			};
 		}
 
+		public struct HyperbolaJob : IJob
+		{
+			[WriteOnly] NativeSlice<float3x2> segments;
+			float a, b, xrange;
+			float3 pos;
+			quaternion rot;
+			int numSegments;
+			public HyperbolaJob (
+				NativeList<float3x2> segments , ref int index ,
+				float a , float b , float xrange ,
+				float3 pos , quaternion rot ,
+				int numSegments
+			)
+			{
+				int bufferSizeRequired = index + numSegments;
+				if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
+				
+				this.segments = segments.AsArray().Slice( index , numSegments );
+				this.a = a;
+				this.b = b;
+				this.xrange = xrange;
+				this.pos = pos;
+				this.rot = rot;
+				this.numSegments = numSegments;
+				
+				index = bufferSizeRequired;
+			}
+			void IJob.Execute () => Circle( segments:segments , r:r , pos:pos , rot:rot , numSegments:numSegments );
+		}
+
+
+
+		#endregion
+		#region parabolas
+
 
 
 		/// <remarks> Will add list elements if necessary. </remarks>
@@ -621,6 +732,11 @@ namespace Segments
 
 
 
+		#endregion
+		#region boxes
+
+
+
 		/// <summary> Plots a cube with 12 segments. </summary>
 		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void Cube ( NativeList<float3x2> segments , ref int index , float a , float3 pos , quaternion rot )
@@ -695,7 +811,45 @@ namespace Segments
 			segments[11] = new float3x2{ c0=pos+B3 , c1=pos+T3 };
 		}
 
+		public struct BoxJob : IJob
+		{
+			[WriteOnly] NativeSlice<float3x2> segments;
+			float3 size, pos;
+			quaternion rot;
+			public BoxJob (
+				NativeList<float3x2> segments , ref int index ,
+				float3 size , float3 pos , quaternion rot
+			)
+			{
+				int bufferSizeRequired = index + 12;
+				if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
+
+				this.segments = segments.AsArray().Slice(index,12);
+				this.size = size;
+				this.pos = pos;
+				this.rot = rot;
+				
+				index = bufferSizeRequired;
+			}
+			public BoxJob (
+				NativeArray<float3x2> segments , ref int index ,
+				float3 size , float3 pos , quaternion rot
+			)
+			{
+				this.segments = segments.Slice(index,12);
+				this.size = size;
+				this.pos = pos;
+				this.rot = rot;
+
+				int bufferSizeRequired = index + 12;
+				if( segments.Length<bufferSizeRequired ) Debug.LogError($"Assertion failed: segments.Length:{segments.Length} < bufferSizeRequired:{bufferSizeRequired}");
+				index = bufferSizeRequired;
+			}
+			void IJob.Execute () => Box( segments , size , pos , rot );
+		}
 
 
+
+		#endregion
 	}
 }
