@@ -101,7 +101,8 @@ namespace Segments
 				
 				index = bufferSizeRequired;
 			}
-			void IJob.Execute () => Ellipse( segments:segments , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+			void IJob.Execute ()
+				=> Ellipse( segments:segments , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
 		}
 
 
@@ -242,7 +243,8 @@ namespace Segments
 				
 				index = bufferSizeRequired;
 			}
-			void IJob.Execute () => Circle( segments:segments , r:r , pos:pos , rot:rot , numSegments:numSegments );
+			void IJob.Execute ()
+				=> Circle( segments:segments , r:r , pos:pos , rot:rot , numSegments:numSegments );
 		}
 
 
@@ -846,7 +848,8 @@ namespace Segments
 				if( segments.Length<bufferSizeRequired ) Debug.LogError($"Assertion failed: segments.Length:{segments.Length} < bufferSizeRequired:{bufferSizeRequired}");
 				index = bufferSizeRequired;
 			}
-			void IJob.Execute () => Box( segments , size , pos , rot );
+			void IJob.Execute ()
+				=> Box( segments , size , pos , rot );
 		}
 
 
