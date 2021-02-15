@@ -589,7 +589,8 @@ namespace Segments
 				
 				index = bufferSizeRequired;
 			}
-			void IJob.Execute () => Circle( segments:segments , r:r , pos:pos , rot:rot , numSegments:numSegments );
+			void IJob.Execute ()
+				=> Hyperbola( segments:segments , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
 		}
 
 
