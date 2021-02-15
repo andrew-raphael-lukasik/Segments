@@ -101,6 +101,25 @@ namespace Segments
 				
 				index = bufferSizeRequired;
 			}
+			public EllipseJob (
+				NativeArray<float3x2> segments , ref int index ,
+				float rx , float ry ,
+				float3 pos , quaternion rot ,
+				int numSegments
+			)
+			{
+				int bufferSizeRequired = index + numSegments;
+				if( segments.Length<bufferSizeRequired ) Debug.LogError($"Assertion failed: segments.Length:{segments.Length} < bufferSizeRequired:{bufferSizeRequired}");
+
+				this.segments = segments.Slice(index,numSegments);
+				this.rx = rx;
+				this.ry = ry;
+				this.pos = pos;
+				this.rot = rot;
+				this.numSegments = numSegments;
+				
+				index = bufferSizeRequired;
+			}
 			void IJob.Execute ()
 				=> Ellipse( segments:segments , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
 		}
@@ -243,6 +262,24 @@ namespace Segments
 				
 				index = bufferSizeRequired;
 			}
+			public CircleJob (
+				NativeArray<float3x2> segments , ref int index ,
+				float r , float3 pos , quaternion rot ,
+				int numSegments
+			)
+			{
+				int bufferSizeRequired = index + numSegments;
+				if( segments.Length<bufferSizeRequired ) Debug.LogError($"Assertion failed: segments.Length:{segments.Length} < bufferSizeRequired:{bufferSizeRequired}");
+				
+				this.segments = segments.Slice( index , numSegments );
+				this.r = r;
+				this.pos = pos;
+				this.rot = rot;
+				this.numSegments = numSegments;
+				
+				index = bufferSizeRequired;
+			}
+			
 			void IJob.Execute ()
 				=> Circle( segments:segments , r:r , pos:pos , rot:rot , numSegments:numSegments );
 		}
@@ -525,7 +562,6 @@ namespace Segments
 			int numSegments
 		)
 		{
-			float Asymptote ( float x ) => (b/a)*x;
 			float c = math.sqrt( a*a + b*b );
 			float2 vertex = new float2{ y=a };
 			float3 focus = new float3{ y=c };
@@ -534,34 +570,17 @@ namespace Segments
 			float xmin = vertex.x - xrange;
 			float xmax = vertex.x + xrange;
 			int index = 0;
-			for( ; index<numSegments-2 ; )
+			for( int i=0 ; i<numSegments ; i++ )
 			{
-				float x0 = math.lerp( xmin , xmax , (float)index / (float)numSegments );
-				float x1 = math.lerp( xmin , xmax , (float)(index+1) / (float)numSegments );
+				float x0 = math.lerp( xmin , xmax , (float)i / (float)numSegments );
+				float x1 = math.lerp( xmin , xmax , (float)(i+1) / (float)numSegments );
 				
 				float3 p0 = new float3{ x=x0 , y=(b*math.sqrt(a*a+x0*x0))/a };
 				float3 p1 = new float3{ x=x1 , y=(b*math.sqrt(a*a+x1*x1))/a };
-
 				float3 v0 = math.mul(rot,p0);
 				float3 v1 = math.mul(rot,p1);
-
 				segments[index++] = new float3x2{ c0=pos+v0 , c1=pos+v1 };
-
-				float3 v0b = math.mul( rot , p0*fmirror );
-				float3 v1b = math.mul( rot , p1*fmirror );
-
-				segments[index++] = new float3x2{ c0=pos+v0b , c1=pos+v1b };
 			}
-			
-			segments[index++] = new float3x2{
-				c0	= pos + math.mul( rot , new float3{ x=xmin , y=Asymptote(xmin) } ) ,
-				c1	= pos + math.mul( rot , new float3{ x=xmax , y=Asymptote(xmax) } )
-			};
-
-			segments[index++] = new float3x2{
-				c0	= pos + math.mul( rot , new float3{ x=xmin , y=-Asymptote(xmin) } ) ,
-				c1	= pos + math.mul( rot , new float3{ x=xmax , y=-Asymptote(xmax) } )
-			};
 		}
 
 		public struct HyperbolaJob : IJob
@@ -591,8 +610,49 @@ namespace Segments
 				
 				index = bufferSizeRequired;
 			}
+			public HyperbolaJob (
+				NativeArray<float3x2> segments , ref int index ,
+				float a , float b , float xrange ,
+				float3 pos , quaternion rot ,
+				int numSegments
+			)
+			{
+				int bufferSizeRequired = index + numSegments;
+				if( segments.Length<bufferSizeRequired ) Debug.LogError($"Assertion failed: segments.Length:{segments.Length} < bufferSizeRequired:{bufferSizeRequired}");
+				
+				this.segments = segments.Slice( index , numSegments );
+				this.a = a;
+				this.b = b;
+				this.xrange = xrange;
+				this.pos = pos;
+				this.rot = rot;
+				this.numSegments = numSegments;
+				
+				index = bufferSizeRequired;
+			}
 			void IJob.Execute ()
 				=> Hyperbola( segments:segments , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+		}
+
+		public static void HyperbolaAsymptotes (
+			NativeSlice<float3x2> segments ,
+			float a , float b , float xrange ,
+			float3 pos , quaternion rot
+		)
+		{
+			float Asymptote ( float x ) => (b/a)*x;
+			float2 vertex = new float2{ y=a };
+			float xmin = vertex.x - xrange;
+			float xmax = vertex.x + xrange;
+			
+			segments[0] = new float3x2{
+				c0	= pos + math.mul( rot , new float3{ x=xmin , y=Asymptote(xmin) } ) ,
+				c1	= pos + math.mul( rot , new float3{ x=xmax , y=Asymptote(xmax) } )
+			};
+			segments[1] = new float3x2{
+				c0	= pos + math.mul( rot , new float3{ x=xmin , y=-Asymptote(xmin) } ) ,
+				c1	= pos + math.mul( rot , new float3{ x=xmax , y=-Asymptote(xmax) } )
+			};
 		}
 
 
@@ -664,6 +724,61 @@ namespace Segments
 				c0	= pos + math.mul( rot , new float3{ x=xmin , y=directrix_y } ) ,
 				c1	= pos + math.mul( rot , new float3{ x=xmax , y=directrix_y } )
 			};
+		}
+
+		public struct ParabolaJob : IJob
+		{
+			[WriteOnly] NativeSlice<float3x2> segments;
+			float a, b, xmin, xmax;
+			float3 pos;
+			quaternion rot;
+			int numSegments;
+			public ParabolaJob (
+				NativeList<float3x2> segments , ref int index ,
+				float a , float b ,
+				float xmin , float xmax ,
+				float3 pos , quaternion rot ,
+				int numSegments
+			)
+			{
+				int bufferSizeRequired = index + numSegments;
+				if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
+				
+				this.segments = segments.AsArray().Slice( index , numSegments );
+				this.a = a;
+				this.b = b;
+				this.xmin = xmin;
+				this.xmax = xmax;
+				this.pos = pos;
+				this.rot = rot;
+				this.numSegments = numSegments;
+				
+				index = bufferSizeRequired;
+			}
+			public ParabolaJob (
+				NativeArray<float3x2> segments , ref int index ,
+				float a , float b ,
+				float xmin , float xmax ,
+				float3 pos , quaternion rot ,
+				int numSegments
+			)
+			{
+				int bufferSizeRequired = index + numSegments;
+				if( segments.Length<bufferSizeRequired ) Debug.LogError($"Assertion failed: segments.Length:{segments.Length} < bufferSizeRequired:{bufferSizeRequired}");
+				
+				this.segments = segments.Slice( index , numSegments );
+				this.a = a;
+				this.b = b;
+				this.xmin = xmin;
+				this.xmax = xmax;
+				this.pos = pos;
+				this.rot = rot;
+				this.numSegments = numSegments;
+				
+				index = bufferSizeRequired;
+			}
+			void IJob.Execute ()
+				=> Parabola( segments:segments , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot , numSegments:numSegments );
 		}
 
 
@@ -839,13 +954,14 @@ namespace Segments
 				float3 size , float3 pos , quaternion rot
 			)
 			{
+				int bufferSizeRequired = index + 12;
+				if( segments.Length<bufferSizeRequired ) Debug.LogError($"Assertion failed: segments.Length:{segments.Length} < bufferSizeRequired:{bufferSizeRequired}");
+				
 				this.segments = segments.Slice(index,12);
 				this.size = size;
 				this.pos = pos;
 				this.rot = rot;
-
-				int bufferSizeRequired = index + 12;
-				if( segments.Length<bufferSizeRequired ) Debug.LogError($"Assertion failed: segments.Length:{segments.Length} < bufferSizeRequired:{bufferSizeRequired}");
+				
 				index = bufferSizeRequired;
 			}
 			void IJob.Execute ()
