@@ -707,20 +707,29 @@ namespace Segments
 		)
 		{
 			const float c = 0;
-			float2 vertex = new float2{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b)) / (4 * a) };
-			float3 focus = new float3{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b) + 1) / (4 * a) };
-			float directrix_y = c - ((b*b) + 1) * 4 * a;
-
-			int index = 0;
-			for( ; index<numSegments-1 ; )
+			// float2 vertex = new float2{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b)) / (4 * a) };
+			// float3 focus = new float3{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b) + 1) / (4 * a) };
+			for( int index=0 ; index<numSegments ; index++ )
 			{
 				float x0 = math.lerp( xmin , xmax , (float)index / (float)numSegments );
 				float x1 = math.lerp( xmin , xmax , (float)(index+1) / (float)numSegments );
 				float3 v0 = math.mul( rot , new float3{ x=x0 , y=a*x0*x0+b*x0+c } );
 				float3 v1 = math.mul( rot , new float3{ x=x1 , y=a*x1*x1+b*x1+c } );
-				segments[ index++ ] = new float3x2{ c0=pos+v0 , c1=pos+v1 };
+				segments[ index ] = new float3x2{ c0=pos+v0 , c1=pos+v1 };
 			}
-			segments[ index++ ] = new float3x2{
+		}
+
+		/// <remarks> Will throw exception if length < 1. </remarks>
+		public static void ParabolaDirectrix (
+			NativeSlice<float3x2> segments ,
+			float a , float b ,
+			float xmin , float xmax ,
+			float3 pos , quaternion rot
+		)
+		{
+			const float c = 0;
+			float directrix_y = c - ((b*b) + 1) * 4 * a;
+			segments[0] = new float3x2{
 				c0	= pos + math.mul( rot , new float3{ x=xmin , y=directrix_y } ) ,
 				c1	= pos + math.mul( rot , new float3{ x=xmax , y=directrix_y } )
 			};
