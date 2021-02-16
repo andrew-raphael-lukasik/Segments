@@ -15,8 +15,14 @@ namespace Segments
 		protected override void OnUpdate ()
 		{
 			Camera camera = Camera.main;
-			if( camera==null ) camera = Camera.current;
-			if( camera==null ) return;
+			#if UNITY_EDITOR
+			{
+				var sceneView = UnityEditor.SceneView.lastActiveSceneView;
+				if( sceneView!=null && sceneView.hasFocus )
+					camera = sceneView.camera;
+			}
+			#endif
+			if( camera==null ) return;// no camera found
 			Transform cameraTransform = camera.transform;
 			
 			if( !camera.orthographic )// perspective-projection camera code path
