@@ -3,6 +3,7 @@
 using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Burst;
 
 namespace Segments
 {
@@ -75,6 +76,7 @@ namespace Segments
 
 
 
+		[BurstCompile]
 		public struct EllipseJob : IJob
 		{
 			[WriteOnly] NativeSlice<float3x2> segments;
@@ -238,6 +240,7 @@ namespace Segments
 			}
 		}
 
+		[BurstCompile]
 		public struct CircleJob : IJob
 		{
 			[WriteOnly] NativeSlice<float3x2> segments;
@@ -583,6 +586,7 @@ namespace Segments
 			}
 		}
 
+		[BurstCompile]
 		public struct HyperbolaJob : IJob
 		{
 			[WriteOnly] NativeSlice<float3x2> segments;
@@ -735,6 +739,7 @@ namespace Segments
 			};
 		}
 
+		[BurstCompile]
 		public struct ParabolaJob : IJob
 		{
 			[WriteOnly] NativeSlice<float3x2> segments;
@@ -938,6 +943,7 @@ namespace Segments
 			segments[11] = new float3x2{ c0=pos+B3 , c1=pos+T3 };
 		}
 
+		[BurstCompile]
 		public struct BoxJob : IJob
 		{
 			[WriteOnly] NativeSlice<float3x2> segments;
