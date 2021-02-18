@@ -40,8 +40,7 @@ namespace Segments.Samples
 				triangles.Dispose();
 			}
 
-			var world = Segments.Core.GetWorld();
-			_segmentsSystem = world.GetExistingSystem<Segments.NativeListToSegmentsSystem>();
+			_segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.NativeListToSegmentsSystem>();
 
 			// initialize segment list:
 			Entity prefab;
@@ -62,7 +61,7 @@ namespace Segments.Samples
 		void OnDisable ()
 		{
 			Dependency.Complete();
-			if( _segments.IsCreated ) _segments.Dispose();
+			_segmentsSystem.DestroyBatch( ref _segments , true );
 			if( _vertices.IsCreated ) _vertices.Dispose();
 			if( _edges.IsCreated ) _edges.Dispose();
 		}

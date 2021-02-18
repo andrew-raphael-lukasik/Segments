@@ -50,7 +50,7 @@ namespace Segments.Samples
 		void OnDisable ()
 		{
 			Dependency.Complete();
-			if( _segments.IsCreated ) _segments.Dispose();
+			_segmentsSystem.DestroyBatch( ref _segments );
 		}
 
 		void Update ()

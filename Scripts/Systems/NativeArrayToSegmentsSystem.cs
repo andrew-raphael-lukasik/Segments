@@ -34,16 +34,9 @@ namespace Segments
 			JobHandle.CombineDependencies( Dependencies ).Complete();
 			Dependencies.Dispose();
 
-			foreach( var batch in _batches )
-			{
-				if( batch.entities.IsCreated )
-				{
-					EntityManager.DestroyEntity( batch.entities );
-					batch.entities.Dispose();
-				}
-				// if( batch.buffer.IsCreated ) batch.buffer.Dispose();// don't - it's not my responsibility
-			}
-			_batches.Clear();
+			for( int i=_batches.Count-1 ; i!=-1 ; i-- )
+				DestroyBatch( i , true );
+			Assert.AreEqual( _batches.Count , 0 );
 		}
 
 
@@ -67,28 +60,21 @@ namespace Segments
 				NativeArray<Entity> entities = batch.entities;
 				int length = batch.length;
 
-				// if( buffer.IsCreated )// never false atm
-				{
-					Job
-						.WithName("component_data_update_job")
-						.WithReadOnly( buffer ).WithNativeDisableContainerSafetyRestriction( buffer )
-						.WithNativeDisableContainerSafetyRestriction( segmentData )
-						.WithCode( () =>
-						{
-							for( int i=0 ; i<length ; i++ )
-								segmentData[ entities[i] ] = new Segment{ start=buffer[i].c0 , end=buffer[i].c1 };
-						} )
-						.WithBurst().Schedule();
-				}
-				// else if( entities.IsCreated )
-				// {
-				// 	_batches.RemoveAt( batchIndex );
-				// 	entityManager.DestroyEntity( entities );
-				// }
+				Job
+					.WithName("component_data_update_job")
+					.WithReadOnly( buffer ).WithNativeDisableContainerSafetyRestriction( buffer )
+					.WithNativeDisableContainerSafetyRestriction( segmentData )
+					.WithCode( () =>
+					{
+						for( int i=0 ; i<length ; i++ )
+							segmentData[ entities[i] ] = new Segment{ start=buffer[i].c0 , end=buffer[i].c1 };
+					} )
+					.WithBurst().Schedule();
 			}
 		}
 
 
+		/// <summary> Creates a new buffer array and mathing entities. </summary>
 		public void CreateBatch ( in Entity segmentPrefab , in int length , out NativeArray<float3x2> buffer )
 		{
 			buffer = new NativeArray<float3x2>( length , Allocator.Persistent );
@@ -99,6 +85,31 @@ namespace Segments
 				entities	= entities ,
 				buffer		= buffer
 			} );
+		}
+
+
+		/// <summary> Disposes this buffer and destroys it's entities. </summary>
+		/// <remarks> Use this to dispose your buffer correctly. It will call buffer.Dispose() so don't do that elsewhere. </remarks>
+		public bool DestroyBatch ( ref NativeArray<float3x2> buffer , bool destroyPrefabEntity = false )
+		{
+			var bufferByValue = buffer;
+			int index = _batches.FindIndex( (batch)=>batch.buffer==bufferByValue );
+			if( index!=-1 )
+			{
+				DestroyBatch( index , destroyPrefabEntity );
+				return true;
+			}
+			else return false;
+		}
+		void DestroyBatch ( int index , bool destroyPrefabEntity )
+		{
+			var batch = _batches[index];
+			_batches.RemoveAt( index );
+			EntityManager.DestroyEntity( batch.entities );
+			batch.entities.Dispose();
+			batch.buffer.Dispose();
+			if( destroyPrefabEntity )
+				EntityManager.DestroyEntity( batch.prefab );
 		}
 		
 

@@ -34,16 +34,9 @@ namespace Segments
 			JobHandle.CombineDependencies( Dependencies ).Complete();
 			Dependencies.Dispose();
 
-			foreach( var batch in _batches )
-			{
-				if( batch.entities.IsCreated )
-				{
-					EntityManager.DestroyEntity( batch.entities );
-					batch.entities.Dispose();
-				}
-				// if( batch.buffer.IsCreated ) batch.buffer.Dispose();// don't - it's not my responsibility
-			}
-			_batches.Clear();
+			for( int i=_batches.Count-1 ; i!=-1 ; i-- )
+				DestroyBatch( i , true );
+			Assert.AreEqual( _batches.Count , 0 );
 		}
 
 
@@ -68,45 +61,42 @@ namespace Segments
 
 				// int bufferSize = buffer.Length;// throws dependency errors
 				int bufferSize = buffer.AsParallelReader().Length;
-
-				// if( buffer.IsCreated )// never false atm
-				if( bufferSize>=0 && bufferSize<10_000 )// ugly temporary workaround that guesses when collection became deallocated
+				if( bufferSize<0 || bufferSize>10_000 )// ugly temporary workaround that guesses when collection became deallocated
 				{
-					if( entities.Length!=bufferSize )
+					throw new System.Exception($"emergency stop for bufferSize:{bufferSize}, <b>DO NOT call Dispose() on segment buffer</b> (my guess is you did) but call {GetType().Name}_Instance.{nameof(DestroyBatch)}( buffer )");
+					// this is for safety reasons as not throwing here in such case could fill entire memory available and crash >= 1 applications
+				}
+				
+				if( entities.Length!=bufferSize )
+				{
+					if( entities.Length<bufferSize )
 					{
-						if( entities.Length<bufferSize )
-						{
-							NativeArray<Entity> instantiated = entityManager.Instantiate( batch.prefab , bufferSize-entities.Length , Allocator.Temp );
-							entities.AddRange( instantiated );
-							instantiated.Dispose();
-						}
-						else
-						{
-							entityManager.DestroyEntity( entities.AsArray().Slice(bufferSize) );
-							entities.Length = bufferSize;
-						}
+						NativeArray<Entity> instantiated = entityManager.Instantiate( batch.prefab , bufferSize-entities.Length , Allocator.Temp );
+						entities.AddRange( instantiated );
+						instantiated.Dispose();
 					}
-					
-					Job
-						.WithName("component_data_update_job")
-						.WithReadOnly( buffer ).WithNativeDisableContainerSafetyRestriction( buffer )
-						.WithNativeDisableContainerSafetyRestriction( segmentData )
-						.WithCode( () =>
-						{
-							for( int i=0 ; i<bufferSize ; i++ )
-								segmentData[ entities[i] ] = new Segment{ start=buffer[i].c0 , end=buffer[i].c1 };
-						} )
-						.WithBurst().Schedule();
+					else
+					{
+						entityManager.DestroyEntity( entities.AsArray().Slice(bufferSize) );
+						entities.Length = bufferSize;
+					}
 				}
-				else if( entities.IsCreated )
-				{
-					_batches.RemoveAt( batchIndex );
-					entityManager.DestroyEntity( entities );
-				}
+				
+				Job
+					.WithName("component_data_update_job")
+					.WithReadOnly( buffer ).WithNativeDisableContainerSafetyRestriction( buffer )
+					.WithNativeDisableContainerSafetyRestriction( segmentData )
+					.WithCode( () =>
+					{
+						for( int i=0 ; i<bufferSize ; i++ )
+							segmentData[ entities[i] ] = new Segment{ start=buffer[i].c0 , end=buffer[i].c1 };
+					} )
+					.WithBurst().Schedule();
 			}
 		}
 
 
+		/// <summary> Creates a new buffer array and mathing entities. </summary>
 		public void CreateBatch ( in Entity segmentPrefab , out NativeList<float3x2> buffer )
 		{
 			buffer = new NativeList<float3x2>( Allocator.Persistent );
@@ -115,6 +105,31 @@ namespace Segments
 				entities	= new NativeList<Entity>( Allocator.Persistent ) ,
 				buffer		= buffer
 			} );
+		}
+		
+
+		/// <summary> Disposes this buffer and destroys it's entities. </summary>
+		/// <remarks> Use this to dispose your buffer correctly. It will call buffer.Dispose() so don't do that elsewhere. </remarks>
+		public bool DestroyBatch ( ref NativeList<float3x2> buffer , bool destroyPrefabEntity = false )
+		{
+			var bufferByValue = buffer;
+			int index = _batches.FindIndex( (batch)=>batch.buffer.Equals(bufferByValue) );
+			if( index!=-1 )
+			{
+				DestroyBatch( index , destroyPrefabEntity );
+				return true;
+			}
+			else return false;
+		}
+		void DestroyBatch ( int index , bool destroyPrefabEntity )
+		{
+			var batch = _batches[index];
+			_batches.RemoveAt( index );
+			EntityManager.DestroyEntity( batch.entities );
+			batch.entities.Dispose();
+			batch.buffer.Dispose();
+			if( destroyPrefabEntity )
+				EntityManager.DestroyEntity( batch.prefab );
 		}
 		
 
