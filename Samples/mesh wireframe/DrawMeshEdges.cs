@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Burst;
 
 namespace Segments.Samples
 {
@@ -42,7 +43,7 @@ namespace Segments.Samples
 
 			_segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.NativeListToSegmentsSystem>();
 
-			// initialize segment list:
+			// create segment buffer:
 			Entity prefab;
 			if( _materialOverride!=null )
 			{
@@ -57,6 +58,7 @@ namespace Segments.Samples
 			_segmentsSystem.CreateBatch( prefab , out _segments );
 			_segments.Length = _edges.Length;
 		}
+		
 
 		void OnDisable ()
 		{
@@ -65,6 +67,7 @@ namespace Segments.Samples
 			if( _vertices.IsCreated ) _vertices.Dispose();
 			if( _edges.IsCreated ) _edges.Dispose();
 		}
+
 
 		void Update ()
 		{
@@ -79,6 +82,8 @@ namespace Segments.Samples
 			_segmentsSystem.Dependencies.Add( Dependency );
 		}
 
+
+		[BurstCompile]
 		public struct UpdateSegmentsJob : IJobParallelFor
 		{
 			[ReadOnly] public NativeArray<int2>.ReadOnly edges;
@@ -98,7 +103,8 @@ namespace Segments.Samples
 			}
 		}
 
-		[Unity.Burst.BurstCompile]
+
+		[BurstCompile]
 		public struct ToEdgesJob : IJob
 		{
 			[ReadOnly] public NativeArray<int>.ReadOnly triangles;

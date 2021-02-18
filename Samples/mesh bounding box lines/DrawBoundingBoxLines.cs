@@ -20,6 +20,7 @@ namespace Segments.Samples
 		NativeArray<float3x2> _segments;
 		Segments.NativeArrayToSegmentsSystem _segmentsSystem;
 		public JobHandle Dependency;
+
 		
 		void OnEnable ()
 		{
@@ -28,7 +29,7 @@ namespace Segments.Samples
 			var world = Segments.Core.GetWorld();
 			_segmentsSystem = world.GetExistingSystem<Segments.NativeArrayToSegmentsSystem>();
 
-			// initialize segment list:
+			// create segment buffer:
 			Entity prefab;
 			if( _materialOverride!=null )
 			{
@@ -47,11 +48,13 @@ namespace Segments.Samples
 			);
 		}
 
+
 		void OnDisable ()
 		{
 			Dependency.Complete();
 			_segmentsSystem.DestroyBatch( ref _segments );
 		}
+
 
 		void Update ()
 		{
@@ -68,6 +71,7 @@ namespace Segments.Samples
 			Dependency = job.Schedule( Dependency );
 			_segmentsSystem.Dependencies.Add( Dependency );
 		}
+
 
 	}
 }
