@@ -67,7 +67,7 @@ namespace Segments
 				NativeArray<Entity> entities = batch.entities;
 				int length = batch.length;
 
-				if( buffer.IsCreated )
+				// if( buffer.IsCreated )// never false atm
 				{
 					Job
 						.WithName("component_data_update_job")
@@ -80,11 +80,11 @@ namespace Segments
 						} )
 						.WithBurst().Schedule();
 				}
-				else if( entities.IsCreated )
-				{
-					_batches.RemoveAt( batchIndex );
-					entityManager.DestroyEntity( entities );
-				}
+				// else if( entities.IsCreated )
+				// {
+				// 	_batches.RemoveAt( batchIndex );
+				// 	entityManager.DestroyEntity( entities );
+				// }
 			}
 		}
 
