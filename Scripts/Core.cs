@@ -15,13 +15,12 @@ namespace Segments
 
 		static World world;
 		static EntityManager entityManager;
-		static EntityArchetype segmentArchetype = default(EntityArchetype);
 		static Entity defaultPrefab;
 
 
 		public static World GetWorld ()
 		{
-			if( world!=null )
+			if( world!=null && world.IsCreated )
 				return world;
 			else
 			{
@@ -39,7 +38,9 @@ namespace Segments
 				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , Prototypes.worldSystems );
 				
 				entityManager = world.EntityManager;
-				defaultPrefab = entityManager.CreateEntity( GetSegmentArchetype() );
+				defaultPrefab = entityManager.CreateEntity(
+					entityManager.CreateArchetype(Prototypes.segment_prefab_components)
+				);
 				entityManager.SetComponentData<Segment>( defaultPrefab , Prototypes.segment );
 				entityManager.SetComponentData<SegmentWidth>( defaultPrefab , Prototypes.segmentWidth );
 				entityManager.SetComponentData<SegmentAspectRatio>( defaultPrefab , new SegmentAspectRatio{ Value = 1f } );
@@ -86,16 +87,6 @@ namespace Segments
 			Entity copy = GetSegmentPrefabCopy( material );
 			entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
 			return copy;
-		}
-
-
-		public static EntityArchetype GetSegmentArchetype ()
-		{
-			if( segmentArchetype.Valid )
-				return segmentArchetype;
-			
-			segmentArchetype = entityManager.CreateArchetype( Prototypes.segment_prefab_components );
-			return segmentArchetype;
 		}
 
 
