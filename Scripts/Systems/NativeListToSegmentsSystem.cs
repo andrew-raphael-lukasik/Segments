@@ -61,7 +61,7 @@ namespace Segments
 
 				// int bufferSize = buffer.Length;// throws dependency errors
 				int bufferSize = buffer.AsParallelReader().Length;
-				if( bufferSize<0 || bufferSize>10_000 )// ugly temporary workaround that guesses when collection became deallocated
+				if( bufferSize<0 || bufferSize>100_000 )// ugly temporary workaround that guesses when collection became deallocated
 				{
 					throw new System.Exception($"emergency stop for bufferSize:{bufferSize}, <b>DO NOT call Dispose() on segment buffer</b> (my guess is you did) but call {GetType().Name}_Instance.{nameof(DestroyBatch)}( buffer )");
 					// this is for safety reasons as not throwing here in such case could fill entire memory available and crash >= 1 applications
