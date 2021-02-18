@@ -65,6 +65,7 @@ namespace Segments
 				{
 					throw new System.Exception($"emergency stop for bufferSize:{bufferSize}, <b>DO NOT call Dispose() on segment buffer</b> (my guess is you did) but call {GetType().Name}_Instance.{nameof(DestroyBatch)}( buffer )");
 					// this is for safety reasons as not throwing here in such case could fill entire memory available and crash >= 1 applications
+					// BUT will also be thrown when you surpass it's upper limit by mistake or intentionally
 				}
 				
 				if( entities.Length!=bufferSize )
