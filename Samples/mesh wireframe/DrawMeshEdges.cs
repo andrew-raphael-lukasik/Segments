@@ -90,8 +90,8 @@ namespace Segments.Samples
 			{
 				int i0 = edges[index].x;
 				int i1 = edges[index].y;
-				float4 p0 = math.mul( matrix , new float4( vertices[i0] , 0 ) );
-				float4 p1 = math.mul( matrix , new float4( vertices[i1] , 0 ) );
+				float4 p0 = math.mul( matrix , new float4( vertices[i0] , 1 ) );
+				float4 p1 = math.mul( matrix , new float4( vertices[i1] , 1 ) );
 				segments[index] = new float3x2{
 					c0	= new float3{ x=p0.x , y=p0.y , z=p0.z } ,
 					c1	= new float3{ x=p1.x , y=p1.y , z=p1.z }
