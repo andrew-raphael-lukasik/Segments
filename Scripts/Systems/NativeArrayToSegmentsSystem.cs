@@ -92,6 +92,8 @@ namespace Segments
 		/// <remarks> Use this to dispose your buffer correctly. It will call buffer.Dispose() so don't do that elsewhere. </remarks>
 		public bool DestroyBatch ( ref NativeArray<float3x2> buffer , bool destroyPrefabEntity = false )
 		{
+			Dependency.Complete();
+			
 			var bufferByValue = buffer;
 			int index = _batches.FindIndex( (batch)=>batch.buffer==bufferByValue );
 			if( index!=-1 )
