@@ -66,10 +66,12 @@ namespace Segments
 				NativeList<float3x2> buffer = batch.buffer;
 				NativeList<Entity> entities = batch.entities;
 
-				if( buffer.IsCreated )
+				// int bufferSize = buffer.Length;// throws dependency errors
+				int bufferSize = buffer.AsParallelReader().Length;
+
+				// if( buffer.IsCreated )// never false atm
+				if( bufferSize>=0 && bufferSize<10_000 )// ugly temporary workaround that guesses when collection became deallocated
 				{
-					// int bufferSize = buffer.Length;// throws dependency errors
-					int bufferSize = buffer.AsParallelReader().Length;// is this a wrong hack?
 					if( entities.Length!=bufferSize )
 					{
 						if( entities.Length<bufferSize )
