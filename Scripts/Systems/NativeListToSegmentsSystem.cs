@@ -15,9 +15,10 @@ namespace Segments
 	[UpdateBefore( typeof(SegmentTransformSystem) )]
 	public class NativeListToSegmentsSystem : SystemBase
 	{
+
+		public const int k_max_num_segments = 100_000;// arbitrary but reasonable
 		
 		List<Batch> _batches = new List<Batch>();
-
 		public NativeList<JobHandle> Dependencies;
 		public JobHandle ScheduledJobs => Dependency;
 
@@ -61,7 +62,7 @@ namespace Segments
 
 				// int bufferSize = buffer.Length;// throws dependency errors
 				int bufferSize = buffer.AsParallelReader().Length;
-				if( bufferSize<0 || bufferSize>100_000 )// ugly temporary workaround that guesses when collection became deallocated
+				if( bufferSize<0 || bufferSize>k_max_num_segments )// ugly temporary workaround that guesses when collection became deallocated
 				{
 					throw new System.Exception($"emergency stop for bufferSize:{bufferSize}, <b>DO NOT call Dispose() on segment buffer</b> (my guess is you did) but call {GetType().Name}_Instance.{nameof(DestroyBatch)}( buffer )");
 					// this is for safety reasons as not throwing here in such case could fill entire memory available and crash >= 1 applications
