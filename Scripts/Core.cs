@@ -45,7 +45,7 @@ namespace Segments
 				entityManager.SetComponentData<SegmentWidth>( defaultPrefab , Prototypes.segmentWidth );
 				entityManager.SetComponentData<SegmentAspectRatio>( defaultPrefab , new SegmentAspectRatio{ Value = 1f } );
 				entityManager.AddComponentData<RenderBounds>( defaultPrefab , Prototypes.renderBounds );
-				entityManager.AddComponentData<LocalToWorld>( defaultPrefab , new LocalToWorld { Value = float4x4.TRS( new float3{} , quaternion.identity , new float3{x=1,y=1,z=1} ) });
+				entityManager.AddComponentData<LocalToWorld>( defaultPrefab , new LocalToWorld{ Value = float4x4.TRS( new float3{} , quaternion.identity , new float3{x=1,y=1,z=1} ) });
 				
 				var renderMesh = Prototypes.renderMesh;
 				entityManager.SetSharedComponentData<RenderMesh>( defaultPrefab , renderMesh );
