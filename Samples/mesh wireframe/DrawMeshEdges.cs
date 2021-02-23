@@ -44,17 +44,7 @@ namespace Segments.Samples
 			_segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.NativeListToSegmentsSystem>();
 
 			// create segment buffer:
-			Entity prefab;
-			if( _materialOverride!=null )
-			{
-				if( _widthOverride>0f ) prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
-				else prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride );
-			}
-			else
-			{
-				if( _widthOverride>0f ) prefab = Segments.Core.GetSegmentPrefabCopy( _widthOverride );
-				else prefab = Segments.Core.GetSegmentPrefabCopy();
-			}
+			Entity prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
 			_segmentsSystem.CreateBatch( prefab , out _segments );
 			_segments.Length = _edges.Length;
 		}

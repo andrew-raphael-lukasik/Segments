@@ -71,21 +71,24 @@ namespace Segments
 		public static Entity GetSegmentPrefabCopy ( Material material )
 		{
 			Entity copy = GetSegmentPrefabCopy();
-			var renderMesh = entityManager.GetSharedComponentData<RenderMesh>( copy );
-			renderMesh.material = material;
-			entityManager.SetSharedComponentData<RenderMesh>( copy , renderMesh );
+			if( material!=null )
+			{
+				var renderMesh = entityManager.GetSharedComponentData<RenderMesh>( copy );
+				renderMesh.material = material;
+				entityManager.SetSharedComponentData<RenderMesh>( copy , renderMesh );
+			}
 			return copy;
 		}
 		public static Entity GetSegmentPrefabCopy ( float width )
 		{
 			Entity copy = GetSegmentPrefabCopy();
-			entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
+			if( width>0 ) entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
 			return copy;
 		}
 		public static Entity GetSegmentPrefabCopy ( Material material , float width )
 		{
 			Entity copy = GetSegmentPrefabCopy( material );
-			entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
+			if( width>0 ) entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
 			return copy;
 		}
 
