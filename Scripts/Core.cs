@@ -30,8 +30,8 @@ namespace Segments
 				if( world==null )
 				{
 					// create editor world:
-					DefaultWorldInitialization.DefaultLazyEditModeInitialize();
-					world = World.All[0];
+					world = DefaultWorldInitialization.Initialize( "Editor World" , true );
+					// DefaultWorldInitialization.DefaultLazyEditModeInitialize();// not immediate
 				}
 				#endif
 
