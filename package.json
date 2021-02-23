@@ -23,9 +23,14 @@
   ],
   "samples": [
     {
-      "displayName": "Samples",
+      "displayName": "Mesh bounding box",
       "description": "",
-      "path": "Samples"
+      "path": "Samples/mesh bounding box"
+    },
+	{
+      "displayName": "mesh wireframe",
+      "description": "",
+      "path": "Samples/mesh wireframe"
     }
   ],
   "hideInEditor": true
