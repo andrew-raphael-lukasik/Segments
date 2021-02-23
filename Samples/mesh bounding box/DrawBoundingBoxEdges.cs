@@ -9,7 +9,7 @@ namespace Segments.Samples
 {
 	[AddComponentMenu("")]
 	[RequireComponent( typeof(MeshRenderer) )]
-	class DrawBoundingBoxLines : MonoBehaviour
+	class DrawBoundingBoxEdges : MonoBehaviour
 	{
 
 		[SerializeField] Material _materialOverride = null;
