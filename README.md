@@ -1,4 +1,4 @@
-Segments is a small and fast line renderer for Unity.Entities tech stack.
+Segments is a small line renderer for Unity.Entities tech stack.
 
 # Systems
 ---
