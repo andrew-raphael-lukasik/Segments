@@ -7,6 +7,7 @@ using Unity.Jobs;
 
 namespace Segments.Samples
 {
+	[ExecuteAlways]
 	[AddComponentMenu("")]
 	[RequireComponent( typeof(MeshRenderer) )]
 	class DrawBoundingBoxEdges : MonoBehaviour

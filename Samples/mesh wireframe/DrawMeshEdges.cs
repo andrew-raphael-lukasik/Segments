@@ -8,6 +8,7 @@ using Unity.Burst;
 
 namespace Segments.Samples
 {
+	[ExecuteAlways]
 	[AddComponentMenu("")]
 	[RequireComponent( typeof(MeshFilter) )]
 	class DrawMeshEdges : MonoBehaviour

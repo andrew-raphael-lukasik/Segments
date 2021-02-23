@@ -200,11 +200,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 210953410}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9dc3e2ccc981ebb4c80aad15be50713f, type: 3}
+  m_Script: {fileID: 11500000, guid: 59e433b7d00d5ff439b6440fc71aced4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _materialOverride: {fileID: 2100000, guid: 4f235d8deba0a24499d2f04cc883b7da, type: 2}
-  _widthOverride: 0.006
+  _widthOverride: 0.005
 --- !u!4 &210953414
 Transform:
   m_ObjectHideFlags: 0
@@ -310,11 +310,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 361519742}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9dc3e2ccc981ebb4c80aad15be50713f, type: 3}
+  m_Script: {fileID: 11500000, guid: 59e433b7d00d5ff439b6440fc71aced4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _materialOverride: {fileID: 2100000, guid: 4f235d8deba0a24499d2f04cc883b7da, type: 2}
-  _widthOverride: 0.006
+  _widthOverride: 0.005
 --- !u!1 &798878838
 GameObject:
   m_ObjectHideFlags: 0
@@ -392,11 +392,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 798878838}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9dc3e2ccc981ebb4c80aad15be50713f, type: 3}
+  m_Script: {fileID: 11500000, guid: 59e433b7d00d5ff439b6440fc71aced4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _materialOverride: {fileID: 2100000, guid: 4f235d8deba0a24499d2f04cc883b7da, type: 2}
-  _widthOverride: 0.006
+  _widthOverride: 0.005
 --- !u!4 &798878842
 Transform:
   m_ObjectHideFlags: 0
@@ -488,11 +488,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1164825327}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9dc3e2ccc981ebb4c80aad15be50713f, type: 3}
+  m_Script: {fileID: 11500000, guid: 59e433b7d00d5ff439b6440fc71aced4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _materialOverride: {fileID: 2100000, guid: 4f235d8deba0a24499d2f04cc883b7da, type: 2}
-  _widthOverride: 0.006
+  _widthOverride: 0.005
 --- !u!4 &1164825331
 Transform:
   m_ObjectHideFlags: 0
@@ -537,6 +537,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _onDrawGizmos: 1
+  _degreesPerSecond: {x: 0, y: 33, z: 0}
 --- !u!4 &1640000942
 Transform:
   m_ObjectHideFlags: 0
@@ -544,7 +545,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1640000940}
-  m_LocalRotation: {x: 0, y: -0.048325483, z: 0, w: -0.9988317}
+  m_LocalRotation: {x: 0, y: -0.68162185, z: 0, w: -0.7317047}
   m_LocalPosition: {x: 7.9, y: 0, z: 20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
