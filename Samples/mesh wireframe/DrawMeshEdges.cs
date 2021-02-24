@@ -62,6 +62,8 @@ namespace Segments.Samples
 
 		void Update ()
 		{
+			Dependency.Complete();
+			
 			var job = new UpdateSegmentsJob{
 				edges		= _edges.AsReadOnly() ,
 				vertices	= _vertices.AsReadOnly() ,

@@ -49,6 +49,8 @@ namespace Segments.Samples
 
 		void Update ()
 		{
+			Dependency.Complete();
+			
 			var bounds = _meshRenderer.bounds;
 			int index = 0;
 			var job = new Segments.Plot.BoxJob(

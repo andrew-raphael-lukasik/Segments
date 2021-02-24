@@ -43,6 +43,8 @@ namespace Segments.Samples
 
 		void Update ()
 		{
+			Dependency.Complete();
+			
 			_segments.Length = _numSegments;
 			var job = new MyJob{
 				transform		= transform.localToWorldMatrix ,
