@@ -60,7 +60,6 @@ void OnDisable ()// OnDestroy
 # Requirements
 - Unity 2020.x
 - Hybrid Renderer
-- SRP for built-in shaders
 
 # Samples
 - mesh wireframe (runtime)
