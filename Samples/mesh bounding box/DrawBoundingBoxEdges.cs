@@ -7,9 +7,10 @@ using Unity.Jobs;
 
 namespace Segments.Samples
 {
+	[ExecuteAlways]
 	[AddComponentMenu("")]
 	[RequireComponent( typeof(MeshRenderer) )]
-	class DrawBoundingBoxLines : MonoBehaviour
+	class DrawBoundingBoxEdges : MonoBehaviour
 	{
 
 		[SerializeField] Material _materialOverride = null;
@@ -20,6 +21,7 @@ namespace Segments.Samples
 		NativeArray<float3x2> _segments;
 		Segments.NativeArrayToSegmentsSystem _segmentsSystem;
 		public JobHandle Dependency;
+
 		
 		void OnEnable ()
 		{
@@ -28,18 +30,8 @@ namespace Segments.Samples
 			var world = Segments.Core.GetWorld();
 			_segmentsSystem = world.GetExistingSystem<Segments.NativeArrayToSegmentsSystem>();
 
-			// initialize segment list:
-			Entity prefab;
-			if( _materialOverride!=null )
-			{
-				if( _widthOverride>0f ) prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
-				else prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride );
-			}
-			else
-			{
-				if( _widthOverride>0f ) prefab = Segments.Core.GetSegmentPrefabCopy( _widthOverride );
-				else prefab = Segments.Core.GetSegmentPrefabCopy();
-			}
+			// create segment buffer:
+			Entity prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
 			_segmentsSystem.CreateBatch(
 				segmentPrefab:	prefab ,
 				length:			12 ,// box is 12 segments
@@ -47,11 +39,13 @@ namespace Segments.Samples
 			);
 		}
 
+
 		void OnDisable ()
 		{
 			Dependency.Complete();
 			_segmentsSystem.DestroyBatch( ref _segments );
 		}
+
 
 		void Update ()
 		{
@@ -68,6 +62,7 @@ namespace Segments.Samples
 			Dependency = job.Schedule( Dependency );
 			_segmentsSystem.Dependencies.Add( Dependency );
 		}
+
 
 	}
 }
