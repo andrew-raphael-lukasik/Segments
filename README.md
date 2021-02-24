@@ -1,4 +1,19 @@
-Segments is a small line renderer for Unity.Entities tech stack.
+Segments is a lightweight line renderer for Unity.Entities tech stack.
+
+# Getting started with Segments:
+```csharp
+var entityManager = Segments.Core.GetWorld().EntityManager;
+Entity prefab = Segments.Core.GetSegmentPrefabCopy( material:null , width:0.01f );
+Entity x_axis = entityManager.Instantiate( prefab );
+    entityManager.AddComponentData( x_axis , new MaterialColor{ Value=new float4{ x=1 , w=1 } });
+    entityManager.SetComponentData( x_axis , new Segments.Segment{ start = float3.zero , end = new float3{ x=1 } } );
+Entity y_axis = entityManager.Instantiate( prefab );
+    entityManager.AddComponentData( y_axis , new MaterialColor{ Value=new float4{ y=1 , w=1 } });
+    entityManager.SetComponentData( y_axis , new Segments.Segment{ start = float3.zero , end = new float3{ y=1 } } );
+Entity z_axis = entityManager.Instantiate( prefab );
+    entityManager.AddComponentData( z_axis , new MaterialColor{ Value=new float4{ z=1 , w=1 } });
+    entityManager.SetComponentData( z_axis , new Segments.Segment{ start = float3.zero , end = new float3{ z=1 } } );
+```
 
 # Getting started with Segments.NativeListToSegmentsSystem:
 ```csharp
@@ -34,37 +49,27 @@ void OnDisable ()// OnDestroy
 ```
 
 # Systems
----
-```csharp
-SegmentTransformSystem : SystemBase
-```
-The fundamental system that makes all this work. Transforms meshes for rendering.
+`SegmentTransformSystem` - The fundamental system that makes all this work. Transforms meshes for rendering.
 
----
-```csharp
-NativeListToSegmentsSystem : SystemBase
-```
-Simplifies entity pool management to a single `NativeList<float3x2>` you fill with data however you need.
+`NativeListToSegmentsSystem` - Simplifies entity pool management to a single `NativeList<float3x2>` you fill with data however you need.
 
----
-```csharp
-NativeArrayToSegmentsSystem : SystemBase
-```
-Simplifies entity pool management to a single `NativeArray<float3x2>` you fill with data however you need.
+`NativeArrayToSegmentsSystem` - Simplifies entity pool management to a single `NativeArray<float3x2>` you fill with data however you need.
 
 ---
 
-# requirements
-Unity 2020.x
+# Requirements
+- Unity 2020.x
+- Hybrid Renderer
+- SRP for built-in shaders
 
-# samples
+# Samples
 - mesh wireframe (runtime)
 <img src="https://i.imgur.com/NCC71mD.gif" height="200">
 
 - drawing mesh bounding boxes (runtime)
 <img src="https://i.imgur.com/J1mzvSbl.jpg" height="200">
 
-# installation Unity 2020.x
+# Installation Unity 2020.x
 Add this line in `manifest.json` / `dependencies`:
 ```
 "com.andrewraphaellukasik.segments": "https://github.com/andrew-raphael-lukasik/segments.git#upm",
