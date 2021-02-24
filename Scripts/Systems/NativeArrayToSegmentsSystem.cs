@@ -21,6 +21,8 @@ namespace Segments
 		public NativeList<JobHandle> Dependencies;
 		public JobHandle ScheduledJobs => Dependency;
 
+		bool _disposed = false;
+
 
 		protected override void OnCreate ()
 		{
@@ -37,6 +39,8 @@ namespace Segments
 			for( int i=_batches.Count-1 ; i!=-1 ; i-- )
 				DestroyBatch( i , true );
 			Assert.AreEqual( _batches.Count , 0 );
+
+			_disposed = true;
 		}
 
 
@@ -90,16 +94,16 @@ namespace Segments
 
 		/// <summary> Disposes this buffer and destroys it's entities. </summary>
 		/// <remarks> Use this to dispose your buffer correctly. It will call buffer.Dispose() so don't do that elsewhere. </remarks>
-		public bool DestroyBatch ( ref NativeArray<float3x2> buffer , bool destroyPrefabEntity = false )
+		public void DestroyBatch ( ref NativeArray<float3x2> buffer , bool destroyPrefabEntity = false )
 		{
+			if( _disposed ) return;
+
+			Dependency.Complete();
+			
 			var bufferByValue = buffer;
 			int index = _batches.FindIndex( (batch)=>batch.buffer==bufferByValue );
 			if( index!=-1 )
-			{
 				DestroyBatch( index , destroyPrefabEntity );
-				return true;
-			}
-			else return false;
 		}
 		void DestroyBatch ( int index , bool destroyPrefabEntity )
 		{

@@ -4,9 +4,11 @@ using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Burst;
 
 namespace Segments.Samples
 {
+	[ExecuteAlways]
 	[AddComponentMenu("")]
 	[RequireComponent( typeof(MeshFilter) )]
 	class DrawMeshEdges : MonoBehaviour
@@ -42,21 +44,12 @@ namespace Segments.Samples
 
 			_segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.NativeListToSegmentsSystem>();
 
-			// initialize segment list:
-			Entity prefab;
-			if( _materialOverride!=null )
-			{
-				if( _widthOverride>0f ) prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
-				else prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride );
-			}
-			else
-			{
-				if( _widthOverride>0f ) prefab = Segments.Core.GetSegmentPrefabCopy( _widthOverride );
-				else prefab = Segments.Core.GetSegmentPrefabCopy();
-			}
+			// create segment buffer:
+			Entity prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
 			_segmentsSystem.CreateBatch( prefab , out _segments );
 			_segments.Length = _edges.Length;
 		}
+		
 
 		void OnDisable ()
 		{
@@ -65,6 +58,7 @@ namespace Segments.Samples
 			if( _vertices.IsCreated ) _vertices.Dispose();
 			if( _edges.IsCreated ) _edges.Dispose();
 		}
+
 
 		void Update ()
 		{
@@ -79,6 +73,8 @@ namespace Segments.Samples
 			_segmentsSystem.Dependencies.Add( Dependency );
 		}
 
+
+		[BurstCompile]
 		public struct UpdateSegmentsJob : IJobParallelFor
 		{
 			[ReadOnly] public NativeArray<int2>.ReadOnly edges;
@@ -98,7 +94,8 @@ namespace Segments.Samples
 			}
 		}
 
-		[Unity.Burst.BurstCompile]
+
+		[BurstCompile]
 		public struct ToEdgesJob : IJob
 		{
 			[ReadOnly] public NativeArray<int>.ReadOnly triangles;

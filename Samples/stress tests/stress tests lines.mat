@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: wireframe lines
+  m_Name: stress tests lines
   m_Shader: {fileID: -6465566751694194690, guid: c92c3ff5ca80dfc4a9c747bc821415b8,
     type: 3}
   m_ShaderKeywords: UVCORRECTION_ON
@@ -101,7 +101,7 @@ Material:
     - _RectInflation: 0.438
     - _RectSizeX: 0.2
     - _RectSizeY: 1
-    - _RectWidth: 0.332
+    - _RectWidth: 0.352
     - _RectX: 0.5
     - _RectY: 0.5
     - _SampleGI: 0
@@ -122,7 +122,7 @@ Material:
     - Vector3_f46222195d364048b814f1e578e8a189: {r: 0, g: 0, b: 0, a: 0}
     - Vector4_6fa4853f26784ad581891add898630bb: {r: 0, g: 0, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 0.74089754, b: 0.0039215684, a: 1}
+    - _Color: {r: 0.0039215684, g: 1, b: 0.7729101, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FadeIn: {r: 0, g: 1, b: 0, a: 0}
     - _FadeInColor: {r: 0, g: 0, b: 0, a: 0}

@@ -30,8 +30,8 @@ namespace Segments
 				if( world==null )
 				{
 					// create editor world:
-					DefaultWorldInitialization.DefaultLazyEditModeInitialize();
-					world = World.All[0];
+					world = DefaultWorldInitialization.Initialize( "Editor World" , true );
+					// DefaultWorldInitialization.DefaultLazyEditModeInitialize();// not immediate
 				}
 				#endif
 
@@ -45,7 +45,7 @@ namespace Segments
 				entityManager.SetComponentData<SegmentWidth>( defaultPrefab , Prototypes.segmentWidth );
 				entityManager.SetComponentData<SegmentAspectRatio>( defaultPrefab , new SegmentAspectRatio{ Value = 1f } );
 				entityManager.AddComponentData<RenderBounds>( defaultPrefab , Prototypes.renderBounds );
-				entityManager.AddComponentData<LocalToWorld>( defaultPrefab , new LocalToWorld { Value = float4x4.TRS( new float3{} , quaternion.identity , new float3{x=1,y=1,z=1} ) });
+				entityManager.AddComponentData<LocalToWorld>( defaultPrefab , new LocalToWorld{ Value = float4x4.TRS( new float3{} , quaternion.identity , new float3{x=1,y=1,z=1} ) });
 				
 				var renderMesh = Prototypes.renderMesh;
 				entityManager.SetSharedComponentData<RenderMesh>( defaultPrefab , renderMesh );
@@ -71,21 +71,24 @@ namespace Segments
 		public static Entity GetSegmentPrefabCopy ( Material material )
 		{
 			Entity copy = GetSegmentPrefabCopy();
-			var renderMesh = entityManager.GetSharedComponentData<RenderMesh>( copy );
-			renderMesh.material = material;
-			entityManager.SetSharedComponentData<RenderMesh>( copy , renderMesh );
+			if( material!=null )
+			{
+				var renderMesh = entityManager.GetSharedComponentData<RenderMesh>( copy );
+				renderMesh.material = material;
+				entityManager.SetSharedComponentData<RenderMesh>( copy , renderMesh );
+			}
 			return copy;
 		}
 		public static Entity GetSegmentPrefabCopy ( float width )
 		{
 			Entity copy = GetSegmentPrefabCopy();
-			entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
+			if( width>0 ) entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
 			return copy;
 		}
 		public static Entity GetSegmentPrefabCopy ( Material material , float width )
 		{
 			Entity copy = GetSegmentPrefabCopy( material );
-			entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
+			if( width>0 ) entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
 			return copy;
 		}
 
