@@ -373,42 +373,40 @@ namespace Segments
 		/// <remarks> Will add list elements if necessary. </remarks>
 		public static void Arrow (
 			NativeList<float3x2> segments , ref int index ,
-			float2 p1 , float2 p2
+			float3 v1 , float3 v2
 		)
 		{
 			int bufferSizeRequired = index + 4;
 			if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 			
-			Arrow( segments.AsArray().Slice(index,4) , p1:p1 , p2:p2 );
+			Arrow( segments.AsArray().Slice(index,4) , v1:v1 , v2:v2 );
 			index = bufferSizeRequired;
 		}
 
 		/// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
 		public static void Arrow (
 			NativeArray<float3x2> segments , ref int index ,
-			float2 p1 , float2 p2
+			float3 v1 , float3 v2
 		)
 		{
 			int bufferSizeRequired = index + 4;
 			if( segments.Length<bufferSizeRequired ) return;
 			
-			Arrow( segments.Slice(index,4) , p1:p1 , p2:p2 );
+			Arrow( segments.Slice(index,4) , v1:v1 , v2:v2 );
 			index = bufferSizeRequired;
 		}
 
 		/// <inheritdoc/> <remarks> Will throw exception if length < 4. </remarks>
 		public static void Arrow (
 			NativeSlice<float3x2> segments ,
-			float2 p1 , float2 p2
+			float3 v1 , float3 v2
 		)
 		{
-			float d = math.distance( p1 , p2 );
-			float3 v1 = new float3{ x=p1.x , y=p1.y };
-			float3 v2 = new float3{ x=p2.x , y=p2.y };
+			float d = math.distance( v1 , v2 );
 			float3 arrowLen = math.normalize(v1-v2) * d * 0.06f;
 			float3 v3 = v2 + math.mul( quaternion.Euler( 0 , 0 , math.PI/14f ) , arrowLen );
 			float3 v4 = v2 + math.mul( quaternion.Euler( 0 , 0 , -math.PI/14f ) , arrowLen );
-			
+
 			segments[0] = new float3x2{ c0=v1 , c1=v2 };
 			segments[1] = new float3x2{ c0=v2 , c1=v3 };
 			segments[2] = new float3x2{ c0=v3 , c1=v4 };
