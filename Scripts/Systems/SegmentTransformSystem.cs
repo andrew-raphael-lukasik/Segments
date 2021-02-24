@@ -29,7 +29,7 @@ namespace Segments
 			{
 				float3 cameraPosition = cameraTransform.position;
 				Entities
-					.WithName("LTW_update_job_perspective_projection")
+					.WithName("LTW_update_for_perspective_projection_job")
 					.ForEach( ( ref LocalToWorld ltw , in Segment segment , in SegmentWidth segmentWidth ) =>
 					{
 						float3 lineVec = segment.end - segment.start;
@@ -44,7 +44,7 @@ namespace Segments
 			{
 				quaternion cameraRotation = cameraTransform.rotation;
 				Entities
-					.WithName("LTW_update_job_orthographic_projection")
+					.WithName("LTW_update_for_orthographic_projection_job")
 					.ForEach( ( ref LocalToWorld ltw , in Segment segment , in SegmentWidth segmentWidth ) =>
 					{
 						float3 lineVec = segment.end - segment.start;
@@ -57,8 +57,8 @@ namespace Segments
 			}
 
 			Entities
-				.WithChangeFilter<Segment,SegmentWidth>()
 				.WithName("aspect_ratio_update_job")
+				.WithChangeFilter<Segment,SegmentWidth>()
 				.ForEach( ( ref SegmentAspectRatio aspectRatio , in Segment segment , in SegmentWidth segmentWidth ) =>
 				{
 					aspectRatio.Value = (float)segmentWidth.Value / math.length( segment.end - segment.start );
