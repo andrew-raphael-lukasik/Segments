@@ -46,7 +46,6 @@ namespace Segments.Samples
 			_segments.Length = _numSegments;
 			var job = new MyJob{
 				transform		= transform.localToWorldMatrix ,
-				random			= new Random( (uint) System.DateTime.Now.GetHashCode() ) ,
 				numSegments		= _numSegments ,
 				segments		= _segments.AsArray().Slice()
 			};
@@ -60,7 +59,6 @@ namespace Segments.Samples
 		public struct MyJob : IJobParallelFor
 		{
 			public float4x4 transform;
-			public Random random;
 			public int numSegments;
 			[WriteOnly] public NativeSlice<float3x2> segments;
 			void IJobParallelFor.Execute ( int index )
@@ -68,16 +66,12 @@ namespace Segments.Samples
 				float t0 = (float)index / (float)numSegments;
 				float t1 = (float)(index+1) / (float)numSegments;
 				
-				// random.state += (uint) index;
-				random = Random.CreateFromIndex( (uint) index );
-				float4 v0 =  math.mul( transform , new float4{ x=t0 , y=random.NextFloat() , w=1 } );
-				random = Random.CreateFromIndex( (uint) index + 1 );
-				float4 v1 =  math.mul( transform , new float4{ x=t1 , y=random.NextFloat() , w=1 } );
+				float rnd0 = Random.CreateFromIndex( (uint) index ).NextFloat();
+				float rnd1 = Random.CreateFromIndex( (uint) index + 1 ).NextFloat();
+				float3 v0 =  math.transform( transform , new float3{ x=t0 , y=rnd0 } );
+				float3 v1 =  math.transform( transform , new float3{ x=t1 , y=rnd1 } );
 				
-				segments[index] = new float3x2{
-					c0 = new float3{ x=v0.x , y=v0.y , z=v0.z } ,
-					c1 = new float3{ x=v1.x , y=v1.y , z=v1.z }
-				};
+				segments[index] = new float3x2{ c0=v0 , c1=v1 };
 			}
 		}
 		
