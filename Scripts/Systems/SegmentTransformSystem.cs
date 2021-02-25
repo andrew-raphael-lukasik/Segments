@@ -51,7 +51,7 @@ namespace Segments
 					segmentHandle			= segmentHandle ,
 					segmentWidthHandle		= segmentWidthHandle
 				};
-				Dependency = job.ScheduleParallel( _query , Dependency );
+				Dependency = job.ScheduleParallel( _query , batchesPerChunk:4 , Dependency );
 			}
 			else// orthographic-projection camera
 			{
@@ -61,20 +61,20 @@ namespace Segments
 					segmentHandle			= segmentHandle ,
 					segmentWidthHandle		= segmentWidthHandle
 				};
-				Dependency = job.ScheduleParallel( _query , Dependency );
+				Dependency = job.ScheduleParallel( _query , batchesPerChunk:4 , Dependency );
 			}
 			_query.AddDependency( Dependency );
 		}
 	}
 
 	[BurstCompile]
-	public struct SegmentTransformPerspectiveProjectionJob : IJobChunk
+	public struct SegmentTransformPerspectiveProjectionJob : IJobEntityBatch
 	{
 		public float3 cameraPosition;
 		public ComponentTypeHandle<LocalToWorld> localToWorldHandle;
 		[ReadOnly] public  ComponentTypeHandle<Segment> segmentHandle;
 		[ReadOnly] public ComponentTypeHandle<SegmentWidth> segmentWidthHandle;
-		void IJobChunk.Execute ( ArchetypeChunk chunk , int chunkIndex , int firstEntityIndex )
+		void IJobEntityBatch.Execute ( ArchetypeChunk chunk , int batchIndex )
 		{
 			var ltw = chunk.GetNativeArray( localToWorldHandle );
 			var segment = chunk.GetNativeArray( segmentHandle );
@@ -94,13 +94,13 @@ namespace Segments
 	}
 
 	[BurstCompile]
-	public struct SegmentTransformOrthographicProjectionJob : IJobChunk
+	public struct SegmentTransformOrthographicProjectionJob : IJobEntityBatch
 	{
 		public quaternion cameraRotation;
 		public ComponentTypeHandle<LocalToWorld> localToWorldHandle;
 		[ReadOnly] public  ComponentTypeHandle<Segment> segmentHandle;
 		[ReadOnly] public ComponentTypeHandle<SegmentWidth> segmentWidthHandle;
-		void IJobChunk.Execute ( ArchetypeChunk chunk , int chunkIndex , int firstEntityIndex )
+		void IJobEntityBatch.Execute ( ArchetypeChunk chunk , int batchIndex )
 		{
 			var ltw = chunk.GetNativeArray( localToWorldHandle );
 			var segment = chunk.GetNativeArray( segmentHandle );
@@ -142,18 +142,18 @@ namespace Segments
 				segmentHandle				= cmd.GetComponentTypeHandle<Segment>( isReadOnly:true ) ,
 				segmentWidthHandle			= cmd.GetComponentTypeHandle<SegmentWidth>( isReadOnly:true )
 			};
-			state.Dependency = job.ScheduleParallel( _query , state.Dependency );
+			state.Dependency = job.ScheduleParallel( _query , batchesPerChunk:4 , state.Dependency );
 		}
 		void ISystemBase.OnDestroy ( ref SystemState state ) {}
 	}
 
 	[BurstCompile]
-	public struct SegmentAspectRatioJob : IJobChunk
+	public struct SegmentAspectRatioJob : IJobEntityBatch
 	{
 		public ComponentTypeHandle<SegmentAspectRatio> segmentAspectRatioHandle;
 		[ReadOnly] public  ComponentTypeHandle<Segment> segmentHandle;
 		[ReadOnly] public ComponentTypeHandle<SegmentWidth> segmentWidthHandle;
-		void IJobChunk.Execute ( ArchetypeChunk chunk , int chunkIndex , int firstEntityIndex )
+		void IJobEntityBatch.Execute ( ArchetypeChunk chunk , int batchIndex )
 		{
 			var aspectRatio = chunk.GetNativeArray( segmentAspectRatioHandle );
 			var segment = chunk.GetNativeArray( segmentHandle );
