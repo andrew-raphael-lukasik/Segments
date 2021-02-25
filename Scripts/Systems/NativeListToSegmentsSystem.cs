@@ -91,8 +91,8 @@ namespace Segments
 				}
 				
 				var job = new SegmentUpdateJob{
-					entities		= entities.AsArray().Slice() ,
-					buffer			= buffer.AsArray().Slice() ,
+					entities		= entities ,
+					buffer			= buffer ,
 					segmentData		= segmentData
 				};
 				var jobHandle = job.Schedule( arrayLength:bufferSize , innerloopBatchCount:128 , Dependency );
@@ -156,9 +156,9 @@ namespace Segments
 		public struct SegmentUpdateJob : IJobParallelFor
 		{
 			[ReadOnly]
-				public NativeSlice<Entity> entities;
+				public NativeList<Entity> entities;
 			[ReadOnly]
-				public NativeSlice<float3x2> buffer;
+				public NativeList<float3x2> buffer;
 			[WriteOnly][NativeDisableParallelForRestriction][NativeDisableContainerSafetyRestriction]
 				public ComponentDataFromEntity<Segment> segmentData;
 			void IJobParallelFor.Execute ( int index )
