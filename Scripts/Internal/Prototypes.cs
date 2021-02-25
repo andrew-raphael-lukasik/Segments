@@ -4,9 +4,7 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 
-using ResourceProvider = Segments.Internal.ResourceProvider;
-
-namespace Segments
+namespace Segments.Internal
 {
 	public static class Prototypes
 	{
@@ -15,6 +13,7 @@ namespace Segments
 		{
 			worldSystems = new System.Type[]{
 					typeof(SegmentTransformSystem)
+				,	typeof(SegmentAspectRatioSystem)
 				,	typeof(NativeArrayToSegmentsSystem)
 				,	typeof(NativeListToSegmentsSystem)
 			};

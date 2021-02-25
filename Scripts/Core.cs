@@ -5,8 +5,8 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
-using Unity.Collections;
-using Unity.Jobs;
+
+using Segments.Internal;
 
 namespace Segments
 {
