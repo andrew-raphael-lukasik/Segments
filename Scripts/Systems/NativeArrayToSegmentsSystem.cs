@@ -83,7 +83,7 @@ namespace Segments
 		}
 
 
-		/// <summary> Creates a new buffer array and mathing entities. </summary>
+		/// <summary> Creates a new buffer array and pool of entities to mirror that buffer. </summary>
 		public void CreateBatch ( in Entity segmentPrefab , in int length , out NativeArray<float3x2> buffer )
 		{
 			buffer = new NativeArray<float3x2>( length , Allocator.Persistent );
