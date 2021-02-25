@@ -2,11 +2,13 @@ using System.Collections.Generic;
 using Debug = UnityEngine.Debug;
 using UnityEngine.Assertions;
 
+using Unity.Mathematics;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Rendering;
-using Unity.Mathematics;
+using Unity.Burst;
 
 namespace Segments
 {
@@ -64,16 +66,19 @@ namespace Segments
 				NativeArray<Entity> entities = batch.entities;
 				int length = batch.length;
 
-				Job
-					.WithName("component_data_update_job")
-					.WithReadOnly( buffer ).WithNativeDisableContainerSafetyRestriction( buffer )
-					.WithNativeDisableContainerSafetyRestriction( segmentData )
-					.WithCode( () =>
-					{
-						for( int i=0 ; i<length ; i++ )
-							segmentData[ entities[i] ] = new Segment{ start=buffer[i].c0 , end=buffer[i].c1 };
-					} )
-					.WithBurst().Schedule();
+				var job = new SegmentUpdateJob{
+					entities		= entities.Slice() ,
+					buffer			= buffer.Slice() ,
+					segmentData		= segmentData
+				};
+				var jobHandle = job.Schedule( arrayLength:length , innerloopBatchCount:128 , Dependency );
+				Dependencies.Add( jobHandle );
+			}
+			if( Dependencies.Length!=0 )
+			{
+				Dependencies.Add( Dependency );
+				Dependency = JobHandle.CombineDependencies( Dependencies );
+				Dependencies.Clear();
 			}
 		}
 
@@ -123,6 +128,22 @@ namespace Segments
 			public int length;
 			public NativeArray<Entity> entities;
 			public NativeArray<float3x2> buffer;
+		}
+
+
+		[BurstCompile]
+		public struct SegmentUpdateJob : IJobParallelFor
+		{
+			[ReadOnly]
+				public NativeSlice<Entity> entities;
+			[ReadOnly]
+				public NativeSlice<float3x2> buffer;
+			[WriteOnly][NativeDisableParallelForRestriction][NativeDisableContainerSafetyRestriction]
+				public ComponentDataFromEntity<Segment> segmentData;
+			void IJobParallelFor.Execute ( int index )
+			{
+				segmentData[ entities[index] ] = new Segment{ start=buffer[index].c0 , end=buffer[index].c1 };
+			}
 		}
 
 
