@@ -13,6 +13,7 @@ namespace Segments.Internal
 		{
 			worldSystems = new System.Type[]{
 					typeof(SegmentTransformSystem)
+				,	typeof(SegmentAspectRatioSystem)
 				,	typeof(NativeArrayToSegmentsSystem)
 				,	typeof(NativeListToSegmentsSystem)
 			};
