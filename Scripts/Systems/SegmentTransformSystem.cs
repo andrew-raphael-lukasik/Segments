@@ -77,13 +77,14 @@ namespace Segments
 		public ComponentTypeHandle<SegmentAspectRatio> aspectRatioHandle;
 		[ReadOnly] public ComponentTypeHandle<Segment> segmentHandle;
 		[ReadOnly] public ComponentTypeHandle<SegmentWidth> segmentWidthHandle;
-		void IJobEntityBatch.Execute ( ArchetypeChunk chunk , int batchIndex )
+		void IJobEntityBatch.Execute ( ArchetypeChunk batchInChunk , int batchIndex )
 		{
-			var ltw = chunk.GetNativeArray( localToWorldHandle );
-			var aspectRatio = chunk.GetNativeArray( aspectRatioHandle );
-			var segment = chunk.GetNativeArray( segmentHandle );
-			var segmentWidth = chunk.GetNativeArray( segmentWidthHandle );
-			for( int i=0 ; i<ltw.Length ; i++ )
+			int length = batchInChunk.Count;
+			var ltw = batchInChunk.GetNativeArray( localToWorldHandle );
+			var aspectRatio = batchInChunk.GetNativeArray( aspectRatioHandle );
+			var segment = batchInChunk.GetNativeArray( segmentHandle );
+			var segmentWidth = batchInChunk.GetNativeArray( segmentWidthHandle );
+			for( int i=0 ; i<length ; i++ )
 			{
 				float3 p0 = segment[i].start;
 				float3 p1 = segment[i].end;
@@ -108,13 +109,14 @@ namespace Segments
 		public ComponentTypeHandle<SegmentAspectRatio> segmentAspectRatioHandle;
 		[ReadOnly] public ComponentTypeHandle<Segment> segmentHandle;
 		[ReadOnly] public ComponentTypeHandle<SegmentWidth> segmentWidthHandle;
-		void IJobEntityBatch.Execute ( ArchetypeChunk chunk , int batchIndex )
+		void IJobEntityBatch.Execute ( ArchetypeChunk batchInChunk , int batchIndex )
 		{
-			var ltw = chunk.GetNativeArray( localToWorldHandle );
-			var aspectRatio = chunk.GetNativeArray( segmentAspectRatioHandle );
-			var segment = chunk.GetNativeArray( segmentHandle );
-			var segmentWidth = chunk.GetNativeArray( segmentWidthHandle );
-			for( int i=0 ; i<ltw.Length ; i++ )
+			int length = batchInChunk.Count;
+			var ltw = batchInChunk.GetNativeArray( localToWorldHandle );
+			var aspectRatio = batchInChunk.GetNativeArray( segmentAspectRatioHandle );
+			var segment = batchInChunk.GetNativeArray( segmentHandle );
+			var segmentWidth = batchInChunk.GetNativeArray( segmentWidthHandle );
+			for( int i=0 ; i<length ; i++ )
 			{
 				float3 p0 = segment[i].start;
 				float3 p1 = segment[i].end;
