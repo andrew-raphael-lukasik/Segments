@@ -68,12 +68,13 @@ namespace Segments
 
 				// int bufferSize = buffer.Length;// throws dependency errors
 				int bufferSize = buffer.AsParallelReader().Length;
-				if( bufferSize<0 || bufferSize>k_max_num_segments )// ugly temporary workaround that guesses when collection became deallocated
+				if( bufferSize<0 )// ugly temporary workaround that guesses when collection became deallocated
 				{
 					throw new System.Exception($"emergency stop for bufferSize:{bufferSize}, <b>DO NOT call Dispose() on segment buffer</b> (my guess is you did) but call {GetType().Name}_Instance.{nameof(DestroyBatch)}( buffer )");
 					// this is for safety reasons as not throwing here in such case could fill entire memory available and crash >= 1 applications
 					// BUT will also be thrown when you surpass it's upper limit by mistake or intentionally
 				}
+				bufferSize = math.min( bufferSize , k_max_num_segments );// max is max, ignores everything north of that
 				
 				if( entities.Length!=bufferSize )
 				{
@@ -91,8 +92,8 @@ namespace Segments
 				}
 				
 				var job = new SegmentUpdateJob{
-					entities		= entities.AsArray().Slice() ,
-					buffer			= buffer.AsArray().Slice() ,
+					entities		= entities ,
+					buffer			= buffer ,
 					segmentData		= segmentData
 				};
 				var jobHandle = job.Schedule( arrayLength:bufferSize , innerloopBatchCount:128 , Dependency );
@@ -107,7 +108,7 @@ namespace Segments
 		}
 
 
-		/// <summary> Creates a new buffer array and mathing entities. </summary>
+		/// <summary> Creates a new buffer array and pool of entities to mirror that buffer. </summary>
 		public void CreateBatch ( in Entity segmentPrefab , out NativeList<float3x2> buffer )
 		{
 			buffer = new NativeList<float3x2>( Allocator.Persistent );
@@ -156,9 +157,9 @@ namespace Segments
 		public struct SegmentUpdateJob : IJobParallelFor
 		{
 			[ReadOnly]
-				public NativeSlice<Entity> entities;
+				public NativeList<Entity> entities;
 			[ReadOnly]
-				public NativeSlice<float3x2> buffer;
+				public NativeList<float3x2> buffer;
 			[WriteOnly][NativeDisableParallelForRestriction][NativeDisableContainerSafetyRestriction]
 				public ComponentDataFromEntity<Segment> segmentData;
 			void IJobParallelFor.Execute ( int index )
