@@ -47,9 +47,20 @@ void OnDisable ()// OnDestroy
     _segmentsSystem.DestroyBatch( ref _segments , true );
 }
 ```
+# Performance
+
+100.000 segments stress test:
+
+<img src="https://i.imgur.com/ZKUyzFa.jpg" height="200">
+
+Cons: Very costly for this number of entities at the moment.
+
+Pros: Threaded jobs schedule pretty well to spread that cost.
+
+Conclusion: I recommend staying in 1-10k segments range until fixed.
 
 # Systems
-`SegmentTransformSystem` - The fundamental system that makes all this work. Transforms meshes for rendering.
+`SegmentTransformSystem` - The main system that makes all this work. Calculates `LocalToWorld` matrices for rendering.
 
 `NativeListToSegmentsSystem` - Simplifies entity pool management to a single `NativeList<float3x2>` you fill with data however you need.
 
