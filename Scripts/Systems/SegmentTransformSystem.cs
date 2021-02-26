@@ -36,8 +36,9 @@ namespace Segments
 			#endif
 			if( camera==null ) return;// no camera found
 
-			Transform cameraTransform = camera.transform;
+			Transform cameraTransform	= camera.transform;
 			var localToWorldHandle		= EntityManager.GetComponentTypeHandle<LocalToWorld>( isReadOnly:false );
+			var aspectRatioHandle		= EntityManager.GetComponentTypeHandle<SegmentAspectRatio>( isReadOnly:false );
 			var segmentHandle			= EntityManager.GetComponentTypeHandle<Segment>( isReadOnly:true );
 			var segmentWidthHandle		= EntityManager.GetComponentTypeHandle<SegmentWidth>( isReadOnly:true );
 			
@@ -45,9 +46,10 @@ namespace Segments
 			if( !camera.orthographic )// perspective-projection camera code path
 			{
 				float3 cameraPosition = cameraTransform.position;
-				var job = new SegmentTransformPerspectiveProjectionJob{
+				var job = new PerspectiveProjectionJob{
 					cameraPosition			= cameraPosition ,
 					localToWorldHandle		= localToWorldHandle ,
+					aspectRatioHandle		= aspectRatioHandle ,
 					segmentHandle			= segmentHandle ,
 					segmentWidthHandle		= segmentWidthHandle
 				};
@@ -55,7 +57,7 @@ namespace Segments
 			}
 			else// orthographic-projection camera
 			{
-				var job = new SegmentTransformOrthographicProjectionJob{
+				var job = new OrthographicProjectionJob{
 					cameraRotation			= cameraTransform.rotation ,
 					localToWorldHandle		= localToWorldHandle ,
 					segmentHandle			= segmentHandle ,
@@ -68,15 +70,17 @@ namespace Segments
 	}
 
 	[BurstCompile]
-	public struct SegmentTransformPerspectiveProjectionJob : IJobEntityBatch
+	public struct PerspectiveProjectionJob : IJobEntityBatch
 	{
 		public float3 cameraPosition;
 		public ComponentTypeHandle<LocalToWorld> localToWorldHandle;
-		[ReadOnly] public  ComponentTypeHandle<Segment> segmentHandle;
+		public ComponentTypeHandle<SegmentAspectRatio> aspectRatioHandle;
+		[ReadOnly] public ComponentTypeHandle<Segment> segmentHandle;
 		[ReadOnly] public ComponentTypeHandle<SegmentWidth> segmentWidthHandle;
 		void IJobEntityBatch.Execute ( ArchetypeChunk chunk , int batchIndex )
 		{
 			var ltw = chunk.GetNativeArray( localToWorldHandle );
+			var aspectRatio = chunk.GetNativeArray( aspectRatioHandle );
 			var segment = chunk.GetNativeArray( segmentHandle );
 			var segmentWidth = chunk.GetNativeArray( segmentWidthHandle );
 			for( int i=0 ; i<ltw.Length ; i++ )
@@ -89,20 +93,25 @@ namespace Segments
 				ltw[i] = new LocalToWorld{
 					Value = float4x4.TRS( p0 , rot , scale )
 				};
+				aspectRatio[i] = new SegmentAspectRatio{
+					Value = (float)segmentWidth[i].Value / math.length( segment[i].end - segment[i].start )
+				};
 			}
 		}
 	}
 
 	[BurstCompile]
-	public struct SegmentTransformOrthographicProjectionJob : IJobEntityBatch
+	public struct OrthographicProjectionJob : IJobEntityBatch
 	{
 		public quaternion cameraRotation;
 		public ComponentTypeHandle<LocalToWorld> localToWorldHandle;
-		[ReadOnly] public  ComponentTypeHandle<Segment> segmentHandle;
+		public ComponentTypeHandle<SegmentAspectRatio> segmentAspectRatioHandle;
+		[ReadOnly] public ComponentTypeHandle<Segment> segmentHandle;
 		[ReadOnly] public ComponentTypeHandle<SegmentWidth> segmentWidthHandle;
 		void IJobEntityBatch.Execute ( ArchetypeChunk chunk , int batchIndex )
 		{
 			var ltw = chunk.GetNativeArray( localToWorldHandle );
+			var aspectRatio = chunk.GetNativeArray( segmentAspectRatioHandle );
 			var segment = chunk.GetNativeArray( segmentHandle );
 			var segmentWidth = chunk.GetNativeArray( segmentWidthHandle );
 			for( int i=0 ; i<ltw.Length ; i++ )
@@ -110,58 +119,15 @@ namespace Segments
 				float3 p0 = segment[i].start;
 				float3 p1 = segment[i].end;
 				float3 lineVec = p1 - p0;
+				float lineLenth = math.length(lineVec);
+				float width = segmentWidth[i].Value;
 				var rot = quaternion.LookRotation( math.normalize(lineVec) , math.mul(cameraRotation,new float3{z=-1}) );
-				var scale = new float3{ x=segmentWidth[i].Value , y=1f , z=math.length(lineVec) };
+				var scale = new float3{ x=width , y=1f , z=lineLenth };
 				ltw[i] = new LocalToWorld{
 					Value = float4x4.TRS( p0 , rot , scale )
 				};
-			}
-		}
-	}
-
-	[BurstCompile]
-	[UpdateInGroup( typeof(UpdatePresentationSystemGroup) )]
-	public struct SegmentAspectRatioSystem : ISystemBase
-	{
-		EntityQuery _query;
-		void ISystemBase.OnCreate ( ref SystemState state )
-		{
-			_query = state.GetEntityQuery(
-					ComponentType.ReadWrite<SegmentAspectRatio>()
-				,	ComponentType.ReadOnly<Segment>()
-				,	ComponentType.ReadOnly<SegmentWidth>()
-			);
-			_query.AddChangedVersionFilter( typeof(Segment) );
-			_query.AddChangedVersionFilter( typeof(SegmentWidth) );
-		}
-		void ISystemBase.OnUpdate ( ref SystemState state )
-		{
-			var cmd = state.EntityManager;
-			var job = new SegmentAspectRatioJob{
-				segmentAspectRatioHandle	= cmd.GetComponentTypeHandle<SegmentAspectRatio>( isReadOnly:false ) ,
-				segmentHandle				= cmd.GetComponentTypeHandle<Segment>( isReadOnly:true ) ,
-				segmentWidthHandle			= cmd.GetComponentTypeHandle<SegmentWidth>( isReadOnly:true )
-			};
-			state.Dependency = job.ScheduleParallel( _query , batchesPerChunk:4 , state.Dependency );
-		}
-		void ISystemBase.OnDestroy ( ref SystemState state ) {}
-	}
-
-	[BurstCompile]
-	public struct SegmentAspectRatioJob : IJobEntityBatch
-	{
-		public ComponentTypeHandle<SegmentAspectRatio> segmentAspectRatioHandle;
-		[ReadOnly] public  ComponentTypeHandle<Segment> segmentHandle;
-		[ReadOnly] public ComponentTypeHandle<SegmentWidth> segmentWidthHandle;
-		void IJobEntityBatch.Execute ( ArchetypeChunk chunk , int batchIndex )
-		{
-			var aspectRatio = chunk.GetNativeArray( segmentAspectRatioHandle );
-			var segment = chunk.GetNativeArray( segmentHandle );
-			var segmentWidth = chunk.GetNativeArray( segmentWidthHandle );
-			for( int i=0 ; i<aspectRatio.Length ; i++ )
-			{
 				aspectRatio[i] = new SegmentAspectRatio{
-					Value = (float)segmentWidth[i].Value / math.length( segment[i].end - segment[i].start )
+					Value = width / lineLenth
 				};
 			}
 		}
