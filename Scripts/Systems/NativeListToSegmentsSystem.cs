@@ -22,8 +22,6 @@ namespace Segments
 		
 		List<Batch> _batches = new List<Batch>();
 		public NativeList<JobHandle> Dependencies;
-		public JobHandle ScheduledJobs => Dependency;
-
 		bool _disposed = false;
 
 
