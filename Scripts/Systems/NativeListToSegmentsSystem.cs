@@ -18,49 +18,54 @@ namespace Segments
 	public class NativeListToSegmentsSystem : SystemBase
 	{
 
-		public const int k_max_num_segments = 100_000;// arbitrary but reasonable
+		public const int k_max_num_segments_default = 100_000;// arbitrary but reasonable
+		public int MAX_NUM_SEGMENTS = k_max_num_segments_default;
 		
 		List<Batch> _batches = new List<Batch>();
-		public NativeList<JobHandle> Dependencies;
-		bool _disposed = false;
-
-
-		protected override void OnCreate ()
-		{
-			Dependencies = new NativeList<JobHandle>( Allocator.Persistent );
-		}
+		bool _isSystemDestroyed = false;
 
 
 		protected override void OnDestroy ()
 		{
 			Dependency.Complete();
-			JobHandle.CombineDependencies( Dependencies ).Complete();
-			Dependencies.Dispose();
 
 			for( int i=_batches.Count-1 ; i!=-1 ; i-- )
+			{
+				_batches[i].dependency.Complete();
 				DestroyBatch( i , true );
+			}
 			Assert.AreEqual( _batches.Count , 0 );
 
-			_disposed = true;
+			_isSystemDestroyed = true;
 		}
 
 
 		protected override void OnUpdate ()
 		{
-			if( Dependencies.Length!=0 )
+			for( int i=_batches.Count-1 ; i!=-1 ; i-- )
+				if( _batches[i].destroy )
+					DestroyBatch( index:i , destroyPrefabEntity:_batches[i].destroyPrefabEntity );
+
+			int numBatches = _batches.Count;
 			{
-				Dependencies.Add( Dependency );
-				Dependency = JobHandle.CombineDependencies( Dependencies );
-				Dependencies.Clear();
+				var deps = new NativeArray<JobHandle>( numBatches+1 , Allocator.Temp );
+				for( int i=0 ; i<numBatches ; i++ )
+					deps[i] = _batches[i].dependency;
+				deps[numBatches] = Dependency;
+				Dependency = JobHandle.CombineDependencies( deps );
 			}
-			if( _batches.Count==0 ) return;
+			if( numBatches==0 ) return;
 
 			var entityManager = EntityManager;
 			var segmentData = GetComponentDataFromEntity<Segment>( isReadOnly:false );
 
-			for( int batchIndex=_batches.Count-1 ; batchIndex!=-1 ; batchIndex-- )
+			var dependencies = new NativeList<JobHandle>( initialCapacity:numBatches+1 , Allocator.Temp );
+			for( int batchIndex=numBatches-1 ; batchIndex!=-1 ; batchIndex-- )
 			{
 				var batch = _batches[ batchIndex ];
+				if( !batch.isBufferDirty )
+					return;
+				
 				NativeList<float3x2> buffer = batch.buffer;
 				NativeList<Entity> entities = batch.entities;
 
@@ -72,7 +77,7 @@ namespace Segments
 					// this is for safety reasons as not throwing here in such case could fill entire memory available and crash >= 1 applications
 					// BUT will also be thrown when you surpass it's upper limit by mistake or intentionally
 				}
-				bufferSize = math.min( bufferSize , k_max_num_segments );// max is max, ignores everything north of that
+				bufferSize = math.min( bufferSize , MAX_NUM_SEGMENTS );// max is max, ignores everything north of that
 				
 				if( entities.Length!=bufferSize )
 				{
@@ -94,35 +99,49 @@ namespace Segments
 					buffer			= buffer ,
 					segmentData		= segmentData
 				};
+				
 				var jobHandle = job.Schedule( arrayLength:bufferSize , innerloopBatchCount:128 , Dependency );
-				Dependencies.Add( jobHandle );
+				dependencies.Add( jobHandle );
 			}
-			if( Dependencies.Length!=0 )
+			if( dependencies.Length!=0 )
 			{
-				Dependencies.Add( Dependency );
-				Dependency = JobHandle.CombineDependencies( Dependencies );
-				Dependencies.Clear();
+				dependencies.Add( Dependency );
+				Dependency = JobHandle.CombineDependencies( dependencies );
+				// dependencies.Clear();
 			}
 		}
 
 
+		public void CreateBatch ( in Entity segmentPrefab , out Batch batch )
+		{
+			var buffer = new NativeList<float3x2>( Allocator.Persistent );
+			batch = new Batch(
+				prefab:		segmentPrefab ,
+				entities:	new NativeList<Entity>( Allocator.Persistent ) ,
+				buffer:		buffer
+			);
+			_batches.Add( batch );
+		}
+
+		[System.Obsolete("Replace with CreateBatch( Entity segmentPrefab , out Batch batch )")]
 		/// <summary> Creates a new buffer array and pool of entities to mirror that buffer. </summary>
 		public void CreateBatch ( in Entity segmentPrefab , out NativeList<float3x2> buffer )
 		{
 			buffer = new NativeList<float3x2>( Allocator.Persistent );
-			_batches.Add( new Batch{
-				prefab		= segmentPrefab ,
-				entities	= new NativeList<Entity>( Allocator.Persistent ) ,
-				buffer		= buffer
-			} );
+			_batches.Add( new Batch(
+				prefab:		segmentPrefab ,
+				entities:	new NativeList<Entity>( Allocator.Persistent ) ,
+				buffer:		buffer
+			) );
 		}
 		
 
+		[System.Obsolete("Replace with batch.Destroy()")]
 		/// <summary> Disposes this buffer and destroys it's entities. </summary>
 		/// <remarks> Use this to dispose your buffer correctly. It will call buffer.Dispose() so don't do that elsewhere. </remarks>
 		public void DestroyBatch ( ref NativeList<float3x2> buffer , bool destroyPrefabEntity = false )
 		{
-			if( _disposed ) return;
+			if( _isSystemDestroyed ) return;
 			
 			Dependency.Complete();
 			
@@ -134,20 +153,48 @@ namespace Segments
 		void DestroyBatch ( int index , bool destroyPrefabEntity )
 		{
 			var batch = _batches[index];
+			if( batch.isDisposed ) return;
+
 			_batches.RemoveAt( index );
 			EntityManager.DestroyEntity( batch.entities );
 			batch.entities.Dispose();
 			batch.buffer.Dispose();
 			if( destroyPrefabEntity )
 				EntityManager.DestroyEntity( batch.prefab );
+			
+			batch.isDisposed = true;
 		}
 		
 
-		struct Batch
+		public class Batch
 		{
-			public Entity prefab;
-			public NativeList<Entity> entities;
+			public readonly Entity prefab;
+			internal NativeList<Entity> entities;
 			public NativeList<float3x2> buffer;
+			public JobHandle dependency;
+			public bool isBufferDirty;
+			internal bool destroy;
+			internal bool destroyPrefabEntity;
+			internal bool isDisposed;
+			public Batch ( Entity prefab , NativeList<Entity> entities , NativeList<float3x2> buffer )
+			{
+				this.prefab = prefab;
+				this.entities = entities;
+				this.buffer = buffer;
+				this.isBufferDirty = true;
+				this.destroy = false;
+				this.destroyPrefabEntity = false;
+				this.isDisposed = false;
+			}
+			public void SetDirty ( bool value ) => this.isBufferDirty = value;
+			/// <summary> Deffered dispose. </summary>
+			/// <remarks> Flags batch data and it's entities for disposal. </summary>
+			public void Destroy ( bool destroyPrefabEntity = false )
+			{
+				this.destroy = true;
+				this.destroyPrefabEntity = destroyPrefabEntity;
+			}
+			public int Length { get=> this.buffer.Length; set=>this.buffer.Length=value; }
 		}
 
 		

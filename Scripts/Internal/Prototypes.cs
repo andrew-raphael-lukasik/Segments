@@ -12,7 +12,8 @@ namespace Segments.Internal
 		static Prototypes ()
 		{
 			worldSystems = new System.Type[]{
-					typeof(SegmentTransformSystem)
+					typeof(SegmentRenderingSystem)
+				,	typeof(SegmentTransformSystem)
 				,	typeof(NativeArrayToSegmentsSystem)
 				,	typeof(NativeListToSegmentsSystem)
 			};

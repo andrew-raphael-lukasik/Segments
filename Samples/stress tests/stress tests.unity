@@ -152,10 +152,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9439af56b6b10f4e90251d3deab8aec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _materialOverride: {fileID: 2100000, guid: 91643007015acfb46bdc20094ec8b561, type: 2}
-  _widthOverride: 0.005
-  _numSegments: 4228
-  _randomizeNumSegments: 1
+  _srcMaterial: {fileID: 2100000, guid: 91643007015acfb46bdc20094ec8b561, type: 2}
+  _numSegments: 170
 --- !u!4 &588660314
 Transform:
   m_ObjectHideFlags: 0

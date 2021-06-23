@@ -17,10 +17,10 @@ namespace Segments.Samples
 		[SerializeField] Material _materialOverride = null;
 		[SerializeField] float _widthOverride = 0.003f;
 
-		NativeList<float3x2> _segments;
 		NativeArray<Vector3> _vertices;
 		NativeArray<int2> _edges;
 		Segments.NativeListToSegmentsSystem _segmentsSystem;
+		Segments.NativeListToSegmentsSystem.Batch _batch;
 		public JobHandle Dependency;
 
 
@@ -46,15 +46,15 @@ namespace Segments.Samples
 
 			// create segment buffer:
 			Entity prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
-			_segmentsSystem.CreateBatch( prefab , out _segments );
-			_segments.Length = _edges.Length;
+			_segmentsSystem.CreateBatch( prefab , out _batch );
+			_batch.Length = _edges.Length;
 		}
 		
 
 		void OnDisable ()
 		{
 			Dependency.Complete();
-			_segmentsSystem.DestroyBatch( ref _segments , true );
+			_batch.Destroy( destroyPrefabEntity:true );
 			if( _vertices.IsCreated ) _vertices.Dispose();
 			if( _edges.IsCreated ) _edges.Dispose();
 		}
@@ -68,11 +68,11 @@ namespace Segments.Samples
 				edges		= _edges.AsReadOnly() ,
 				vertices	= _vertices.AsReadOnly() ,
 				matrix		= transform.localToWorldMatrix ,
-				segments	= _segments
+				segments	= _batch.buffer
 			};
 			
 			Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 , dependsOn:Dependency );
-			_segmentsSystem.Dependencies.Add( Dependency );
+			_batch.dependency = Dependency;
 		}
 
 

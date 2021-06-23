@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Assertions;
 
 using Unity.Mathematics;
 using Unity.Entities;
@@ -15,29 +16,28 @@ namespace Segments.Samples
 	class StressTests : MonoBehaviour
 	{
 		
-		[SerializeField] Material _materialOverride = null;
-		[SerializeField] float _widthOverride = 0.003f;
-		[SerializeField][Range(2,Segments.NativeListToSegmentsSystem.k_max_num_segments)] int _numSegments;
+		[SerializeField] Material _srcMaterial = null;
+		[SerializeField][Min(1)] int _numSegments;
 		
-		NativeList<float3x2> _segments;
-		Segments.NativeListToSegmentsSystem _segmentsSystem;
+		Segments.SegmentRenderingSystem _segmentsSystem;
+		
+		[Header("Read Only:")]
+		[SerializeField] Segments.Batch _batch;
+
 		public JobHandle Dependency;
 
 
 		void OnEnable ()
 		{
-			_segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.NativeListToSegmentsSystem>();
-
-			// initialize segment list:
-			Entity prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
-			_segmentsSystem.CreateBatch( prefab , out _segments );
+			_segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.SegmentRenderingSystem>();
+			_segmentsSystem.CreateBatch( out _batch , _srcMaterial );
 		}
 
 
 		void OnDisable ()
 		{
 			Dependency.Complete();
-			_segmentsSystem.DestroyBatch( ref _segments , true );
+			_batch.Dispose();
 		}
 
 
@@ -45,15 +45,32 @@ namespace Segments.Samples
 		{
 			Dependency.Complete();
 			
-			_segments.Length = _numSegments;
-			var job = new MyJob{
-				transform		= transform.localToWorldMatrix ,
-				numSegments		= _numSegments ,
-				segments		= _segments.AsArray().Slice()
-			};
-			
-			Dependency = job.Schedule( arrayLength:_segments.Length , innerloopBatchCount:128 , dependsOn:Dependency );
-			_segmentsSystem.Dependencies.Add( Dependency );
+			if( _batch.Length!=_numSegments )
+			{
+				_batch.Length = _numSegments;
+				var job = new MyJob{
+					transform		= transform.localToWorldMatrix ,
+					numSegments		= _numSegments ,
+					segments		= _batch.Segments.AsArray().Slice()
+				};
+				
+				Dependency = job.Schedule( arrayLength:_batch.Length , innerloopBatchCount:128 , dependsOn:Dependency );
+				_batch.Dependency = Dependency;
+				// _batch.isBufferDirty = true;
+
+				Dependency.Complete();
+				int i = 0;
+				_batch.Segments[i++] = new float3x2{
+					c0 = new float3{ x=0 , y=0 , z=-4+i } ,
+					c1 = new float3{ x=0 , y=0.1f , z=-4+i }
+				};
+
+				_batch.Segments[i++] = new float3x2{
+					c0 = new float3{ x=0 , y=0 , z=-4+i } ,
+					c1 = new float3{ x=0 , y=1f , z=-4+i }
+				};
+			}
+			// else _batch.isBufferDirty = false;
 		}
 
 
