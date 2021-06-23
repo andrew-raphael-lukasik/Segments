@@ -1,18 +1,15 @@
 Shader "Segments/Line Shader v1" {
 Properties
 {
-	_Width ( "Width" , Float ) = 0.5//_Width ("Width", Range(0.005,0.05)) = 0.01
-	_Overlap ( "Overlap" , Float ) = 0.5
+	_Width ( "Width" , Float ) = 0.5
 	
 	[MainColor][HDR]
 	_Color ( "Color" , Color ) = (1,1,1,1)
 
 	[HDR]
-	_Color1 ( "Border Color" , Color ) = (1,1,1,0)
+	_Color1 ( "Outer Color" , Color ) = (1,1,1,0)
 
-	_BorderSize ( "Border Size" , Range(0,1) ) = 0.1
-
-	_Sharpness ( "Sharpness" , Range(0,1) ) = 0
+	_Roundness ( "Roundness" , Range(0,1) ) = 1.0
 
 	// [MainTexture] _BaseMap("BaseMap", 2D) = "white" {}
 }
@@ -61,15 +58,18 @@ SubShader
 		float4 _Color;
 		float4 _Color1;
 		float _Width;
-		float _Overlap;
-		float _Sharpness;
-		float _BorderSize;
+		float _Roundness;
 
+
+		#define PI 3.1415926535897932384626433832795
 
 		// src: https://www.shadertoy.com/view/MlGBWD
 		float remap01 ( float from , float to , float x ) { return saturate( (x-from)/(to-from) ); }
 
 		float lengthSq ( float2 vec ) { return dot( vec , vec ); }
+
+		// src: https://easings.net/#easeOutCirc
+		float easeOutCirc ( float x ) { return sqrt( 1.0 - pow(x-1.0,2.0) ); }
 
 		// src: https://github.com/Unity-Technologies/Unity.Mathematics/blob/7da8f190d976ab687187eaeb3d42408e7f606667/src/Unity.Mathematics/matrix.cs#L436
 		float3x3 LookRotation ( float3 forward , float3 up )
@@ -106,13 +106,6 @@ SubShader
 		}
 
 
-		// vertexOut vert ( vertexIn IN )
-		// {
-		// 	vertexOut o;
-		// 	o.pos = IN.pos;
-		// 	o.color = IN.color;
-		// 	return o;
-		// }
 		vertexOut vert ( uint vId : SV_VertexID )
 		{
 			vertexOut o;
@@ -143,14 +136,15 @@ SubShader
 			float3x3 ltw = rot * Scale(scale);
 
 			// quad 1x1, pivot at bottom center
-			float capWidth = 1/lineLen * _Overlap*0.5;
+			float overlap = _Width;
+			float capWidth = 1/lineLen * overlap*0.5;
 			float4 bl = UnityObjectToClipPos( IN0.pos + float4( mul( float3(-0.5,0,-capWidth) , ltw ) , 0 ) );
 			float4 br = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,-capWidth) , ltw ) , 0 ) );
 			float4 tl = UnityObjectToClipPos( IN0.pos + float4( mul( float3(-0.5,0,1+capWidth) , ltw ) , 0 ) );
 			float4 tr = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,1+capWidth) , ltw ) , 0 ) );
 
 			geomOut VERT;
-			VERT.aspect = _Width / ( lineLen + _Overlap );
+			VERT.aspect = _Width / ( lineLen + overlap );
 			// VERT.aspect = _Width / lineLen;
 
 			float4 localcs_v0 = UnityObjectToClipPos( IN0.pos );
@@ -185,17 +179,6 @@ SubShader
 				stream.Append(VERT);
 		}
 
-
-		float4 frag_1 ( geomOut i )
-		{
-			float t = abs( i.uv - float2(0.5,0) ) * 2.0;
-			t = pow( smoothstep(0,1,t) , lerp(1,10,_Sharpness) );
-			// return 1.0 - t;
-			float4 col = i.color * lerp( _Color , _Color1 , t );
-			// float4 col = i.color;
-			// col.a *= smoothstep( 1.0 , 0 , t );
-			return col;
-		}
 		float4 frag_draw_local_pos ( geomOut i )
 		{
 			return float4( i.localcs_pos , 1 );
@@ -204,7 +187,7 @@ SubShader
 		{
 			const float epsilon = 0.0000001;
 			const float sqrt2 = 1.41421356237;
-			float margin = _BorderSize*0.5;
+			float margin = _Roundness * 0.5;
 
 			float2 ruv = abs( i.uv - 0.5 );
 			float rw = 0.5 - margin;
@@ -212,23 +195,17 @@ SubShader
 			float dx = ruv.x - rw;
 			float dy = max( ruv.y - rh , 0 );
 			float a12 = min( 1-( dx / max(0.5-rw,epsilon) ) , 1-( dy / max(0.5-rh,epsilon) ) );
-			float a3 = 1 - saturate(
-				length(
-					abs(float2(i.uv.x,i.uv.y/i.aspect)-float2(0.5,0.5)) - (0.5-margin)
-				)
-				/ margin
-			);
+			float a3 = 1 - saturate( length( float2( ruv.x , ruv.y/i.aspect ) - float2( 0.5 - margin , 0.5*1/i.aspect - margin ) ) / margin );
 			
 			// float case1 = ruv.x>rw;// left & right margins
 			// float case2 = ruv.y>rh;// top & bottom margins
 			float case3 = ruv.x>rw & ruv.y>rh;// corner margins
-
 			float a = case3 ? a3 : a12;
-			// return float4( i.uv.x , i.uv.y , 0 , 1 );
 			
-			// a = smoothstep( 0 , 1 , a );
-			float t = pow( a , lerp(1,10,_Sharpness) );
+			float t = easeOutCirc(a);
 			float4 col = i.color * lerp( _Color1 , _Color , t );
+			if( t==0 ) discard;
+
 			return col;
 		}
 		float4 frag ( geomOut i ) : COLOR
