@@ -1,15 +1,14 @@
-Shader "Segments/Line Shader v1" {
+Shader "Segments/Rounded Rectangle" {
 Properties
 {
-	_Width ( "Width" , Float ) = 0.5
+	_Width ( "Width" , Float ) = 0.1
 	
 	[MainColor][HDR]
-	_Color ( "Color" , Color ) = (1,1,1,1)
-
-	[HDR]
-	_Color1 ( "Outer Color" , Color ) = (1,1,1,0)
+	_Color ( "Color" , Color ) = (0.4,1,0,1)
 
 	_Roundness ( "Roundness" , Range(0,1) ) = 1.0
+
+	_Smoothness ( "Smoothness" , Range(0,1) ) = 0.8
 
 	// [MainTexture] _BaseMap("BaseMap", 2D) = "white" {}
 }
@@ -18,7 +17,8 @@ SubShader
 {
 	LOD 200
 	Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }
-	BlendOp Max
+	
+	BlendOp Add
 	Blend SrcAlpha OneMinusSrcAlpha
 	ZWrite Off
 	ZTest Less
@@ -46,22 +46,24 @@ SubShader
 		struct geomOut {
 			float4 pos : POSITION;
 			float4 color : COLOR0;
-			float2 uv : UV0;
-			float aspect : UV2;// aspect ratio
-			float3 localcs_pos : UV3;// relative to v0
-			float3 localcs_v1 : UV4;// v1, relative to v0
+			float4 uv : UV0;
+				// uv.xy - uv
+				// uv.z - aspect ratio
+				// uv.w - depth (clip space)
 		};
 
 
 		uniform float _ArrayVertices [1363*3];
 		// uniform float4 _ArrayColors [1363];
 		float4 _Color;
-		float4 _Color1;
 		float _Width;
 		float _Roundness;
+		float _Smoothness;
 
 
 		#define PI 3.1415926535897932384626433832795
+		#define epsilon 0.0000001
+		#define sqrt2 1.41421356237
 
 		// src: https://www.shadertoy.com/view/MlGBWD
 		float remap01 ( float from , float to , float x ) { return saturate( (x-from)/(to-from) ); }
@@ -104,18 +106,24 @@ SubShader
 				float3( scale.z , scale.z , scale.z )
 			);
 		}
-
+		
 
 		vertexOut vert ( uint vId : SV_VertexID )
 		{
 			vertexOut o;
 			int i0 = vId * 3;
-			o.pos = float4( _ArrayVertices[i0] , _ArrayVertices[i0+1] , _ArrayVertices[i0+2] , 1 );
+			float4 vec = float4( _ArrayVertices[i0] , _ArrayVertices[i0+1] , _ArrayVertices[i0+2] , 1 );
+			
+			// src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
+			float4 clipPos = UnityObjectToClipPos( vec );
+			vec.w = clipPos.z / clipPos.w;// depth
+			#if !defined(UNITY_REVERSED_Z) // basically only OpenGL
+			vec.w = vec.w * 0.5 + 0.5; // remap -1 to 1 range to 0.0 to 1.0
+			#endif
+			
+			o.pos = vec;
 			o.color = 1;//_ArrayColors[vId];
 			
-			// float4 cameraLocalPos = mul( unity_WorldToObject , float4(_WorldSpaceCameraPos,1.0) );
-			// o.pos.w = 1.0 - saturate( max( lengthSq(o.pos.xyz,_WorldSpaceCameraPos.xyz)*0.01 , 0 ) );
-
 			return o;
 		}
 
@@ -143,75 +151,63 @@ SubShader
 			float4 tl = UnityObjectToClipPos( IN0.pos + float4( mul( float3(-0.5,0,1+capWidth) , ltw ) , 0 ) );
 			float4 tr = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,1+capWidth) , ltw ) , 0 ) );
 
-			geomOut VERT;
-			VERT.aspect = _Width / ( lineLen + overlap );
-			// VERT.aspect = _Width / lineLen;
+			float2 depth = pow( float2( IN0.pos.w , IN1.pos.w ) , 0.3 );
+			depth = float2( IN0.pos.w , IN1.pos.w );
 
-			float4 localcs_v0 = UnityObjectToClipPos( IN0.pos );
-			VERT.localcs_v1 = UnityObjectToClipPos( IN1.pos ) - localcs_v0;
-			
+			geomOut VERT;
+			float aspect = _Width / ( lineLen + overlap );
+
 			// bottom right
 			VERT.pos = br;
-			VERT.localcs_pos = VERT.pos - localcs_v0;
 			VERT.color = IN0.color;
-			VERT.uv = float2(1,0);
+			VERT.uv = float4( 1 , 0 , aspect , depth.x );
 				stream.Append(VERT);
 
 			// bottom left
 			VERT.pos = bl;
-			VERT.localcs_pos = VERT.pos - localcs_v0;
 			VERT.color = IN0.color;
-			VERT.uv = float2(0,0);
+			VERT.uv = float4( 0 , 0 , aspect , depth.x );
 				stream.Append(VERT);
 
 			// top right
 			VERT.pos = tr;
-			VERT.localcs_pos = VERT.pos - localcs_v0;
 			VERT.color = IN1.color;
-			VERT.uv = float2(1,1);
+			VERT.uv = float4( 1 , 1 , aspect , depth.y );
 				stream.Append(VERT);
 
 			// top left
 			VERT.pos = tl;
-			VERT.localcs_pos = VERT.pos - localcs_v0;
 			VERT.color = IN1.color;
-			VERT.uv = float2(0,1);
+			VERT.uv = float4( 0 , 1 , aspect , depth.y );
 				stream.Append(VERT);
 		}
 
-		float4 frag_draw_local_pos ( geomOut i )
+
+		float4 frag ( geomOut i ) : COLOR
 		{
-			return float4( i.localcs_pos , 1 );
-		}
-		float4 frag_uv_method ( geomOut i )
-		{
-			const float epsilon = 0.0000001;
-			const float sqrt2 = 1.41421356237;
 			float margin = _Roundness * 0.5;
+			float aspect = i.uv.z;
+			float depth = i.uv.w;
 
 			float2 ruv = abs( i.uv - 0.5 );
 			float rw = 0.5 - margin;
-			float rh = 0.5 - margin * i.aspect;
+			float rh = 0.5 - margin * aspect;
 			float dx = ruv.x - rw;
 			float dy = max( ruv.y - rh , 0 );
 			float a12 = min( 1-( dx / max(0.5-rw,epsilon) ) , 1-( dy / max(0.5-rh,epsilon) ) );
-			float a3 = 1 - saturate( length( float2( ruv.x , ruv.y/i.aspect ) - float2( 0.5 - margin , 0.5*1/i.aspect - margin ) ) / margin );
+			float a3 = 1 - saturate( length( float2( ruv.x , ruv.y/aspect ) - float2( 0.5 - margin , 0.5*1/aspect - margin ) ) / margin );
 			
-			// float case1 = ruv.x>rw;// left & right margins
-			// float case2 = ruv.y>rh;// top & bottom margins
 			float case3 = ruv.x>rw & ruv.y>rh;// corner margins
 			float a = case3 ? a3 : a12;
 			
 			float t = easeOutCirc(a);
-			float4 col = i.color * lerp( _Color1 , _Color , t );
-			if( t==0 ) discard;
+			t = t/_Smoothness + step(_Smoothness,t);
+			
+			float4 col = saturate( i.color * _Color * float4(1,1,1,t) );
+			// return depth;
 
+			if( t<=0 ) discard;
 			return col;
-		}
-		float4 frag ( geomOut i ) : COLOR
-		{
-			// return frag_1(i);
-			return frag_uv_method(i);
 		}
 
 		
