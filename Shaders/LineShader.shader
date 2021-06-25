@@ -150,12 +150,10 @@ SubShader
 			float4 br = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,-capWidth) , ltw ) , 0 ) );
 			float4 tl = UnityObjectToClipPos( IN0.pos + float4( mul( float3(-0.5,0,1+capWidth) , ltw ) , 0 ) );
 			float4 tr = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,1+capWidth) , ltw ) , 0 ) );
-
-			float2 depth = pow( float2( IN0.pos.w , IN1.pos.w ) , 0.3 );
-			depth = float2( IN0.pos.w , IN1.pos.w );
-
+			
 			geomOut VERT;
 			float aspect = _Width / ( lineLen + overlap );
+			float2 depth = float2( IN0.pos.w , IN1.pos.w );
 
 			// bottom right
 			VERT.pos = br;
@@ -204,7 +202,6 @@ SubShader
 			t = t/_Smoothness + step(_Smoothness,t);
 			
 			float4 col = saturate( i.color * _Color * float4(1,1,1,t) );
-			// return depth;
 
 			if( t<=0 ) discard;
 			return col;
