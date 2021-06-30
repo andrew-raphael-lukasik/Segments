@@ -1,16 +1,22 @@
 Shader "Segments/Rounded Rectangle" {
 Properties
 {
-	_Width ( "Width" , Float ) = 0.1
-	
-	[MainColor][HDR]
-	_Color ( "Color" , Color ) = (0.4,1,0,1)
-
 	_Roundness ( "Roundness" , Range(0,1) ) = 1.0
-
 	_Smoothness ( "Smoothness" , Range(0,1) ) = 0.8
 
-	// [MainTexture] _BaseMap("BaseMap", 2D) = "white" {}
+	[MainColor][Header(NEAR)]
+	_Color ( "Color" , Color ) = (0.4,1,0,1)
+	_Width ( "Width" , Range(0,1) ) = 0.1
+	_DepthNear ( "Depth" , Range(0,1) ) = 0.99
+
+	[Header(FAR)]
+	_ColorFar ( "Color" , Color ) = (0.4,1,0,1)
+	_WidthFar ( "Width" , Range(0,1) ) = 0.01
+	_DepthFar ( "Depth" , Range(0,1) ) = 1.0
+
+	[Header(Texture)]
+	[Toggle] _Texture ("Enabled", Float) = 0
+	[MainTexture] _MainTex( "Texture" , 2D ) = "white" {}
 }
 
 SubShader
@@ -32,6 +38,7 @@ SubShader
 		#pragma require geometry
 		// #pragma target 4.0
 		#pragma target 4.5
+		#pragma multi_compile _TEXTURE _TEXTURE_ON
 		#include "UnityCG.cginc"
 		
 
@@ -57,16 +64,29 @@ SubShader
 		// uniform float4 _ArrayColors [1363];
 		float4 _Color;
 		float _Width;
+		float _WidthFar;
 		float _Roundness;
 		float _Smoothness;
+		float _DepthNear;
+		float _DepthFar;
+		float4 _ColorFar;
+
+		#ifdef _TEXTURE_ON
+		sampler2D _MainTex;
+		float4 _MainTex_ST;
+		#endif
 
 
 		#define PI 3.1415926535897932384626433832795
 		#define epsilon 0.0000001
 		#define sqrt2 1.41421356237
 
-		// src: https://www.shadertoy.com/view/MlGBWD
 		float remap01 ( float from , float to , float x ) { return saturate( (x-from)/(to-from) ); }
+		float2 remap01 ( float2 from , float2 to , float2 x ) { return saturate( (x-from)/(to-from) ); }
+		float remap ( float from , float to , float x ) { return (x-from)/(to-from); }
+		float2 remap ( float2 from , float2 to , float2 x ) { return (x-from)/(to-from); }
+		float inverselerp ( float from , float to , float x ) { return remap(from,to,x); }
+		float2 inverselerp ( float2 from , float2 to , float2 x ) { return remap(from,to,x); }
 
 		float lengthSq ( float2 vec ) { return dot( vec , vec ); }
 
@@ -98,7 +118,7 @@ SubShader
 				float3( rotation[2]*scale.z )
 			);
 		}
-		float3x3 Scale ( float3 scale )
+		float3x3 S ( float3 scale )
 		{
 			return float3x3(
 				float3( scale.x , scale.x , scale.x ) ,
@@ -107,7 +127,7 @@ SubShader
 			);
 		}
 		
-
+		
 		vertexOut vert ( uint vId : SV_VertexID )
 		{
 			vertexOut o;
@@ -117,8 +137,8 @@ SubShader
 			// src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
 			float4 clipPos = UnityObjectToClipPos( vec );
 			vec.w = clipPos.z / clipPos.w;// depth
-			#if !defined(UNITY_REVERSED_Z) // basically only OpenGL
-			vec.w = vec.w * 0.5 + 0.5; // remap -1 to 1 range to 0.0 to 1.0
+			#if !defined(UNITY_REVERSED_Z)// if OpenGL
+			vec.w = vec.w * 0.5 + 0.5;// remap -1 to 1 range to 0.0 to 1.0
 			#endif
 			
 			o.pos = vec;
@@ -137,46 +157,64 @@ SubShader
 			float3 cameraPosition = _WorldSpaceCameraPos;
 			float3 lineVec = IN1.pos - IN0.pos;
 			float3 lineDir = normalize(lineVec);
-			float lineLen = length(lineVec);
+			float2 lineLen = (float2) length(lineVec);
+			float2 depth = remap01(
+				(float2) lerp( 1 , 0 , easeOutCirc(_DepthFar) ) ,
+				(float2) lerp( 1 , 0 , easeOutCirc(_DepthNear) ) ,
+				float2( IN0.pos.w , IN1.pos.w )
+			);
+			float2 width = lerp( (float2)_WidthFar , (float2)_Width , depth );
+			float2 overlap = width;
+			float2 aspect = width / ( lineLen + overlap );
+			float3 bscale = float3( width.x , 1 , lineLen.x );
+			float3 tscale = float3( width.y , 1 , lineLen.y );
 			float3x3 rot = LookRotation( lineDir , normalize(cameraPosition-IN0.pos) );
-			float3 scale = float3( _Width , 1 , lineLen );
-			// float3x3 ltw = RS( rot , scale );
-			float3x3 ltw = rot * Scale(scale);
+			float3x3 bltw = rot * S(bscale);
+			float3x3 tltw = rot * S(tscale);
 
 			// quad 1x1, pivot at bottom center
-			float overlap = _Width;
-			float capWidth = 1/lineLen * overlap*0.5;
-			float4 bl = UnityObjectToClipPos( IN0.pos + float4( mul( float3(-0.5,0,-capWidth) , ltw ) , 0 ) );
-			float4 br = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,-capWidth) , ltw ) , 0 ) );
-			float4 tl = UnityObjectToClipPos( IN0.pos + float4( mul( float3(-0.5,0,1+capWidth) , ltw ) , 0 ) );
-			float4 tr = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,1+capWidth) , ltw ) , 0 ) );
+			float2 capWidth = float2(1,1)/lineLen * overlap*float2(0.5,0.5);
+			float4 bl = UnityObjectToClipPos( IN0.pos + float4( mul( float3(-0.5,0,-capWidth.x) , bltw ) , 0 ) );
+			float4 br = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,-capWidth.x) , bltw ) , 0 ) );
+			float4 tl = UnityObjectToClipPos( IN0.pos + float4( mul( float3(-0.5,0,1+capWidth.y) , tltw ) , 0 ) );
+			float4 tr = UnityObjectToClipPos( IN0.pos + float4( mul( float3( 0.5,0,1+capWidth.y) , tltw ) , 0 ) );
 			
 			geomOut VERT;
-			float aspect = _Width / ( lineLen + overlap );
-			float2 depth = float2( IN0.pos.w , IN1.pos.w );
 
 			// bottom right
 			VERT.pos = br;
 			VERT.color = IN0.color;
-			VERT.uv = float4( 1 , 0 , aspect , depth.x );
+			VERT.uv = float4( float2(1,0) , aspect.x , depth.x );
+			#ifdef _TEXTURE_ON
+			VERT.uv.xy = TRANSFORM_TEX(VERT.uv.xy,_MainTex);
+			#endif
 				stream.Append(VERT);
 
 			// bottom left
 			VERT.pos = bl;
 			VERT.color = IN0.color;
-			VERT.uv = float4( 0 , 0 , aspect , depth.x );
+			VERT.uv = float4( float2(0,0) , aspect.x , depth.x );
+			#ifdef _TEXTURE_ON
+			VERT.uv.xy = TRANSFORM_TEX(VERT.uv.xy,_MainTex);
+			#endif
 				stream.Append(VERT);
 
 			// top right
 			VERT.pos = tr;
 			VERT.color = IN1.color;
-			VERT.uv = float4( 1 , 1 , aspect , depth.y );
+			VERT.uv = float4( float2(1,1) , aspect.y , depth.y );
+			#ifdef _TEXTURE_ON
+			VERT.uv.xy = TRANSFORM_TEX(VERT.uv.xy,_MainTex);
+			#endif
 				stream.Append(VERT);
 
 			// top left
 			VERT.pos = tl;
 			VERT.color = IN1.color;
-			VERT.uv = float4( 0 , 1 , aspect , depth.y );
+			VERT.uv = float4( float2(0,1) , aspect.y , depth.y );
+			#ifdef _TEXTURE_ON
+			VERT.uv.xy = TRANSFORM_TEX(VERT.uv.xy,_MainTex);
+			#endif
 				stream.Append(VERT);
 		}
 
@@ -196,14 +234,18 @@ SubShader
 			float a3 = 1 - saturate( length( float2( ruv.x , ruv.y/aspect ) - float2( 0.5 - margin , 0.5*1/aspect - margin ) ) / margin );
 			
 			float case3 = ruv.x>rw & ruv.y>rh;// corner margins
-			float a = case3 ? a3 : a12;
+			float pre_alpha = case3 ? a3 : a12;
 			
-			float t = easeOutCirc(a);
-			t = t/_Smoothness + step(_Smoothness,t);
-			
-			float4 col = saturate( i.color * _Color * float4(1,1,1,t) );
+			float alpha = remap01( 0 , _Smoothness , easeOutCirc(pre_alpha) );
+			float4 col = saturate( i.color * lerp(_ColorFar,_Color,depth) * float4(1,1,1,alpha) );
 
-			if( t<=0 ) discard;
+			if( alpha<=0 ) discard;
+
+			#ifdef _TEXTURE_ON
+			float4 texCol = tex2D( _MainTex , i.uv.xy );
+			col *= texCol;
+			#endif
+
 			return col;
 		}
 
