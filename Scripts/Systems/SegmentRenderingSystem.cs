@@ -23,8 +23,16 @@ namespace Segments
 		bool _isSystemDestroyed = false;
 
 
+		protected override void OnCreate ()
+		{
+			RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+		}
+
+
 		protected override void OnDestroy ()
 		{
+			RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+
 			Dependency.Complete();
 
 			for( int i=_batches.Count-1 ; i!=-1 ; i-- )
@@ -60,45 +68,56 @@ namespace Segments
 			var entityManager = EntityManager;
 			var segmentData = GetComponentDataFromEntity<Segment>( isReadOnly:false );
 
-			// var dependencies = new NativeList<JobHandle>( initialCapacity:numBatches+1 , Allocator.Temp );
 			for( int batchIndex=numBatches-1 ; batchIndex!=-1 ; batchIndex-- )
 			{
 				var batch = _batches[ batchIndex ];
-				NativeList<float3x2> buffer = batch.Segments;
+				NativeList<float3x2> buffer = batch.buffer;
+				Mesh mesh = batch.mesh;
 
 				// int bufferSize = buffer.Length;// throws dependency errors
 				int bufferSize = buffer.AsParallelReader().Length;
-
-				var _materialProperties = new MaterialPropertyBlock();
 				
 				batch.Dependency.Complete();
-				ConvertArray( buffer , ref batch.shaderData );
-				_materialProperties.SetFloatArray( "_ArrayVertices" , batch.shaderData );
-				Graphics.DrawProcedural(
-					material:		batch.material ,
-					bounds:			new Bounds( Vector3.zero , Vector3.one*100 ) ,
-					topology:		MeshTopology.Lines ,
-					vertexCount:	bufferSize , 
-					instanceCount:	1 ,
-					camera:			null ,
-					properties:		_materialProperties ,
-					castShadows:	ShadowCastingMode.Off ,
-					receiveShadows:	false ,
-					layer:			0
+
+				int numVertices = buffer.Length * 2;
+				mesh.SetVertexBufferParams( numVertices , Batch.layout );
+				mesh.SetVertexBufferData( buffer.AsArray() , 0 , 0 , buffer.Length );
+				// var tmp = new NativeArray<float3>( numVertices , Allocator.Temp );
+				// for( int i=0 ; i<numVertices ; i++ ) tmp[i] = (float3) UnityEngine.Random.onUnitSphere;
+				// mesh.SetVertexBufferData( tmp , 0 , 0 , tmp.Length );
+
+				int numIndices = numVertices;
+				var indices = new NativeArray<uint>( numIndices , Allocator.TempJob );
+				new IndicesJob{ indices = indices }
+					.Schedule( indices.Length , 1024 )
+					.Complete();
+				mesh.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
+				mesh.SetIndexBufferData( indices , 0 , 0 , numIndices );
+				indices.Dispose();
+				mesh.SetSubMesh(
+					index:	0 ,
+					desc:	new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) ,
+					flags:	MeshUpdateFlags.DontValidateIndices
 				);
+				mesh.RecalculateBounds();
+
+				mesh.UploadMeshData( false );
 			}
-			// if( dependencies.Length!=0 )
-			// {
-			// 	dependencies.Add( Dependency );
-			// 	Dependency = JobHandle.CombineDependencies( dependencies );
-			// 	// dependencies.Clear();
-			// }
+		}
 
-			// Graphics.DrawProcedural()
 
-			// CommandBuffer cmd = new CommandBuffer();
-			// cmd.SetComputeBufferData(  );
-			// Graphics.ExecuteCommandBuffer( cmd );
+		void OnBeginCameraRendering ( ScriptableRenderContext context , Camera camera )
+		{
+			#if UNITY_EDITOR
+			if( camera.name=="Preview Scene Camera" ) return;
+			#endif
+
+			var propertyBlock = new MaterialPropertyBlock{};
+			for( int i=_batches.Count-1 ; i!=-1 ; i-- )
+			{
+				var batch = _batches[i];
+				Graphics.DrawMesh( batch.mesh , Vector3.zero , quaternion.identity , batch.material , 0 , camera , 0 , propertyBlock , false , true , true );
+			}
 		}
 
 
@@ -109,21 +128,40 @@ namespace Segments
 			
 			var buffer = new NativeList<float3x2>( Allocator.Persistent );
 			batch = new Batch(
-				material:	materialOverride ,
+				mat:		materialOverride ,
 				buffer:		buffer
 			);
 			_batches.Add( batch );
 		}
 
 
-		internal static unsafe void ConvertArray ( NativeArray<float3x2> input , ref float[] output )
+		internal static unsafe void ConvertArray ( NativeArray<float3x2> src , ref float[] dst )
 		{
-			void* unsafeInput = NativeArrayUnsafeUtility.GetUnsafePtr( input );
-			int len = input.Length * 3 * 2;
-			if( output.Length!=len ) output = new float[ len ];
-			void* outputPtr = UnsafeUtility.PinGCArrayAndGetDataAddress( output , out ulong handle );
-			UnsafeUtility.MemCpy( destination: outputPtr , source: unsafeInput , size: input.Length * UnsafeUtility.SizeOf<float3x2>() );
+			void* unsafeInput = NativeArrayUnsafeUtility.GetUnsafePtr( src );
+			int len = src.Length * 3 * 2;
+			if( dst.Length!=len ) dst = new float[ len ];
+			void* outputPtr = UnsafeUtility.PinGCArrayAndGetDataAddress( dst , out ulong handle );
+			UnsafeUtility.MemCpy( destination: outputPtr , source: unsafeInput , size: src.Length * UnsafeUtility.SizeOf<float3x2>() );
 			UnsafeUtility.ReleaseGCObject( handle );
+		}
+
+		internal static unsafe void CopyData ( NativeArray<float3x2> src , ref NativeList<float3> dst )
+		{
+			void* inputPtr = NativeArrayUnsafeUtility.GetUnsafePtr( src );
+			void* outputPtr = NativeListUnsafeUtility.GetUnsafePtr( dst );
+
+			int numVectors = src.Length * 2;
+			if( dst.Length!=numVectors ) dst.Length = numVectors;
+
+			UnsafeUtility.MemCpy( destination: outputPtr , source: inputPtr , size: src.Length * UnsafeUtility.SizeOf<float3x2>() );
+		}
+
+
+		[Unity.Burst.BurstCompile]
+		public struct IndicesJob : IJobParallelFor
+		{
+			[WriteOnly] public NativeArray<uint> indices;
+			void IJobParallelFor.Execute ( int index ) => indices[index] = (uint) index;
 		}
 
 

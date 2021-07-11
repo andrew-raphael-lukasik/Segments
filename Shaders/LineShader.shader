@@ -1,17 +1,18 @@
 Shader "Segments/Rounded Rectangle" {
 Properties
 {
+	_Width ( "Width" , Float ) = 0.1
 	_Roundness ( "Roundness" , Range(0,1) ) = 1.0
 	_Smoothness ( "Smoothness" , Range(0,1) ) = 0.8
 
 	[MainColor][Header(NEAR)]
 	_Color ( "Color" , Color ) = (0.4,1,0,1)
-	_Width ( "Width" , Range(0,1) ) = 0.1
+	// _Width ( "Width" , Range(0,1) ) = 0.1
 	_DepthNear ( "Depth" , Range(0,1) ) = 0.99
 
 	[Header(FAR)]
 	_ColorFar ( "Color" , Color ) = (0.4,1,0,1)
-	_WidthFar ( "Width" , Range(0,1) ) = 0.01
+	// _WidthFar ( "Width" , Range(0,1) ) = 0.01
 	_DepthFar ( "Depth" , Range(0,1) ) = 1.0
 
 	[Header(Texture)]
@@ -22,7 +23,7 @@ Properties
 SubShader
 {
 	LOD 200
-	Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }
+	Tags { "Queue"="Transparent" "RenderType"="Transparent" "RenderPipeline"="UniversalPipeline" }
 	
 	BlendOp Add
 	Blend SrcAlpha OneMinusSrcAlpha
@@ -57,15 +58,14 @@ SubShader
 				// uv.xy - uv
 				// uv.z - aspect ratio
 				// uv.w - depth (clip space)
-			float4 screenPos : TEXCOORD1;
 		};
 
 
-		uniform float _ArrayVertices [1363*3];
+		// uniform float _ArrayVertices [1363*3];
 		// uniform float4 _ArrayColors [1363];
 		float4 _Color;
 		float _Width;
-		float _WidthFar;
+		// float _WidthFar;
 		float _Roundness;
 		float _Smoothness;
 		float _DepthNear;
@@ -129,22 +129,31 @@ SubShader
 		}
 		
 		
-		vertexOut vert ( uint vId : SV_VertexID )
+		// vertexOut vert ( uint vId : SV_VertexID )
+		// {
+		// 	vertexOut o;
+		// 	int i0 = vId * 3;
+		// 	float4 vec = float4( _ArrayVertices[i0] , _ArrayVertices[i0+1] , _ArrayVertices[i0+2] , 1 );
+			
+		// 	// src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
+		// 	float4 clipPos = UnityObjectToClipPos( vec );
+		// 	vec.w = clipPos.z / clipPos.w;// depth
+		// 	// #if !defined(UNITY_REVERSED_Z)// if OpenGL
+		// 	// 	vec.w = vec.w * 0.5 + 0.5;// remap -1 to 1 range to 0.0 to 1.0
+		// 	// #endif
+			
+		// 	o.vertex = vec;
+		// 	o.color = 1;//_ArrayColors[vId];
+			
+		// 	return o;
+		// }
+
+		vertexOut vert ( vertexIn i )
 		{
 			vertexOut o;
-			int i0 = vId * 3;
-			float4 vec = float4( _ArrayVertices[i0] , _ArrayVertices[i0+1] , _ArrayVertices[i0+2] , 1 );
-			
-			// src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
-			float4 clipPos = UnityObjectToClipPos( vec );
-			vec.w = clipPos.z / clipPos.w;// depth
-			// #if !defined(UNITY_REVERSED_Z)// if OpenGL
-			// 	vec.w = vec.w * 0.5 + 0.5;// remap -1 to 1 range to 0.0 to 1.0
-			// #endif
-			
-			o.vertex = vec;
-			o.color = 1;//_ArrayColors[vId];
-			
+			// o.vertex = UnityObjectToClipPos( i.vertex );
+			o.vertex = i.vertex;
+			o.color = i.color;
 			return o;
 		}
 
@@ -164,7 +173,7 @@ SubShader
 				(float2) lerp( 1 , 0 , easeOutCirc(_DepthNear) ) ,
 				float2( max(IN0.vertex.w,0) , IN1.vertex.w )
 			);
-			float2 width = lerp( (float2)_WidthFar , (float2)_Width , depth );
+			float2 width = _Width;// float2 width = lerp( (float2)_WidthFar , (float2)_Width , depth );
 			float2 overlap = width;
 			float2 aspect = width / ( lineLen + overlap );
 			float3 bscale = float3( width.x , 1 , lineLen.x );
@@ -181,7 +190,6 @@ SubShader
 			float4 tr = UnityObjectToClipPos( IN0.vertex + float4( mul( float3( 0.5,0,1+capWidth.y) , tltw ) , 0 ) );
 			
 			geomOut vertex;
-			vertex.screenPos = 0;
 
 			// bottom right
 			vertex.vertex = br;
@@ -207,6 +215,25 @@ SubShader
 			vertex.uv = float4( float2(0,1) , aspect.y , depth.y );
 			STREAM.Append(vertex);
 		}
+
+		// [maxvertexcount(4)]
+		// void geom ( point vertexOut IN[1] , inout TriangleStream<geomOut> triStream )
+		// {
+		// 	float _Size = _Width;
+
+		// 	vertexOut vertex = IN[0];
+		// 	const float2 points[4] = { float2(1,-1) , float2(1,1) , float2(-1,-1) , float2(-1,1) };
+		// 	float2 pmul = float2( _Size*(_ScreenParams.y / _ScreenParams.x) , _Size ) * 0.5;
+			
+		// 	geomOut newVertex;
+		// 	newVertex.color = vertex.color;
+		// 	newVertex.uv = float4( float2(0,0) , 1 , 1 );
+		// 	for( int i=0 ; i<4 ; i++ )
+		// 	{
+		// 		newVertex.vertex = UnityObjectToClipPos(vertex.vertex) + float4( points[i]*pmul , 0 , 0 );
+		// 		triStream.Append( newVertex );
+		// 	}
+		// }
 
 
 		float4 frag ( geomOut i ) : COLOR

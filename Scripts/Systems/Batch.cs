@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 using Unity.Mathematics;
 using Unity.Collections;
@@ -7,38 +8,42 @@ using Unity.Jobs;
 
 namespace Segments
 {
-	[System.Serializable]
 	public class Batch
 	{
 
-		/// <summary> DO NOT call batch.Segments.Dispose() EVER. Call batch.Dispose(); instead. </summary>
-		/// <remarks> Calling Buffer.Dispose() will result in undefined program behaviour (crash). </remarks>
-		public NativeList<float3x2> Segments;
+		/// <summary> DO NOT call <see cref="buffer"/>.Dispose() EVER. Call <see cref="Batch.Dispose()"/>; instead. </summary>
+		/// <remarks> Calling <see cref="buffer"/>.Dispose() will result in undefined program behaviour (crash). </remarks>
+		public NativeList<float3x2> buffer;
 		
 		public int Length
 		{
-			get => this.Segments.Length;
-			set => this.Segments.Length = value;
+			get => this.buffer.Length;
+			set => this.buffer.Length = value;
 		}
 
 		public Material material;
-
 		internal Mesh mesh;
-		internal float[] shaderData;
-
 		public JobHandle Dependency;
-
 		internal bool isDisposed;
+		
+		public static readonly VertexAttributeDescriptor[] layout = new[]{ new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) };
 
-
-		public Batch ( NativeList<float3x2> buffer , Material material )
+		public Batch ( NativeList<float3x2> buffer , Material mat )
 		{
-			this.Segments = buffer;
+			this.buffer = buffer;
 			this.isDisposed = false;
-			this.material = new Material( material );
-			this.material.name = $"{this.material} (runtime copy)";
+			
+			this.material = new Material( mat );
+			this.material.name = $"{mat.name} (runtime copy #{this.material.GetHashCode()})";
+			
 			this.mesh = new Mesh();
-			this.shaderData = new float[0];
+			this.mesh.hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor;
+			// this.mesh.SetSubMesh( 0 , new SubMeshDescriptor( indexStart:0, indexCount:0 , topology:MeshTopology.Lines ) );
+			this.mesh.MarkDynamic();
+			this.mesh.subMeshCount = 1;
+			// this.mesh.SetVertexBufferParams( 2 , layout );
+			// this.mesh.SetIndexBufferParams( 2 , IndexFormat.UInt32 );
+			this.mesh.name = "batch mesh "+this.mesh.GetHashCode();
 		}
 
 
@@ -48,7 +53,7 @@ namespace Segments
 			if( this.isDisposed )
 				return;
 			
-			this.Segments.Dispose();
+			this.buffer.Dispose();
 			
 			if( Application.isPlaying )
 			{
