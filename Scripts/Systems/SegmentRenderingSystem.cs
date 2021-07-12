@@ -71,27 +71,21 @@ namespace Segments
 			for( int batchIndex=numBatches-1 ; batchIndex!=-1 ; batchIndex-- )
 			{
 				var batch = _batches[ batchIndex ];
-				NativeList<float3x2> buffer = batch.buffer;
-				Mesh mesh = batch.mesh;
-
-				// int bufferSize = buffer.Length;// throws dependency errors
-				int bufferSize = buffer.AsParallelReader().Length;
-				
 				batch.Dependency.Complete();
 
+				NativeList<float3x2> buffer = batch.buffer;
+				Mesh mesh = batch.mesh;
+				// int bufferSize = buffer.Length;// throws dependency errors
+				int bufferSize = buffer.AsParallelReader().Length;
 				int numVertices = buffer.Length * 2;
+				int numIndices = numVertices;
+
+				var indices = new NativeArray<uint>( numIndices , Allocator.TempJob );
+				var indicesJob = new IndicesJob{ Indices=indices }.Schedule( indices.Length , 1024 );
 				mesh.SetVertexBufferParams( numVertices , Batch.layout );
 				mesh.SetVertexBufferData( buffer.AsArray() , 0 , 0 , buffer.Length );
-				// var tmp = new NativeArray<float3>( numVertices , Allocator.Temp );
-				// for( int i=0 ; i<numVertices ; i++ ) tmp[i] = (float3) UnityEngine.Random.onUnitSphere;
-				// mesh.SetVertexBufferData( tmp , 0 , 0 , tmp.Length );
-
-				int numIndices = numVertices;
-				var indices = new NativeArray<uint>( numIndices , Allocator.TempJob );
-				new IndicesJob{ indices = indices }
-					.Schedule( indices.Length , 1024 )
-					.Complete();
 				mesh.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
+				indicesJob.Complete();
 				mesh.SetIndexBufferData( indices , 0 , 0 , numIndices );
 				indices.Dispose();
 				mesh.SetSubMesh(
@@ -100,7 +94,6 @@ namespace Segments
 					flags:	MeshUpdateFlags.DontValidateIndices
 				);
 				mesh.RecalculateBounds();
-
 				mesh.UploadMeshData( false );
 			}
 		}
@@ -160,8 +153,8 @@ namespace Segments
 		[Unity.Burst.BurstCompile]
 		public struct IndicesJob : IJobParallelFor
 		{
-			[WriteOnly] public NativeArray<uint> indices;
-			void IJobParallelFor.Execute ( int index ) => indices[index] = (uint) index;
+			[WriteOnly] public NativeArray<uint> Indices;
+			void IJobParallelFor.Execute ( int index ) => Indices[index] = (uint) index;
 		}
 
 
