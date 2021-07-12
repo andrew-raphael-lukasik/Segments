@@ -9,6 +9,7 @@ using UnityEngine;
 
 namespace Segments
 {
+	[System.Obsolete("Replace with SegmentRenderingSystem")]
 	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(UpdatePresentationSystemGroup) )]
 	public class SegmentTransformSystem : SystemBase
