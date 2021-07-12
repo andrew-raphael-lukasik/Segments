@@ -127,33 +127,23 @@ SubShader
 				float3( scale.z , scale.z , scale.z )
 			);
 		}
-		
-		
-		// vertexOut vert ( uint vId : SV_VertexID )
-		// {
-		// 	vertexOut o;
-		// 	int i0 = vId * 3;
-		// 	float4 vec = float4( _ArrayVertices[i0] , _ArrayVertices[i0+1] , _ArrayVertices[i0+2] , 1 );
-			
-		// 	// src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
-		// 	float4 clipPos = UnityObjectToClipPos( vec );
-		// 	vec.w = clipPos.z / clipPos.w;// depth
-		// 	// #if !defined(UNITY_REVERSED_Z)// if OpenGL
-		// 	// 	vec.w = vec.w * 0.5 + 0.5;// remap -1 to 1 range to 0.0 to 1.0
-		// 	// #endif
-			
-		// 	o.vertex = vec;
-		// 	o.color = 1;//_ArrayColors[vId];
-			
-		// 	return o;
-		// }
+
 
 		vertexOut vert ( vertexIn i )
 		{
 			vertexOut o;
-			// o.vertex = UnityObjectToClipPos( i.vertex );
-			o.vertex = i.vertex;
+			float4 vec = i.vertex;
+			
+			// src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
+			float4 clipPos = UnityObjectToClipPos( vec );
+			vec.w = clipPos.z / clipPos.w;// depth
+			#if !defined(UNITY_REVERSED_Z)// if OpenGL
+				vec.w = vec.w * 0.5 + 0.5;// remap -1 to 1 range to 0.0 to 1.0
+			#endif
+			
+			o.vertex = vec;
 			o.color = i.color;
+			
 			return o;
 		}
 
@@ -173,6 +163,8 @@ SubShader
 				(float2) lerp( 1 , 0 , easeOutCirc(_DepthNear) ) ,
 				float2( max(IN0.vertex.w,0) , IN1.vertex.w )
 			);
+			depth = min( max( depth , 0 ) , 1 );
+
 			float2 width = _Width;// float2 width = lerp( (float2)_WidthFar , (float2)_Width , depth );
 			float2 overlap = width;
 			float2 aspect = width / ( lineLen + overlap );
@@ -215,25 +207,6 @@ SubShader
 			vertex.uv = float4( float2(0,1) , aspect.y , depth.y );
 			STREAM.Append(vertex);
 		}
-
-		// [maxvertexcount(4)]
-		// void geom ( point vertexOut IN[1] , inout TriangleStream<geomOut> triStream )
-		// {
-		// 	float _Size = _Width;
-
-		// 	vertexOut vertex = IN[0];
-		// 	const float2 points[4] = { float2(1,-1) , float2(1,1) , float2(-1,-1) , float2(-1,1) };
-		// 	float2 pmul = float2( _Size*(_ScreenParams.y / _ScreenParams.x) , _Size ) * 0.5;
-			
-		// 	geomOut newVertex;
-		// 	newVertex.color = vertex.color;
-		// 	newVertex.uv = float4( float2(0,0) , 1 , 1 );
-		// 	for( int i=0 ; i<4 ; i++ )
-		// 	{
-		// 		newVertex.vertex = UnityObjectToClipPos(vertex.vertex) + float4( points[i]*pmul , 0 , 0 );
-		// 		triStream.Append( newVertex );
-		// 	}
-		// }
 
 
 		float4 frag ( geomOut i ) : COLOR
