@@ -22,41 +22,44 @@ namespace Segments.Samples
 
 		[SerializeField] bool _everyFrame = false;
 
-		public JobHandle Dependency;
-		
 		Segments.SegmentRenderingSystem _segmentsSystem;
 		Segments.Batch _batch;
 		
 
 		void OnEnable ()
 		{
-			_segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.SegmentRenderingSystem>();
+			_segmentsSystem = Segments.Core.GetRenderingSystem();
 			_segmentsSystem.CreateBatch( out _batch , _srcMaterial );
 		}
 
 
 		void OnDisable ()
 		{
-			Dependency.Complete();
-			if( _batch!=null ) _batch.Dispose();
+			if( _batch!=null )
+			{
+				_batch.Dependency.Complete();
+				_batch.Dispose();
+			}
 		}
 
 
 		void Update ()
 		{
-			Dependency.Complete();
+			// complete previous job:
+			_batch.Dependency.Complete();
 
-			if( _batch.Length!=_numSegments || _everyFrame )
+			if( _batch.buffer.Length!=_numSegments || _everyFrame )
 			{
-				_batch.Length = _numSegments;
+				// set buffer length:
+				_batch.buffer.Length = _numSegments;
+
+				// scheduel new job:
 				var job = new MyJob{
 					transform		= transform.localToWorldMatrix ,
 					numSegments		= _numSegments ,
 					segments		= _batch.buffer.AsArray().Slice()
 				};
-				
-				Dependency = job.Schedule( arrayLength:_batch.Length , innerloopBatchCount:128 , dependsOn:Dependency );
-				_batch.Dependency = Dependency;
+				_batch.Dependency = job.Schedule( arrayLength:_batch.buffer.Length , innerloopBatchCount:128 , dependsOn:_batch.Dependency );
 			}
 		}
 

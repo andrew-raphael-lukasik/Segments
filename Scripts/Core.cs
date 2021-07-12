@@ -59,7 +59,11 @@ namespace Segments
 				return world;
 			}
 		}
-		
+
+
+		public static SegmentRenderingSystem GetRenderingSystem ()
+			=> GetWorld().GetExistingSystem<Segments.SegmentRenderingSystem>();
+
 
 		public static Entity GetSegmentPrefabCopy ()
 		{

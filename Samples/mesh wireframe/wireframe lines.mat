@@ -8,8 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: wireframe lines
-  m_Shader: {fileID: -6465566751694194690, guid: c92c3ff5ca80dfc4a9c747bc821415b8,
-    type: 3}
+  m_Shader: {fileID: 4800000, guid: f08c904251499354b8cf48315e30760e, type: 3}
   m_ShaderKeywords: UVCORRECTION_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
@@ -46,7 +45,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: c28544402f30f674aa593707d4542bef, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -81,9 +80,13 @@ Material:
     - _AlphaClip: 0
     - _AspectRatio: 1
     - _Blend: 0
+    - _BorderSize: 0.1
     - _BumpScale: 1
     - _Cull: 0
     - _Cutoff: 0.5
+    - _DepthEffectPower: 1
+    - _DepthFar: 1
+    - _DepthNear: 0.35
     - _DetailNormalMapScale: 1
     - _DstBlend: 10
     - _GlossMapScale: 1
@@ -101,20 +104,24 @@ Material:
     - _RectInflation: 0.438
     - _RectSizeX: 0.2
     - _RectSizeY: 1
-    - _RectWidth: 0.332
+    - _RectWidth: 0.352
     - _RectX: 0.5
     - _RectY: 0.5
+    - _Roundness: 1
     - _SampleGI: 0
     - _SegmentOverlap: 0.2
-    - _Sharpness: 0.95
+    - _Sharpness: 0
     - _SharpnessMax: 1
+    - _Smoothness: 0.8
     - _SmoothnessTextureChannel: 0
     - _Smoothstep: 0.533
     - _SmoothstepMin: 0.482
     - _SpecularHighlights: 1
     - _SrcBlend: 5
     - _Surface: 1
+    - _Texture: 0
     - _UVSec: 0
+    - _Width: 0.005
     - _ZWrite: 0
     m_Colors:
     - Vector2_c80a53d91c7843899933e627e1cebdb1: {r: 0, g: 0, b: 0, a: 0}
@@ -122,7 +129,9 @@ Material:
     - Vector3_f46222195d364048b814f1e578e8a189: {r: 0, g: 0, b: 0, a: 0}
     - Vector4_6fa4853f26784ad581891add898630bb: {r: 0, g: 0, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 0.74089754, b: 0.0039215684, a: 1}
+    - _Color: {r: 1, g: 0.92883223, b: 0.0039215684, a: 1}
+    - _Color1: {r: 0, g: 0.021323847, b: 0.11320752, a: 0}
+    - _ColorFar: {r: 1, g: 0.4577373, b: 0, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FadeIn: {r: 0, g: 1, b: 0, a: 0}
     - _FadeInColor: {r: 0, g: 0, b: 0, a: 0}

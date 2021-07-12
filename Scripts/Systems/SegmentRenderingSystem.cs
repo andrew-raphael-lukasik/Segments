@@ -20,7 +20,6 @@ namespace Segments
 
 
 		List<Batch> _batches = new List<Batch>();
-		bool _isSystemDestroyed = false;
 
 
 		protected override void OnCreate ()
@@ -44,8 +43,6 @@ namespace Segments
 				_batches.RemoveAt(i);
 			}
 			Assert.AreEqual( _batches.Count , 0 );
-
-			_isSystemDestroyed = true;
 		}
 
 

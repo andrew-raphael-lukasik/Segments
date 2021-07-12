@@ -12,6 +12,7 @@ using Unity.Burst;
 
 namespace Segments
 {
+	[System.Obsolete("Replace with SegmentRenderingSystem")]
 	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(UpdatePresentationSystemGroup) )]
 	[UpdateBefore( typeof(SegmentTransformSystem) )]

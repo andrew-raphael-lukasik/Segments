@@ -14,55 +14,50 @@ namespace Segments.Samples
 	{
 
 		[SerializeField] Material _materialOverride = null;
-		[SerializeField] float _widthOverride = 0.003f;
 
 		MeshRenderer _meshRenderer = null;
-		
-		NativeArray<float3x2> _segments;
-		Segments.NativeArrayToSegmentsSystem _segmentsSystem;
-		public JobHandle Dependency;
+		Segments.SegmentRenderingSystem _segmentsSystem;
+		Segments.Batch _batch;
 
 		
 		void OnEnable ()
 		{
 			_meshRenderer = GetComponent<MeshRenderer>();
 
-			var world = Segments.Core.GetWorld();
-			_segmentsSystem = world.GetExistingSystem<Segments.NativeArrayToSegmentsSystem>();
-
 			// create segment buffer:
-			Entity prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
-			_segmentsSystem.CreateBatch(
-				segmentPrefab:	prefab ,
-				length:			12 ,// box is 12 segments
-				buffer:			out _segments
-			);
+			_segmentsSystem = Segments.Core.GetRenderingSystem();
+			_segmentsSystem.CreateBatch( out _batch , _materialOverride );
+			
+			// initialize buffer size:
+			_batch.buffer.Length = 12;
 		}
 
 
 		void OnDisable ()
 		{
-			Dependency.Complete();
-			_segmentsSystem.DestroyBatch( ref _segments );
+			if( _batch!=null )
+			{
+				_batch.Dependency.Complete();
+				_batch.Dispose();
+			}
 		}
 
 
 		void Update ()
 		{
-			Dependency.Complete();
+			_batch.Dependency.Complete();
 			
 			var bounds = _meshRenderer.bounds;
 			int index = 0;
 			var job = new Segments.Plot.BoxJob(
-				segments:	_segments ,
+				segments:	_batch.buffer ,
 				index:		ref index ,
 				size:		bounds.size ,
 				pos:		bounds.center ,
 				rot:		quaternion.identity
 			);
 
-			Dependency = job.Schedule( Dependency );
-			_segmentsSystem.Dependencies.Add( Dependency );
+			_batch.Dependency = job.Schedule( _batch.Dependency );
 		}
 
 

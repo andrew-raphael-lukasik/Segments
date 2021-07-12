@@ -11,15 +11,9 @@ namespace Segments
 	public class Batch
 	{
 
-		/// <summary> DO NOT call <see cref="buffer"/>.Dispose() EVER. Call <see cref="Batch.Dispose()"/>; instead. </summary>
+		/// <summary> DO NOT call <see cref="buffer"/>.Dispose(). Call <see cref="Batch.Dispose()"/>; instead. </summary>
 		/// <remarks> Calling <see cref="buffer"/>.Dispose() will result in undefined program behaviour (crash). </remarks>
 		public NativeList<float3x2> buffer;
-		
-		public int Length
-		{
-			get => this.buffer.Length;
-			set => this.buffer.Length = value;
-		}
 
 		public Material material;
 		internal Mesh mesh;
