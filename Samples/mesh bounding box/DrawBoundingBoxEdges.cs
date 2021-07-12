@@ -17,7 +17,7 @@ namespace Segments.Samples
 
 		MeshRenderer _meshRenderer = null;
 		Segments.SegmentRenderingSystem _segmentsSystem;
-		Segments.Batch _batch;
+		Segments.Batch _segments;
 
 		
 		void OnEnable ()
@@ -26,38 +26,38 @@ namespace Segments.Samples
 
 			// create segment buffer:
 			_segmentsSystem = Segments.Core.GetRenderingSystem();
-			_segmentsSystem.CreateBatch( out _batch , _materialOverride );
+			_segmentsSystem.CreateBatch( out _segments , _materialOverride );
 			
 			// initialize buffer size:
-			_batch.buffer.Length = 12;
+			_segments.buffer.Length = 12;
 		}
 
 
 		void OnDisable ()
 		{
-			if( _batch!=null )
+			if( _segments!=null )
 			{
-				_batch.Dependency.Complete();
-				_batch.Dispose();
+				_segments.Dependency.Complete();
+				_segments.Dispose();
 			}
 		}
 
 
 		void Update ()
 		{
-			_batch.Dependency.Complete();
+			_segments.Dependency.Complete();
 			
 			var bounds = _meshRenderer.bounds;
 			int index = 0;
 			var job = new Segments.Plot.BoxJob(
-				segments:	_batch.buffer ,
+				segments:	_segments.buffer ,
 				index:		ref index ,
 				size:		bounds.size ,
 				pos:		bounds.center ,
 				rot:		quaternion.identity
 			);
 
-			_batch.Dependency = job.Schedule( _batch.Dependency );
+			_segments.Dependency = job.Schedule( _segments.Dependency );
 		}
 
 

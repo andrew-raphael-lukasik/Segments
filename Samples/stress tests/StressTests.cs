@@ -19,26 +19,25 @@ namespace Segments.Samples
 		
 		[SerializeField] Material _srcMaterial = null;
 		[SerializeField] int _numSegments = 128;
-
 		[SerializeField] bool _everyFrame = false;
 
 		Segments.SegmentRenderingSystem _segmentsSystem;
-		Segments.Batch _batch;
+		Segments.Batch _segments;
 		
 
 		void OnEnable ()
 		{
 			_segmentsSystem = Segments.Core.GetRenderingSystem();
-			_segmentsSystem.CreateBatch( out _batch , _srcMaterial );
+			_segmentsSystem.CreateBatch( out _segments , _srcMaterial );
 		}
 
 
 		void OnDisable ()
 		{
-			if( _batch!=null )
+			if( _segments!=null )
 			{
-				_batch.Dependency.Complete();
-				_batch.Dispose();
+				_segments.Dependency.Complete();
+				_segments.Dispose();
 			}
 		}
 
@@ -46,20 +45,20 @@ namespace Segments.Samples
 		void Update ()
 		{
 			// complete previous job:
-			_batch.Dependency.Complete();
+			_segments.Dependency.Complete();
 
-			if( _batch.buffer.Length!=_numSegments || _everyFrame )
+			if( _segments.buffer.Length!=_numSegments || _everyFrame )
 			{
 				// set buffer length:
-				_batch.buffer.Length = _numSegments;
+				_segments.buffer.Length = _numSegments;
 
 				// scheduel new job:
 				var job = new MyJob{
 					transform		= transform.localToWorldMatrix ,
 					numSegments		= _numSegments ,
-					segments		= _batch.buffer.AsArray().Slice()
+					segments		= _segments.buffer.AsArray().Slice()
 				};
-				_batch.Dependency = job.Schedule( arrayLength:_batch.buffer.Length , innerloopBatchCount:128 , dependsOn:_batch.Dependency );
+				_segments.Dependency = job.Schedule( arrayLength:_segments.buffer.Length , innerloopBatchCount:128 , dependsOn:_segments.Dependency );
 			}
 		}
 
@@ -168,18 +167,18 @@ namespace Segments.Samples
 
 				var MATERIAL_INSTANCE = new UnityEditor.UIElements.ObjectField("Material instance (copy)");
 				MATERIAL_INSTANCE.objectType = typeof(Material);
-				MATERIAL_INSTANCE.value = instance._batch.material;
+				MATERIAL_INSTANCE.value = instance._segments.material;
 				ROOT.Add( MATERIAL_INSTANCE );
 
 				var MESH_INSTANCE = new UnityEditor.UIElements.ObjectField("Mesh instance");
 				MESH_INSTANCE.objectType = typeof(Mesh);
-				MESH_INSTANCE.value = instance._batch.mesh;
+				MESH_INSTANCE.value = instance._segments.mesh;
 				ROOT.Add( MESH_INSTANCE );
 
 				
 				var mf = instance.GetComponent<MeshFilter>();
 				if( mf!=null )
-					mf.mesh = instance._batch.mesh;
+					mf.mesh = instance._segments.mesh;
 			}
 			
 		}

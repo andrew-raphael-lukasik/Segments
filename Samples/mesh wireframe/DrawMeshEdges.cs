@@ -20,7 +20,7 @@ namespace Segments.Samples
 		NativeArray<int2> _edges;
 
 		Segments.SegmentRenderingSystem _segmentsSystem;
-		Segments.Batch _batch;
+		Segments.Batch _segments;
 
 
 		void OnEnable ()
@@ -43,19 +43,19 @@ namespace Segments.Samples
 
 			// create segment buffer:
 			_segmentsSystem = Segments.Core.GetRenderingSystem();
-			_segmentsSystem.CreateBatch( out _batch , _materialOverride );
+			_segmentsSystem.CreateBatch( out _segments , _materialOverride );
 			
 			// initialize buffer size:
-			_batch.buffer.Length = _edges.Length;
+			_segments.buffer.Length = _edges.Length;
 		}
 		
 
 		void OnDisable ()
 		{
-			if( _batch!=null ) 
+			if( _segments!=null ) 
 			{
-				_batch.Dependency.Complete();
-				_batch.Dispose();
+				_segments.Dependency.Complete();
+				_segments.Dispose();
 			}
 			if( _vertices.IsCreated ) _vertices.Dispose();
 			if( _edges.IsCreated ) _edges.Dispose();
@@ -64,16 +64,16 @@ namespace Segments.Samples
 
 		void Update ()
 		{
-			_batch.Dependency.Complete();
+			_segments.Dependency.Complete();
 			
 			var job = new UpdateSegmentsJob{
 				Edges		= _edges.AsReadOnly() ,
 				Vertices	= _vertices.AsReadOnly() ,
 				Transform	= transform.localToWorldMatrix ,
-				Segments	= _batch.buffer
+				Segments	= _segments.buffer
 			};
 			
-			_batch.Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 , dependsOn:_batch.Dependency );
+			_segments.Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 , dependsOn:_segments.Dependency );
 		}
 
 
