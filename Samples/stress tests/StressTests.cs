@@ -57,21 +57,7 @@ namespace Segments.Samples
 				
 				Dependency = job.Schedule( arrayLength:_batch.Length , innerloopBatchCount:128 , dependsOn:Dependency );
 				_batch.Dependency = Dependency;
-				// _batch.isBufferDirty = true;
-
-				// Dependency.Complete();
-				// int i = 0;
-				// _batch.Segments[i++] = new float3x2{
-				// 	c0 = new float3{ x=0 , y=0 , z=-4+i } ,
-				// 	c1 = new float3{ x=0 , y=0.1f , z=-4+i }
-				// };
-
-				// _batch.Segments[i++] = new float3x2{
-				// 	c0 = new float3{ x=0 , y=0 , z=-4+i } ,
-				// 	c1 = new float3{ x=0 , y=1f , z=-4+i }
-				// };
 			}
-			// else _batch.isBufferDirty = false;
 		}
 
 
@@ -138,7 +124,7 @@ namespace Segments.Samples
 				NUM.RegisterValueChangedCallback( (ctx) => {
 					instance._numSegments = ctx.newValue;
 
-					// const int max = 1023/6;
+					// const int max = 100_000;
 					// if( instance._numSegments > max )
 					// {
 					// 	instance._numSegments = max;
