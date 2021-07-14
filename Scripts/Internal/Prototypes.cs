@@ -13,9 +13,6 @@ namespace Segments.Internal
 		{
 			worldSystems = new System.Type[]{
 					typeof(SegmentRenderingSystem)
-				,	typeof(SegmentTransformSystem)
-				,	typeof(NativeArrayToSegmentsSystem)
-				,	typeof(NativeListToSegmentsSystem)
 			};
 
 			segment_components = new ComponentType[]{
