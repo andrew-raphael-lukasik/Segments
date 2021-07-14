@@ -62,9 +62,6 @@ namespace Segments
 			}
 			if( numBatches==0 ) return;
 
-			var entityManager = EntityManager;
-			var segmentData = GetComponentDataFromEntity<Segment>( isReadOnly:false );
-
 			for( int batchIndex=numBatches-1 ; batchIndex!=-1 ; batchIndex-- )
 			{
 				var batch = _batches[ batchIndex ];
