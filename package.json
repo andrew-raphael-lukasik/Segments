@@ -6,17 +6,17 @@
     "url": "https://github.com/andrew-raphael-lukasik"
   },
   "displayName": "Segments",
-  "version": "2020.1.1",
+  "version": "2021.1.1",
   "unity": "2020.1",
-  "description": "Line rendering for Dots tech stack",
+  "description": "Line rendering for DOTS tech stack",
   "documentationUrl": "https://github.com/andrew-raphael-lukasik/Segments",
   "dependencies": {
     "com.unity.entities": "0.17.0-preview.41",
     "com.unity.rendering.hybrid": "0.11.0-preview.42"
   },
   "keywords": [
-	"segments",
-	"lines",
+    "segments",
+    "lines",
     "entities",
     "hybrid",
     "rendering"
@@ -27,12 +27,12 @@
       "description": "",
       "path": "Samples/mesh bounding box"
     },
-	{
+    {
       "displayName": "mesh wireframe",
       "description": "",
       "path": "Samples/mesh wireframe"
     },
-	{
+    {
       "displayName": "stress tests",
       "description": "",
       "path": "Samples/stress tests"
