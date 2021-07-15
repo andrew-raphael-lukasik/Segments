@@ -6,7 +6,6 @@ using Debug = UnityEngine.Debug;
 
 using Unity.Mathematics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Rendering;
@@ -69,8 +68,7 @@ namespace Segments
 
 				NativeList<float3x2> buffer = batch.buffer;
 				Mesh mesh = batch.mesh;
-				// int bufferSize = buffer.Length;// throws dependency errors
-				int bufferSize = buffer.AsParallelReader().Length;
+				int bufferSize = buffer.Length;
 				int numVertices = buffer.Length * 2;
 				int numIndices = numVertices;
 
@@ -119,28 +117,6 @@ namespace Segments
 				buffer:		buffer
 			);
 			_batches.Add( batch );
-		}
-
-
-		internal static unsafe void ConvertArray ( NativeArray<float3x2> src , ref float[] dst )
-		{
-			void* unsafeInput = NativeArrayUnsafeUtility.GetUnsafePtr( src );
-			int len = src.Length * 3 * 2;
-			if( dst.Length!=len ) dst = new float[ len ];
-			void* outputPtr = UnsafeUtility.PinGCArrayAndGetDataAddress( dst , out ulong handle );
-			UnsafeUtility.MemCpy( destination: outputPtr , source: unsafeInput , size: src.Length * UnsafeUtility.SizeOf<float3x2>() );
-			UnsafeUtility.ReleaseGCObject( handle );
-		}
-
-		internal static unsafe void CopyData ( NativeArray<float3x2> src , ref NativeList<float3> dst )
-		{
-			void* inputPtr = NativeArrayUnsafeUtility.GetUnsafePtr( src );
-			void* outputPtr = NativeListUnsafeUtility.GetUnsafePtr( dst );
-
-			int numVectors = src.Length * 2;
-			if( dst.Length!=numVectors ) dst.Length = numVectors;
-
-			UnsafeUtility.MemCpy( destination: outputPtr , source: inputPtr , size: src.Length * UnsafeUtility.SizeOf<float3x2>() );
 		}
 
 
