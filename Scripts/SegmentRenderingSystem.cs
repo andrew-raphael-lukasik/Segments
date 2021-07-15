@@ -47,23 +47,26 @@ namespace Segments
 
 		protected override void OnUpdate ()
 		{
+			// remove disposed batches from the list:
 			for( int i=_batches.Count-1 ; i!=-1 ; i-- )
 				if( _batches[i].isDisposed )
 					_batches.RemoveAt(i);
-
 			int numBatches = _batches.Count;
-			{
-				var deps = new NativeArray<JobHandle>( numBatches+1 , Allocator.Temp );
-				for( int i=0 ; i<numBatches ; i++ )
-					deps[i] = _batches[i].Dependency;
-				deps[numBatches] = Dependency;
-				Dependency = JobHandle.CombineDependencies( deps );
-			}
-			if( numBatches==0 ) return;
 
-			for( int batchIndex=numBatches-1 ; batchIndex!=-1 ; batchIndex-- )
+			// combine dependencies
+			// {
+			// 	var deps = new NativeArray<JobHandle>( numBatches+1 , Allocator.Temp );
+			// 	for( int i=0 ; i<numBatches ; i++ )
+			// 		deps[i] = _batches[i].Dependency;
+			// 	deps[numBatches] = Dependency;
+			// 	Dependency = JobHandle.CombineDependencies( deps );
+			// }
+			// if( numBatches==0 ) return;
+
+			// update meshes for rendering:
+			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
-				var batch = _batches[ batchIndex ];
+				var batch = _batches[ i ];
 				batch.Dependency.Complete();
 
 				NativeList<float3x2> buffer = batch.buffer;
