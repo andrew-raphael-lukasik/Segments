@@ -28,7 +28,7 @@ namespace Segments
 				}
 				#endif
 
-				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentRenderingSystem) );
+				// DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentRenderingSystem) );
 				
 				return world;
 			}
@@ -36,11 +36,7 @@ namespace Segments
 
 
 		public static SegmentRenderingSystem GetRenderingSystem ()
-			=> GetWorld().GetExistingSystem<Segments.SegmentRenderingSystem>();
-
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Initialize () => GetWorld();
+			=> GetWorld().GetOrCreateSystem<Segments.SegmentRenderingSystem>();
 
 
 	}
