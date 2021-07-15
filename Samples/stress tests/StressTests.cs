@@ -8,8 +8,6 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
 
-using Random = Unity.Mathematics.Random;
-
 namespace Segments.Samples
 {
 	[ExecuteAlways]
@@ -19,6 +17,7 @@ namespace Segments.Samples
 		
 		[SerializeField] Material _srcMaterial = null;
 		[SerializeField] int _numSegments = 128;
+		[SerializeField] float _frequency = 16;
 		[SerializeField] bool _everyFrame = false;
 
 		Segments.SegmentRenderingSystem _segmentsSystem;
@@ -38,6 +37,7 @@ namespace Segments.Samples
 			{
 				_segments.Dependency.Complete();
 				_segments.Dispose();
+				_segments = null;
 			}
 		}
 
@@ -56,9 +56,15 @@ namespace Segments.Samples
 				var job = new MyJob{
 					transform		= transform.localToWorldMatrix ,
 					numSegments		= _numSegments ,
-					segments		= _segments.buffer.AsArray().Slice()
+					segments		= _segments.buffer.AsArray().Slice() ,
+					offset			= Time.time ,
+					frequency		= _frequency ,
 				};
-				_segments.Dependency = job.Schedule( arrayLength:_segments.buffer.Length , innerloopBatchCount:128 , dependsOn:_segments.Dependency );
+				_segments.Dependency = job.Schedule(
+					arrayLength:			_segments.buffer.Length ,
+					innerloopBatchCount:	64 ,
+					dependsOn:				_segments.Dependency
+				);
 			}
 		}
 
@@ -68,18 +74,18 @@ namespace Segments.Samples
 		{
 			public float4x4 transform;
 			public int numSegments;
+			public float offset;
+			public float frequency;
 			[WriteOnly] public NativeSlice<float3x2> segments;
 			void IJobParallelFor.Execute ( int index )
 			{
 				float t0 = (float) index / (float) numSegments;
 				float t1 = (float)( index+1 ) / (float) numSegments;
-				
-				float rnd0 = Random.CreateFromIndex( (uint) index ).NextFloat();
-				float rnd1 = Random.CreateFromIndex( (uint) index + 1 ).NextFloat();
-				float3 v0 =  math.transform( transform , new float3{ x=t0 , y=rnd0 } );
-				float3 v1 =  math.transform( transform , new float3{ x=t1 , y=rnd1 } );
-				
-				segments[index] = new float3x2{ c0=v0 , c1=v1 };
+				float amp0 = math.sin( frequency * ( t0*math.PI*2f + offset ) );
+				float amp1 = math.sin( frequency * ( t1*math.PI*2f + offset ) );
+				float3 vec0 = math.transform( transform , new float3{ x=t0 , y=amp0 } );
+				float3 vec1 = math.transform( transform , new float3{ x=t1 , y=amp1 } );
+				segments[index] = new float3x2{ c0=vec0 , c1=vec1 };
 			}
 		}
 		
@@ -146,6 +152,13 @@ namespace Segments.Samples
 				} );
 				ROOT.Add( NUM );
 
+				var FREQ = new UnityEditor.UIElements.FloatField("Frequency");
+				FREQ.value = instance._frequency;
+				FREQ.RegisterValueChangedCallback( (ctx) => {
+					instance._frequency = ctx.newValue;
+				} );
+				ROOT.Add( FREQ );
+
 				var LOOP = new Toggle("Every Frame");
 				LOOP.value = instance._everyFrame;
 				LOOP.RegisterValueChangedCallback( (ctx) => {
@@ -161,24 +174,28 @@ namespace Segments.Samples
 				BUTTON.text = "Update batch";
 				ROOT.Add( BUTTON );
 
-				var LABEL = new Label("Batch data:");
-				LABEL.style.marginTop = LABEL.style.marginTop.value.value + 12f;
-				ROOT.Add( LABEL );
+				if( instance._segments!=null )
+				{
+					var LABEL = new Label("Batch data:");
+					LABEL.style.marginTop = LABEL.style.marginTop.value.value + 12f;
+					ROOT.Add( LABEL );
 
-				var MATERIAL_INSTANCE = new UnityEditor.UIElements.ObjectField("Material instance (copy)");
-				MATERIAL_INSTANCE.objectType = typeof(Material);
-				MATERIAL_INSTANCE.value = instance._segments.material;
-				ROOT.Add( MATERIAL_INSTANCE );
+					var MATERIAL_INSTANCE = new UnityEditor.UIElements.ObjectField("Material instance (copy)");
+					MATERIAL_INSTANCE.objectType = typeof(Material);
+					MATERIAL_INSTANCE.value = instance._segments.material;
+					ROOT.Add( MATERIAL_INSTANCE );
 
-				var MESH_INSTANCE = new UnityEditor.UIElements.ObjectField("Mesh instance");
-				MESH_INSTANCE.objectType = typeof(Mesh);
-				MESH_INSTANCE.value = instance._segments.mesh;
-				ROOT.Add( MESH_INSTANCE );
-
-				
-				var mf = instance.GetComponent<MeshFilter>();
-				if( mf!=null )
-					mf.mesh = instance._segments.mesh;
+					var MESH_INSTANCE = new UnityEditor.UIElements.ObjectField("Mesh instance");
+					MESH_INSTANCE.objectType = typeof(Mesh);
+					MESH_INSTANCE.value = instance._segments.mesh;
+					ROOT.Add( MESH_INSTANCE );
+				}
+				else
+				{
+					var LABEL = new Label("( no batch data )");
+					LABEL.style.marginTop = LABEL.style.marginTop.value.value + 12f;
+					ROOT.Add( LABEL );
+				}
 			}
 			
 		}

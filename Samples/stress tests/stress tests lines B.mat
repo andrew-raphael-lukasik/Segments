@@ -112,7 +112,7 @@ Material:
     - _SegmentOverlap: 0.2
     - _Sharpness: 0
     - _SharpnessMax: 1
-    - _Smoothness: 0.8
+    - _Smoothness: 1
     - _SmoothnessTextureChannel: 0
     - _Smoothstep: 0.533
     - _SmoothstepMin: 0.482
@@ -121,7 +121,7 @@ Material:
     - _Surface: 1
     - _Texture: 0
     - _UVSec: 0
-    - _Width: 0.005
+    - _Width: 0.02
     - _ZWrite: 0
     m_Colors:
     - Vector2_c80a53d91c7843899933e627e1cebdb1: {r: 0, g: 0, b: 0, a: 0}
