@@ -28,7 +28,7 @@ namespace Segments
 				}
 				#endif
 
-				// DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentRenderingSystem) );
+				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentRenderingSystem) );
 				
 				return world;
 			}
@@ -36,7 +36,7 @@ namespace Segments
 
 
 		public static SegmentRenderingSystem GetRenderingSystem ()
-			=> GetWorld().GetOrCreateSystem<Segments.SegmentRenderingSystem>();
+			=> GetWorld().GetExistingSystem<Segments.SegmentRenderingSystem>();
 
 
 	}
