@@ -5,6 +5,7 @@ using UnityEngine.Assertions;
 using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Burst;
 
@@ -20,13 +21,13 @@ namespace Segments.Samples
 		[SerializeField] float _frequency = 16;
 		[SerializeField] bool _everyFrame = false;
 
-		Segments.SegmentRenderingSystem _segmentsSystem;
-		Segments.Batch _segments;
+		Segments.UnsafeSegmentRenderingSystem _segmentsSystem;
+		Segments.UnsafeBatch _segments;
 		
 
 		void OnEnable ()
 		{
-			_segmentsSystem = Segments.Core.GetRenderingSystem();
+			_segmentsSystem = Segments.Core.GetUnsafeRenderingSystem();
 			_segmentsSystem.CreateBatch( out _segments , _srcMaterial );
 		}
 
@@ -42,26 +43,27 @@ namespace Segments.Samples
 		}
 
 
-		void Update ()
+		unsafe void Update ()
 		{
-			// complete previous job:
+			if( _segments==null ) return;
+
 			_segments.Dependency.Complete();
 
-			if( _segments.buffer.Length!=_numSegments || _everyFrame )
+			if( _segments.buffer.length!=_numSegments || _everyFrame )
 			{
-				// set buffer length:
-				_segments.buffer.Length = _numSegments;
+				_segments.buffer.Resize( _numSegments );
+				_segments.buffer.length = _segments.buffer.capacity;
 
 				// scheduel new job:
 				var job = new MyJob{
-					transform		= transform.localToWorldMatrix ,
-					numSegments		= _numSegments ,
-					segments		= _segments.buffer.AsArray().Slice() ,
-					offset			= Time.time ,
-					frequency		= _frequency ,
+					LocalToWorld	= transform.localToWorldMatrix ,
+					NumSegments		= _numSegments ,
+					Ptr				= _segments.buffer.ptr ,
+					Offset			= Time.time ,
+					Frequency		= _frequency ,
 				};
 				_segments.Dependency = job.Schedule(
-					arrayLength:			_segments.buffer.Length ,
+					arrayLength:			_numSegments ,
 					innerloopBatchCount:	64 ,
 					dependsOn:				_segments.Dependency
 				);
@@ -70,22 +72,24 @@ namespace Segments.Samples
 
 
 		[BurstCompile]
-		public struct MyJob : IJobParallelFor
+		public unsafe struct MyJob : IJobParallelFor
 		{
-			public float4x4 transform;
-			public int numSegments;
-			public float offset;
-			public float frequency;
-			[WriteOnly] public NativeSlice<float3x2> segments;
+			public float4x4 LocalToWorld;
+			public int NumSegments;
+			public float Offset;
+			public float Frequency;
+			[NativeDisableUnsafePtrRestriction][WriteOnly] public float3x2* Ptr;
 			void IJobParallelFor.Execute ( int index )
 			{
-				float t0 = (float) index / (float) numSegments;
-				float t1 = (float)( index+1 ) / (float) numSegments;
-				float amp0 = math.sin( frequency * ( t0*math.PI*2f + offset ) );
-				float amp1 = math.sin( frequency * ( t1*math.PI*2f + offset ) );
-				float3 vec0 = math.transform( transform , new float3{ x=t0 , y=amp0 } );
-				float3 vec1 = math.transform( transform , new float3{ x=t1 , y=amp1 } );
-				segments[index] = new float3x2{ c0=vec0 , c1=vec1 };
+				float t0 = (float) index / (float) NumSegments;
+				float t1 = (float)( index+1 ) / (float) NumSegments;
+				float2 amp = math.sin( Frequency * new float2{
+					x = t0*math.PI*2f + Offset ,
+					y = t1*math.PI*2f + Offset
+				} );
+				float3 vec0 = math.transform( LocalToWorld , new float3{ x=t0 , y=amp.x } );
+				float3 vec1 = math.transform( LocalToWorld , new float3{ x=t1 , y=amp.y } );
+				Ptr[index] = new float3x2{ c0=vec0 , c1=vec1 };
 			}
 		}
 		
