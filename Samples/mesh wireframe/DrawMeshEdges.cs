@@ -19,7 +19,6 @@ namespace Segments.Samples
 		NativeArray<Vector3> _vertices;
 		NativeArray<int2> _edges;
 
-		Segments.SegmentRenderingSystem _segmentsSystem;
 		Segments.Batch _segments;
 
 
@@ -42,8 +41,7 @@ namespace Segments.Samples
 			}
 
 			// create segment buffer:
-			_segmentsSystem = Segments.Core.GetRenderingSystem();
-			_segmentsSystem.CreateBatch( out _segments , _materialOverride );
+			Segments.Core.CreateBatch( out _segments , _materialOverride );
 			
 			// initialize buffer size:
 			_segments.buffer.Length = _edges.Length;

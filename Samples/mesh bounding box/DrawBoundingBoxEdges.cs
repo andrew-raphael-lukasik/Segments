@@ -16,7 +16,6 @@ namespace Segments.Samples
 		[SerializeField] Material _materialOverride = null;
 
 		MeshRenderer _meshRenderer = null;
-		Segments.SegmentRenderingSystem _segmentsSystem;
 		Segments.Batch _segments;
 
 		
@@ -25,8 +24,7 @@ namespace Segments.Samples
 			_meshRenderer = GetComponent<MeshRenderer>();
 
 			// create segment buffer:
-			_segmentsSystem = Segments.Core.GetRenderingSystem();
-			_segmentsSystem.CreateBatch( out _segments , _materialOverride );
+			Segments.Core.CreateBatch( out _segments , _materialOverride );
 			
 			// initialize buffer size:
 			_segments.buffer.Length = 12;

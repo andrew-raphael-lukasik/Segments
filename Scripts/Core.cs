@@ -1,11 +1,19 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Assertions;
+using Unity.Mathematics;
 using Unity.Entities;
+using Unity.Collections;
 using Segments.Internal;
 
 namespace Segments
 {
 	public static class Core
 	{
+		
+
+		internal static List<IBatch> Batches = new List<IBatch>();
 
 
 		static World world;
@@ -28,14 +36,56 @@ namespace Segments
 				}
 				#endif
 
-				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentRenderingSystem) );
+				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentInitializationSystem) , typeof(SegmentRenderingSystem) );
 				
 				return world;
 			}
 		}
 
 
-		public static SegmentRenderingSystem GetRenderingSystem () => GetWorld().GetExistingSystem<Segments.SegmentRenderingSystem>();
+		public static void CreateBatch ( out Batch batch , Material materialOverride = null )
+		{
+			GetWorld();// makes sure initialized world exists
+
+			if( materialOverride==null )
+				materialOverride = Internal.ResourceProvider.default_material;
+			
+			var buffer = new NativeList<float3x2>( Allocator.Persistent );
+			batch = new Batch(
+				mat:		materialOverride ,
+				buffer:		buffer
+			);
+			Batches.Add( batch );
+		}
+		public static void CreateBatch ( out UnsafeBatch batch , Material materialOverride = null )
+		{
+			GetWorld();// makes sure initialized world exists
+			
+			if( materialOverride==null )
+				materialOverride = Internal.ResourceProvider.default_material;
+			
+			var buffer = new VeryUnsafeList<float3x2>( initialCapacity:32 , Allocator.Persistent );
+			
+			batch = new UnsafeBatch(
+				mat:		materialOverride ,
+				buffer:		buffer
+			);
+			Batches.Add( batch );
+		}
+
+
+		public static void DestroyAllBatches ()
+		{
+			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
+			{
+				var batch = Batches[i];
+				batch.Dependency.Complete();
+				batch.Dispose();
+				
+				Batches.RemoveAt(i);
+			}
+			Assert.AreEqual( Batches.Count , 0 );
+		}
 
 
 	}
