@@ -153,7 +153,7 @@ namespace Segments
 				combined.Encapsulate( InputPtr[i].c0 );
 				combined.Encapsulate( InputPtr[i].c1 );
 			}
-			*OutputPtr = new Bounds{ min=combined.Min , max=combined.Max };
+			*OutputPtr = !combined.IsEmpty ? new Bounds{ min=combined.Min , max=combined.Max } : default(Bounds);
 		}
 	}
 
