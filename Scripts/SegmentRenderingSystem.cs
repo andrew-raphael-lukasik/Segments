@@ -18,7 +18,7 @@ namespace Segments
 	{
 
 
-		List<Batch> _batches = new List<Batch>();
+		List<IBatch> _batches = new List<IBatch>();
 
 
 		protected override void OnCreate ()
@@ -69,7 +69,7 @@ namespace Segments
 				var batch = _batches[ i ];
 				batch.Dependency.Complete();
 
-				NativeList<float3x2> buffer = batch.buffer;
+				NativeArray<float3x2> buffer = batch.buffer;
 				Mesh mesh = batch.mesh;
 				int bufferSize = buffer.Length;
 				int numVertices = buffer.Length * 2;
@@ -78,16 +78,19 @@ namespace Segments
 				var indices = new NativeArray<uint>( numIndices , Allocator.TempJob );
 				var indicesJob = new IndicesJob{ Indices=indices }.Schedule( indices.Length , 1024 );
 				mesh.SetVertexBufferParams( numVertices , Batch.layout );
-				mesh.SetVertexBufferData( buffer.AsArray() , 0 , 0 , buffer.Length );
+				mesh.SetVertexBufferData( buffer , 0 , 0 , buffer.Length );
 				mesh.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
 				indicesJob.Complete();
 				mesh.SetIndexBufferData( indices , 0 , 0 , numIndices );
 				indices.Dispose();
-				mesh.SetSubMesh(
-					index:	0 ,
-					desc:	new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) ,
-					flags:	MeshUpdateFlags.DontValidateIndices
-				);
+				if( mesh.GetSubMesh(0).indexCount!=numIndices )
+				{
+					mesh.SetSubMesh(
+						index:	0 ,
+						desc:	new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) ,
+						flags:	MeshUpdateFlags.DontValidateIndices
+					);
+				}
 				mesh.RecalculateBounds();
 				mesh.UploadMeshData( false );
 			}
@@ -121,6 +124,22 @@ namespace Segments
 			);
 			_batches.Add( batch );
 		}
+		public void CreateBatch ( out UnsafeBatch batch , Material materialOverride = null )
+		{
+			if( materialOverride==null )
+				materialOverride = Internal.ResourceProvider.default_material;
+			
+			var buffer = new VeryUnsafeList<float3x2>( initialCapacity:32 , Allocator.Persistent );
+			
+			batch = new UnsafeBatch(
+				mat:		materialOverride ,
+				buffer:		buffer
+			);
+			_batches.Add( batch );
+		}
+
+
+		public static SegmentRenderingSystem GetExistingSystem () => Segments.Core.GetRenderingSystem();
 
 
 		[Unity.Burst.BurstCompile]

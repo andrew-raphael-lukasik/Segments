@@ -21,13 +21,13 @@ namespace Segments.Samples
 		[SerializeField] float _frequency = 16;
 		[SerializeField] bool _everyFrame = false;
 
-		Segments.UnsafeSegmentRenderingSystem _segmentsSystem;
+		Segments.SegmentRenderingSystem _segmentsSystem;
 		Segments.UnsafeBatch _segments;
 		
 
 		void OnEnable ()
 		{
-			_segmentsSystem = Segments.Core.GetUnsafeRenderingSystem();
+			_segmentsSystem = Segments.Core.GetRenderingSystem();
 			_segmentsSystem.CreateBatch( out _segments , _srcMaterial );
 		}
 
