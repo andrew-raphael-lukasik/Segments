@@ -28,7 +28,6 @@ namespace Segments
 		void IBatch.Dispose() => this.Dispose();
 		#endregion
 		
-		public static readonly VertexAttributeDescriptor[] layout = new[]{ new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) };
 
 		public Batch ( NativeList<float3x2> buffer , Material mat )
 		{

@@ -1,14 +1,11 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Assertions;
-using Debug = UnityEngine.Debug;
-
 using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Rendering;
+using BurstCompile = Unity.Burst.BurstCompileAttribute;
 
 namespace Segments
 {
@@ -16,6 +13,10 @@ namespace Segments
 	[UpdateInGroup( typeof(InitializationSystemGroup) )]
 	internal class SegmentInitializationSystem : SystemBase
 	{
+
+
+		static readonly VertexAttributeDescriptor[] _layout = new[]{ new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) };
+
 
 		protected override void OnDestroy ()
 		{
@@ -32,20 +33,9 @@ namespace Segments
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 				if( batches[i].isDisposed )
 					batches.RemoveAt(i);
-			int numBatches = batches.Count;
-
-			// combine dependencies
-			// {
-			// 	var deps = new NativeArray<JobHandle>( numBatches+1 , Allocator.Temp );
-			// 	for( int i=0 ; i<numBatches ; i++ )
-			// 		deps[i] = _batches[i].Dependency;
-			// 	deps[numBatches] = Dependency;
-			// 	Dependency = JobHandle.CombineDependencies( deps );
-			// }
-			// if( numBatches==0 ) return;
 
 			// update meshes for rendering:
-			for( int i=numBatches-1 ; i!=-1 ; i-- )
+			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[ i ];
 				batch.Dependency.Complete();
@@ -58,7 +48,7 @@ namespace Segments
 
 				var indices = new NativeArray<uint>( numIndices , Allocator.TempJob );
 				var indicesJob = new IndicesJob{ Indices=indices }.Schedule( indices.Length , 1024 );
-				mesh.SetVertexBufferParams( numVertices , Batch.layout );
+				mesh.SetVertexBufferParams( numVertices , _layout );
 				mesh.SetVertexBufferData( buffer , 0 , 0 , buffer.Length );
 				mesh.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
 				indicesJob.Complete();
@@ -78,7 +68,7 @@ namespace Segments
 		}
 
 
-		[Unity.Burst.BurstCompile]
+		[BurstCompile]
 		public struct IndicesJob : IJobParallelFor
 		{
 			[WriteOnly] public NativeArray<uint> Indices;

@@ -20,8 +20,6 @@ namespace Segments
 		public JobHandle Dependency;
 		internal bool isDisposed;
 		
-		public static readonly VertexAttributeDescriptor[] layout = new[]{ new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) };
-
 
 		#region IBatch implementaion
 		NativeArray<float3x2> IBatch.buffer => this.buffer.AsArray();
@@ -31,7 +29,7 @@ namespace Segments
 		bool IBatch.isDisposed { get => this.isDisposed; set => this.isDisposed=value; }
 		void IBatch.Dispose() => this.Dispose();
 		#endregion
-		
+
 
 		public UnsafeBatch ( VeryUnsafeList<float3x2> buffer , Material mat )
 		{
