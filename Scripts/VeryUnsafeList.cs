@@ -111,9 +111,11 @@ namespace Segments
 		/// <returns>A NativeArray "view" of the list.</returns>
 		public NativeArray<T> AsArray ()
 		{
-			return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( this.ptr , this.length , Allocator.None );
-			// return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( this.ptr , this.length , this.allocator );
-			// @TODO: this array throws null error later on, no idea why
+			var nativeArray = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( this.ptr , this.length , Allocator.None );
+			#if ENABLE_UNITY_COLLECTIONS_CHECKS
+			NativeArrayUnsafeUtility.SetAtomicSafetyHandle( ref nativeArray , AtomicSafetyHandle.Create() );
+			#endif
+			return nativeArray;
 		}
 
 		public void Dispose ()
