@@ -154,7 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 91643007015acfb46bdc20094ec8b561, type: 2}
   _numSegments: 25000
-  _frequency: 10
+  _frequency: 1
   _everyFrame: 1
 --- !u!4 &588660314
 Transform:
@@ -201,7 +201,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 91643007015acfb46bdc20094ec8b561, type: 2}
   _numSegments: 25000
-  _frequency: 10
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &589676856
 Transform:
@@ -248,7 +248,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 1347e42cd0778b9408cd8a7e91ae93e7, type: 2}
   _numSegments: 25000
-  _frequency: 10
+  _frequency: 30
   _everyFrame: 1
 --- !u!4 &716963683
 Transform:
@@ -295,7 +295,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 1347e42cd0778b9408cd8a7e91ae93e7, type: 2}
   _numSegments: 25000
-  _frequency: 10
+  _frequency: 1
   _everyFrame: 1
 --- !u!4 &852920736
 Transform:
