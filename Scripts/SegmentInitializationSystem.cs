@@ -73,24 +73,11 @@ namespace Segments
 			JobHandle.CompleteAll( dependencies );
 			Profiler.EndSample();
 
-			// push vertices:
-			Profiler.BeginSample("push_vertices");
-			for( int i=batches.Count-1 ; i!=-1 ; i-- )
-			{
-				var batch = batches[i];
-				NativeArray<float3x2> buffer = batch.buffer;
-				Mesh mesh = batch.mesh;
-				int numVertices = buffer.Length * 2;
-				
-				mesh.SetVertexBufferParams( numVertices , _layout );
-				mesh.SetVertexBufferData( buffer , 0 , 0 , buffer.Length );
-			}
-			Profiler.EndSample();
-
 			allIndicesJobHandle.Complete();
 
-			// push indices:
-			Profiler.BeginSample("push_indices");
+			// push mesh data:
+			Profiler.BeginSample("push_mesh_data");
+			const MeshUpdateFlags meshUpdateFlags = MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds;
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
@@ -99,12 +86,36 @@ namespace Segments
 				int numVertices = buffer.Length * 2;
 				int numIndices = numVertices;
 				var indices = AsArray<int>( allIndices.GetUnsafePtr() , numIndices );
-				
-				mesh.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
-				mesh.SetIndexBufferData( indices , 0 , 0 , numIndices );
-				mesh.SetSubMesh( 0 , new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) );
+
+				Mesh.MeshDataArray dataArray = Mesh.AllocateWritableMeshData( 1 );
+				var meshData = dataArray[0];
+				{
+					meshData.SetVertexBufferParams( numVertices , _layout );
+					UnsafeUtility.MemCpy(
+						destination:	meshData.GetVertexData<float3>().GetUnsafePtr() ,
+						source:			buffer.GetUnsafePtr() ,
+						size:			UnsafeUtility.SizeOf<float3x2>()*buffer.Length
+					);
+					
+					meshData.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
+					var indexData = meshData.GetIndexData<int>();
+					UnsafeUtility.MemCpy(
+						destination:	indexData.GetUnsafePtr() ,
+						source:			indices.GetUnsafePtr() ,
+						size:			UnsafeUtility.SizeOf<int>()*indices.Length
+					);
+
+					meshData.subMeshCount = 1;
+					meshData.SetSubMesh( 0 , new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) , meshUpdateFlags );
+				}
+				Mesh.ApplyAndDisposeWritableMeshData( dataArray , mesh , meshUpdateFlags );
 			}
 			Profiler.EndSample();
+
+
+			
+			
+
 
 			JobHandle.CompleteAll( allBoundsJobHandles );
 
