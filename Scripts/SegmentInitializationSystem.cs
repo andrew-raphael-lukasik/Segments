@@ -67,7 +67,7 @@ namespace Segments
 			JobHandle.CompleteAll( dependencies );
 			Profiler.EndSample();
 
-			// update vertices:
+			// push vertices:
 			Profiler.BeginSample("push_vertices");
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 			{
@@ -83,7 +83,7 @@ namespace Segments
 
 			allIndicesJobHandle.Complete();
 
-			// update indices:
+			// push indices:
 			Profiler.BeginSample("push_indices");
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 			{
@@ -107,12 +107,6 @@ namespace Segments
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 				batches[i].mesh.bounds = allBounds[i];
 			Profiler.EndSample();
-
-			// // upload mesh data:
-			// Profiler.BeginSample("upload_mesh_data");
-			// for( int i=batches.Count-1 ; i!=-1 ; i-- )
-			// 	batches[i].mesh.UploadMeshData( false );// this seems to do nothing here (?)
-			// Profiler.EndSample();
 
 			allIndices.Dispose();
 			allBounds.Dispose();
