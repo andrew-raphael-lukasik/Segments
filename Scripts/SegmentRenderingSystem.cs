@@ -20,12 +20,7 @@ namespace Segments
 			#endif
 
 			var propertyBlock = new MaterialPropertyBlock{};
-			var batches = Core.Batches;
-			for( int i=batches.Count-1 ; i!=-1 ; i-- )
-			{
-				var batch = batches[i];
-				Graphics.DrawMesh( batch.mesh , Vector3.zero , quaternion.identity , batch.material , 0 , camera , 0 , propertyBlock , false , true , true );
-			}
+			Core.Render( camera , propertyBlock );
 		}
 
 	}

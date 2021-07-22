@@ -88,5 +88,15 @@ namespace Segments
 		}
 
 
+		public static void Render ( Camera camera , MaterialPropertyBlock materialPropertyBlock = null )
+		{
+			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
+			{
+				var batch = Batches[i];
+				Graphics.DrawMesh( batch.mesh , Vector3.zero , quaternion.identity , batch.material , 0 , camera , 0 , materialPropertyBlock , false , true , true );
+			}
+		}
+
+
 	}
 }
