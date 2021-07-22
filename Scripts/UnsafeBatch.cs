@@ -8,7 +8,7 @@ using Unity.Jobs;
 
 namespace Segments
 {
-	public class UnsafeBatch
+	public class UnsafeBatch : IBatch
 	{
 
 		/// <summary> DO NOT call <see cref="buffer"/>.Dispose(). Call <see cref="UnsafeBatch.Dispose()"/>; instead. </summary>
@@ -21,6 +21,17 @@ namespace Segments
 		internal bool isDisposed;
 		
 		public static readonly VertexAttributeDescriptor[] layout = new[]{ new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) };
+
+
+		#region IBatch implementaion
+		NativeArray<float3x2> IBatch.buffer => this.buffer.AsArray();
+		Material IBatch.material => this.material;
+		Mesh IBatch.mesh => this.mesh;
+		JobHandle IBatch.Dependency => this.Dependency;
+		bool IBatch.isDisposed { get => this.isDisposed; set => this.isDisposed=value; }
+		void IBatch.Dispose() => this.Dispose();
+		#endregion
+		
 
 		public UnsafeBatch ( VeryUnsafeList<float3x2> buffer , Material mat )
 		{
