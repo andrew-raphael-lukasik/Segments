@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Rendering;
@@ -25,7 +26,7 @@ namespace Segments
 		}
 
 
-		protected override void OnUpdate ()
+		protected override unsafe void OnUpdate ()
 		{
 			var batches = Core.Batches;
 
@@ -33,27 +34,42 @@ namespace Segments
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 				if( batches[i].isDisposed )
 					batches.RemoveAt(i);
+			
+			// complete all dependencies:
+			NativeArray<JobHandle> dependencies = new NativeArray<JobHandle>( batches.Count , Allocator.Temp );
+			for( int i=batches.Count-1 ; i!=-1 ; i-- )
+				dependencies[i] = batches[i].Dependency;
+			JobHandle.CompleteAll( dependencies );
 
-			// update meshes for rendering:
+			// update vertices:
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 			{
-				var batch = batches[ i ];
-				batch.Dependency.Complete();
-
+				var batch = batches[i];
 				NativeArray<float3x2> buffer = batch.buffer;
 				Mesh mesh = batch.mesh;
-				int bufferSize = buffer.Length;
 				int numVertices = buffer.Length * 2;
-				int numIndices = numVertices;
-
-				var indices = new NativeArray<uint>( numIndices , Allocator.TempJob );
-				var indicesJob = new IndicesJob{ Indices=indices }.Schedule( indices.Length , 1024 );
+				
 				mesh.SetVertexBufferParams( numVertices , _layout );
 				mesh.SetVertexBufferData( buffer , 0 , 0 , buffer.Length );
+			}
+
+			// update indices:
+			for( int i=batches.Count-1 ; i!=-1 ; i-- )
+			{
+				var batch = batches[i];
+				NativeArray<float3x2> buffer = batch.buffer;
+				Mesh mesh = batch.mesh;
+				int numVertices = buffer.Length * 2;
+				int numIndices = numVertices;
+				var indices = new NativeArray<uint>( numIndices , Allocator.TempJob );
+				var indicesJob = new IndicesJob{ Ptr=(uint*)indices.GetUnsafePtr() }.Schedule( indices.Length , 1024 );
+				
 				mesh.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
+				
 				indicesJob.Complete();
 				mesh.SetIndexBufferData( indices , 0 , 0 , numIndices );
 				indices.Dispose();
+
 				if( mesh.GetSubMesh(0).indexCount!=numIndices )
 				{
 					mesh.SetSubMesh(
@@ -62,6 +78,12 @@ namespace Segments
 						flags:	MeshUpdateFlags.DontValidateIndices
 					);
 				}
+			}
+
+			// final updates:
+			for( int i=batches.Count-1 ; i!=-1 ; i-- )
+			{
+				Mesh mesh = batches[i].mesh;
 				mesh.RecalculateBounds();
 				mesh.UploadMeshData( false );
 			}
@@ -69,10 +91,10 @@ namespace Segments
 
 
 		[BurstCompile]
-		public struct IndicesJob : IJobParallelFor
+		public unsafe struct IndicesJob : IJobParallelFor
 		{
-			[WriteOnly] public NativeArray<uint> Indices;
-			void IJobParallelFor.Execute ( int index ) => Indices[index] = (uint) index;
+			[NativeDisableUnsafePtrRestriction][WriteOnly] public uint* Ptr;
+			void IJobParallelFor.Execute ( int index ) => Ptr[index] = (uint) index;
 		}
 
 
