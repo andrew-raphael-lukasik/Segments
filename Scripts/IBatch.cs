@@ -11,7 +11,8 @@ namespace Segments
 		Material material {get;}
 		Mesh mesh {get;}
 		JobHandle Dependency {get;}
-		bool isDisposed {get;set;}
-		void Dispose ();
+		bool disposeRequested {get;set;}
+		void Dispose ();// deffered one
+		void DisposeNow ();
 	}
 }

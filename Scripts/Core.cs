@@ -80,7 +80,7 @@ namespace Segments
 			{
 				var batch = Batches[i];
 				batch.Dependency.Complete();
-				batch.Dispose();
+				batch.DisposeNow();
 				
 				Batches.RemoveAt(i);
 			}

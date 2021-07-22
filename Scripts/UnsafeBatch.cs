@@ -26,8 +26,22 @@ namespace Segments
 		Material IBatch.material => this.material;
 		Mesh IBatch.mesh => this.mesh;
 		JobHandle IBatch.Dependency => this.Dependency;
-		bool IBatch.isDisposed { get => this.isDisposed; set => this.isDisposed=value; }
-		void IBatch.Dispose() => this.Dispose();
+		bool IBatch.disposeRequested { get => this.isDisposed; set => this.isDisposed=value; }
+		void IBatch.DisposeNow()
+		{
+			this.buffer.Dispose();
+			
+			if( Application.isPlaying )
+			{
+				Object.Destroy( this.mesh );
+				Object.Destroy( this.material );
+			}
+			else
+			{
+				Object.DestroyImmediate( this.mesh );
+				Object.DestroyImmediate( this.material );
+			}
+		}
 		#endregion
 
 
@@ -51,26 +65,7 @@ namespace Segments
 
 
 		/// <summary> Deffered dispose. </summary>
-		public void Dispose ()
-		{
-			if( this.isDisposed )
-				return;
-			
-			this.buffer.Dispose();
-			
-			if( Application.isPlaying )
-			{
-				Object.Destroy( this.mesh );
-				Object.Destroy( this.material );
-			}
-			else
-			{
-				Object.DestroyImmediate( this.mesh );
-				Object.DestroyImmediate( this.material );
-			}
-			
-			this.isDisposed = true;
-		}
+		public void Dispose () => this.isDisposed = true;
 
 
 	}

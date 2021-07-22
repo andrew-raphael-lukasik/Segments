@@ -17,22 +17,36 @@ namespace Segments
 		public Material material;
 		internal Mesh mesh;
 		public JobHandle Dependency;
-		internal bool isDisposed;
+		internal bool disposeRequested;
 
 		#region IBatch implementaion
 		NativeArray<float3x2> IBatch.buffer => this.buffer.AsArray();
 		Material IBatch.material => this.material;
 		Mesh IBatch.mesh => this.mesh;
 		JobHandle IBatch.Dependency => this.Dependency;
-		bool IBatch.isDisposed { get => this.isDisposed; set => this.isDisposed=value; }
-		void IBatch.Dispose() => this.Dispose();
+		bool IBatch.disposeRequested { get => this.disposeRequested; set => this.disposeRequested=value; }
+		void IBatch.DisposeNow ()
+		{
+			this.buffer.Dispose();
+			
+			if( Application.isPlaying )
+			{
+				Object.Destroy( this.mesh );
+				Object.Destroy( this.material );
+			}
+			else
+			{
+				Object.DestroyImmediate( this.mesh );
+				Object.DestroyImmediate( this.material );
+			}
+		}
 		#endregion
 		
 
 		public Batch ( NativeList<float3x2> buffer , Material mat )
 		{
 			this.buffer = buffer;
-			this.isDisposed = false;
+			this.disposeRequested = false;
 			
 			this.material = new Material( mat );
 			this.material.name = $"{mat.name} (runtime copy #{this.material.GetHashCode()})";
@@ -49,26 +63,7 @@ namespace Segments
 
 
 		/// <summary> Deffered dispose. </summary>
-		public void Dispose ()
-		{
-			if( this.isDisposed )
-				return;
-			
-			this.buffer.Dispose();
-			
-			if( Application.isPlaying )
-			{
-				Object.Destroy( this.mesh );
-				Object.Destroy( this.material );
-			}
-			else
-			{
-				Object.DestroyImmediate( this.mesh );
-				Object.DestroyImmediate( this.material );
-			}
-			
-			this.isDisposed = true;
-		}
+		public void Dispose () => this.disposeRequested = true;
 
 
 	}

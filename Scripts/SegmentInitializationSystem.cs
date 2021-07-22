@@ -31,6 +31,19 @@ namespace Segments
 		{
 			var batches = Core.Batches;
 
+			// dispose requested batches:
+			Profiler.BeginSample("dispose_batches");
+			for( int i=batches.Count-1 ; i!=-1 ; i-- )
+			{
+				var batch = batches[i];
+				if( batch.disposeRequested )
+				{
+					batch.DisposeNow();
+					batches.RemoveAt(i);
+				}
+			}
+			Profiler.EndSample();
+
 			// shedule indices job:
 			Profiler.BeginSample("shedule_indices_job");
 			int numAllIndices = 0;
@@ -50,13 +63,6 @@ namespace Segments
 				NativeArray<float3x2> buffer = batch.buffer;
 				allBoundsJobHandles[i] = new BoundsJob( buffer , allBounds , i ).Schedule();
 			}
-			Profiler.EndSample();
-
-			// remove disposed batches from the list:
-			Profiler.BeginSample("remove_disposed");
-			for( int i=batches.Count-1 ; i!=-1 ; i-- )
-				if( batches[i].isDisposed )
-					batches.RemoveAt(i);
 			Profiler.EndSample();
 			
 			// complete all dependencies:
