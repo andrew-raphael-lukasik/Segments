@@ -101,17 +101,19 @@ namespace Segments
 			this.allocatedBytes = newAllocatedBytes;
 		}
 
+		public NativeArray<T> ToArray ( Allocator allocator = Allocator.Temp )
+		{
+			var nativeArray = new NativeArray<T>( this.length , allocator );
+			UnsafeUtility.MemCpy( destination:nativeArray.GetUnsafePtr() , source:this.ptr , this.allocatedBytes );
+			return nativeArray;
+		}
+		
 		/// <returns>A NativeArray "view" of the list.</returns>
 		public NativeArray<T> AsArray ()
 		{
-			var nativeArray = new NativeArray<T>( this.length , Allocator.Temp );
-			UnsafeUtility.MemCpy( destination:nativeArray.GetUnsafePtr() , source:this.ptr , this.allocatedBytes );
-			return nativeArray;
-
-			// @TODO: get rid of this copy with this NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray (its array throws null error later on, no idea why)
-
-			// return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( this.ptr , this.length , Allocator.Invalid );
+			return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( this.ptr , this.length , Allocator.None );
 			// return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( this.ptr , this.length , this.allocator );
+			// @TODO: this array throws null error later on, no idea why
 		}
 
 		public void Dispose ()
