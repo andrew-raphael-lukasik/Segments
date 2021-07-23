@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Profiling;
+using UnityEngine.Assertions;
 using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -17,12 +18,27 @@ namespace Segments
 	{
 
 
-		static readonly VertexAttributeDescriptor[] _layout = new[]{ new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) };
+		internal NativeList<Bounds> DefferedBounds = new NativeList<Bounds>( initialCapacity:2 , Allocator.Persistent );
+		internal NativeList<JobHandle> DefferedBoundsJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent );
+		internal NativeList<JobHandle> FillMeshDataArrayJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent );
+		internal Mesh.MeshDataArray[] MeshDataArrays = new Mesh.MeshDataArray[0];
+		internal int numBatchesToProcess;
+
+
+		protected override void OnCreate ()
+		{
+			this.OnUpdate();
+		}
 
 
 		protected override void OnDestroy ()
 		{
 			Dependency.Complete();
+			JobHandle.CompleteAll( DefferedBoundsJobs );
+			JobHandle.CompleteAll( FillMeshDataArrayJobs );
+			if( DefferedBounds.IsCreated ) DefferedBounds.Dispose();
+			if( DefferedBoundsJobs.IsCreated ) DefferedBoundsJobs.Dispose();
+			if( FillMeshDataArrayJobs.IsCreated ) FillMeshDataArrayJobs.Dispose();
 			Core.DestroyAllBatches();
 		}
 
@@ -44,89 +60,93 @@ namespace Segments
 			}
 			Profiler.EndSample();
 
+			int numBatches = batches.Count;
+			numBatchesToProcess = 0;
+
+			// complete all batch dependencies:
+			Profiler.BeginSample("complete_dependencies");
+			NativeArray<JobHandle> batchDependencies = new NativeArray<JobHandle>( numBatches , Allocator.Temp );
+			for( int i=numBatches-1 ; i!=-1 ; i-- )
+				batchDependencies[i] = batches[i].Dependency;
+			JobHandle.CompleteAll( batchDependencies );
+			Profiler.EndSample();
+
 			// shedule indices job:
 			Profiler.BeginSample("shedule_indices_job");
 			int numAllIndices = 0;
-			for( int i=batches.Count-1 ; i!=-1 ; i-- )
+			for( int i=numBatches-1 ; i!=-1 ; i-- )
 				numAllIndices = math.max( numAllIndices , batches[i].buffer.Length*2 );
 			var allIndices = new NativeArray<uint>( numAllIndices , Allocator.TempJob );
-			var allIndicesJobHandle = new IndicesJob{ Ptr=(uint*)allIndices.GetUnsafePtr() }.Schedule( allIndices.Length , 1024 );
+			var allIndicesJobHandle = new IndicesJob(allIndices).Schedule( allIndices.Length , 1024 );
 			Profiler.EndSample();
 
-			// shedule indices job:
+			// shedule bounds job:
 			Profiler.BeginSample("shedule_bounds_job");
-			NativeArray<Bounds> allBounds = new NativeArray<Bounds>( batches.Count , Allocator.TempJob );
-			NativeArray<JobHandle> allBoundsJobHandles = new NativeArray<JobHandle>( batches.Count , Allocator.Temp );
-			for( int i=batches.Count-1 ; i!=-1 ; i-- )
+			DefferedBoundsJobs.Length = numBatches;
+			DefferedBounds.Length = numBatches;
+			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
 				NativeArray<float3x2> buffer = batch.buffer;
-				allBoundsJobHandles[i] = new BoundsJob( buffer , allBounds , i ).Schedule();
+				DefferedBoundsJobs[i] = new BoundsJob( buffer , DefferedBounds , i ).Schedule();
 			}
 			Profiler.EndSample();
-			
-			// complete all dependencies:
-			Profiler.BeginSample("complete_dependencies");
-			NativeArray<JobHandle> dependencies = new NativeArray<JobHandle>( batches.Count , Allocator.Temp );
-			for( int i=batches.Count-1 ; i!=-1 ; i-- )
-				dependencies[i] = batches[i].Dependency;
-			JobHandle.CompleteAll( dependencies );
-			Profiler.EndSample();
 
-			allIndicesJobHandle.Complete();
-
-			// push mesh data:
-			Profiler.BeginSample("push_mesh_data");
-			const MeshUpdateFlags meshUpdateFlags = MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds;
-			for( int i=batches.Count-1 ; i!=-1 ; i-- )
+			// create mesh data:
+			Profiler.BeginSample("create_mesh_data");
+			if( MeshDataArrays.Length!=numBatches ) MeshDataArrays = new Mesh.MeshDataArray[ numBatches ];
+			FillMeshDataArrayJobs.Length = numBatches;
+			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
 				NativeArray<float3x2> buffer = batch.buffer;
 				Mesh mesh = batch.mesh;
 				int numVertices = buffer.Length * 2;
 				int numIndices = numVertices;
-				var indices = AsArray<int>( allIndices.GetUnsafePtr() , numIndices );
 
-				Mesh.MeshDataArray dataArray = Mesh.AllocateWritableMeshData( 1 );
-				var meshData = dataArray[0];
-				{
-					meshData.SetVertexBufferParams( numVertices , _layout );
-					UnsafeUtility.MemCpy(
-						destination:	meshData.GetVertexData<float3>().GetUnsafePtr() ,
-						source:			buffer.GetUnsafePtr() ,
-						size:			UnsafeUtility.SizeOf<float3x2>()*buffer.Length
-					);
-					
-					meshData.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
-					var indexData = meshData.GetIndexData<int>();
-					UnsafeUtility.MemCpy(
-						destination:	indexData.GetUnsafePtr() ,
-						source:			indices.GetUnsafePtr() ,
-						size:			UnsafeUtility.SizeOf<int>()*indices.Length
-					);
+				var indices = AsArray<uint>( allIndices.GetUnsafeReadOnlyPtr() , numIndices );
+				MeshDataArrays[i] = Mesh.AllocateWritableMeshData(1);
+				var meshData = MeshDataArrays[i][0];
+				meshData.SetVertexBufferParams( numVertices , new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) );
+				meshData.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
+				var bufferFloat3 = AsArray<float3>( buffer.GetUnsafeReadOnlyPtr() , numVertices );
+				
+				JobHandle jobHandle =
+				Job
+					.WithName("fill_MeshDataArray_job")
+					.WithCode( () =>
+					{
+						meshData.subMeshCount = 1;
+						meshData.SetSubMesh(
+							index:	0 ,
+							desc:	new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) ,
+							flags:	MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
+						);
 
-					meshData.subMeshCount = 1;
-					meshData.SetSubMesh( 0 , new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) , meshUpdateFlags );
-				}
-				Mesh.ApplyAndDisposeWritableMeshData( dataArray , mesh , meshUpdateFlags );
+						var vertexData = meshData.GetVertexData<float3>();
+						UnsafeUtility.MemCpy(
+							destination:	vertexData.GetUnsafePtr() ,
+							source:			buffer.GetUnsafeReadOnlyPtr() ,
+							size:			UnsafeUtility.SizeOf<float3x2>()*buffer.Length
+						);
+						
+						var indexBuffer = meshData.GetIndexData<uint>();
+						UnsafeUtility.MemCpy(
+							destination:	indexBuffer.GetUnsafePtr() ,
+							source:			indices.GetUnsafeReadOnlyPtr() ,
+							size:			UnsafeUtility.SizeOf<int>()*indices.Length
+						);
+					} )
+					.WithBurst()
+					.Schedule( allIndicesJobHandle );
+				
+				FillMeshDataArrayJobs[i] = jobHandle;
+				batch.Dependency = jobHandle;
 			}
 			Profiler.EndSample();
 
-
-			
-			
-
-
-			JobHandle.CompleteAll( allBoundsJobHandles );
-
-			// push bounds:
-			Profiler.BeginSample("push_bounds");
-			for( int i=batches.Count-1 ; i!=-1 ; i-- )
-				batches[i].mesh.bounds = allBounds[i];
-			Profiler.EndSample();
-
 			allIndices.Dispose();
-			allBounds.Dispose();
+			numBatchesToProcess = numBatches;
 		}
 
 		public unsafe NativeArray<T> AsArray <T> ( void* dataPtr , int dataLength ) where T : unmanaged
@@ -145,7 +165,13 @@ namespace Segments
 	[BurstCompile]
 	unsafe struct IndicesJob : IJobParallelFor
 	{
-		[NativeDisableUnsafePtrRestriction][WriteOnly] public uint* Ptr;
+		[NativeDisableUnsafePtrRestriction][WriteOnly] uint* Ptr;
+		public IndicesJob ( NativeArray<uint> output )
+		{
+			this.Ptr = (uint*) output.GetUnsafePtr();
+
+			Assert.IsTrue( this.Ptr!=null );
+		}
 		void IJobParallelFor.Execute ( int index ) => Ptr[index] = (uint) index;
 	}
 
@@ -156,11 +182,15 @@ namespace Segments
 		[NativeDisableUnsafePtrRestriction][ReadOnly] float3x2* InputPtr;
 		[ReadOnly] int InputLength;
 		[NativeDisableUnsafePtrRestriction][WriteOnly] Bounds* OutputPtr;
-		public BoundsJob ( NativeArray<float3x2> input ,  NativeArray<Bounds> output , int outputIndex )
+		public BoundsJob ( NativeArray<float3x2> input , NativeArray<Bounds> output , int outputIndex )
 		{
-			this.InputPtr = (float3x2*) input.GetUnsafePtr();
+			this.InputPtr = (float3x2*) input.GetUnsafeReadOnlyPtr();
 			this.InputLength = input.Length;
-			this.OutputPtr = ((Bounds*) output.GetUnsafePtr())+outputIndex;
+			this.OutputPtr = ( (Bounds*) output.GetUnsafePtr() ) + outputIndex;
+
+			Assert.IsTrue( outputIndex<output.Length );
+			Assert.IsTrue( this.InputPtr!=null );
+			Assert.IsTrue( this.OutputPtr!=null );
 		}
 		void IJob.Execute ()
 		{
@@ -174,5 +204,5 @@ namespace Segments
 		}
 	}
 
-	
+
 }
