@@ -1,30 +1,12 @@
-Segments is a lightweight line renderer for Unity.Entities tech stack.
+Segments is a lightweight line renderer for DOTS tech stack.
 
 # Getting started with Segments:
 ```csharp
-var entityManager = Segments.Core.GetWorld().EntityManager;
-Entity prefab = Segments.Core.GetSegmentPrefabCopy( material:null , width:0.01f );
-Entity x_axis = entityManager.Instantiate( prefab );
-    entityManager.AddComponentData( x_axis , new MaterialColor{ Value=new float4{ x=1 , w=1 } });
-    entityManager.SetComponentData( x_axis , new Segments.Segment{ start = float3.zero , end = new float3{ x=1 } } );
-Entity y_axis = entityManager.Instantiate( prefab );
-    entityManager.AddComponentData( y_axis , new MaterialColor{ Value=new float4{ y=1 , w=1 } });
-    entityManager.SetComponentData( y_axis , new Segments.Segment{ start = float3.zero , end = new float3{ y=1 } } );
-Entity z_axis = entityManager.Instantiate( prefab );
-    entityManager.AddComponentData( z_axis , new MaterialColor{ Value=new float4{ z=1 , w=1 } });
-    entityManager.SetComponentData( z_axis , new Segments.Segment{ start = float3.zero , end = new float3{ z=1 } } );
-```
-
-# Getting started with Segments.NativeListToSegmentsSystem:
-```csharp
-NativeList<float3x2> _segments;
-Segments.NativeListToSegmentsSystem _segmentsSystem;
-public JobHandle Dependency;
+[SerializeField] Material _material = null;
+Segments.Batch _segments;
 void OnEnable ()// OnCreate
 {
-    _segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.NativeListToSegmentsSystem>();
-    Entity prefab = Segments.Core.GetSegmentPrefabCopy();// prefab entity for you to modify & customize
-    _segmentsSystem.CreateBatch( prefab , out _segments );
+    Segments.Core.CreateBatch( out _segments , _material );
 }
 void Update ()// OnUpdate
 {
@@ -38,38 +20,22 @@ void Update ()// OnUpdate
         numSegments:    64
     );
     
-    Dependency = job.Schedule( dependsOn:Dependency );
-    _segmentsSystem.Dependencies.Add( Dependency );
+    _segments.Dependency = job.Schedule( dependsOn:_segments.Dependency );
 }
 void OnDisable ()// OnDestroy
 {
-    Dependency.Complete();
-    _segmentsSystem.DestroyBatch( ref _segments , true );
+	_segments.Dispose();
 }
 ```
 # Performance
 
-100.000 segments stress test:
+100.000 segments stress test? No problem.
 
-<img src="https://i.imgur.com/ZKUyzFa.jpg" height="200">
+@todo: details
 
-Cons: Very costly for this number of entities at the moment.
-
-Pros: Threaded jobs schedule pretty well to spread that cost.
-
-Conclusion: I recommend staying in 1-10k segments range until fixed.
-
-# Systems
-`SegmentTransformSystem` - The main system that makes all this work. Calculates `LocalToWorld` matrices for rendering.
-
-`NativeListToSegmentsSystem` - Simplifies entity pool management to a single `NativeList<float3x2>` you fill with data however you need.
-
-`NativeArrayToSegmentsSystem` - Simplifies entity pool management to a single `NativeArray<float3x2>` you fill with data however you need.
-
----
 
 # Requirements
-- Unity 2020.x
+- Unity 2020.1
 - Hybrid Renderer
 
 # Samples
