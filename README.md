@@ -1,4 +1,4 @@
-Segments is a lightweight line renderer for DOTS tech stack.
+Segments is a lightweight and fast line renderer for DOTS tech stack.
 
 # Getting started with Segments:
 ```csharp
