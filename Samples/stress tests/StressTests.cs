@@ -21,7 +21,7 @@ namespace Segments.Samples
 		[SerializeField] float _frequency = 16;
 		[SerializeField] bool _everyFrame = false;
 
-		Segments.UnsafeBatch _segments;
+		Segments.Batch _segments;
 		
 
 		void OnEnable ()
@@ -38,7 +38,6 @@ namespace Segments.Samples
 		{
 			if( _segments!=null )
 			{
-				_segments.Dependency.Complete();
 				_segments.Dispose();
 				_segments = null;
 			}
@@ -51,16 +50,15 @@ namespace Segments.Samples
 
 			_segments.Dependency.Complete();
 
-			if( _segments.buffer.length!=_numSegments || _everyFrame )
+			if( _segments.buffer.Length!=_numSegments || _everyFrame )
 			{
-				_segments.buffer.Resize( _numSegments );
-				_segments.buffer.length = _segments.buffer.capacity;
+				_segments.buffer.Length = _numSegments;
 
 				// scheduel new job:
 				var job = new MyJob{
 					Transform		= transform.localToWorldMatrix ,
 					NumSegments		= _numSegments ,
-					Ptr				= _segments.buffer.ptr ,
+					Segments		= _segments.buffer ,
 					Offset			= Time.time ,
 					Frequency		= _frequency ,
 				};
@@ -80,7 +78,7 @@ namespace Segments.Samples
 			public int NumSegments;
 			public float Offset;
 			public float Frequency;
-			[NativeDisableUnsafePtrRestriction][WriteOnly] public float3x2* Ptr;
+			[WriteOnly] public NativeArray<float3x2> Segments;
 			void IJobParallelFor.Execute ( int index )
 			{
 				float t0 = (float) index / (float) NumSegments;
@@ -91,7 +89,7 @@ namespace Segments.Samples
 				} );
 				float3 vec0 = math.transform( Transform , new float3{ x=t0 , y=amp.x } );
 				float3 vec1 = math.transform( Transform , new float3{ x=t1 , y=amp.y } );
-				Ptr[index] = new float3x2{ c0=vec0 , c1=vec1 };
+				Segments[index] = new float3x2{ c0=vec0 , c1=vec1 };
 			}
 		}
 		

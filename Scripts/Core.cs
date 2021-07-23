@@ -13,7 +13,7 @@ namespace Segments
 	{
 		
 
-		internal static List<IBatch> Batches = new List<IBatch>();
+		internal static List<Batch> Batches = new List<Batch>();
 
 
 		static World world;
@@ -57,21 +57,6 @@ namespace Segments
 			);
 			Batches.Add( batch );
 		}
-		public static void CreateBatch ( out UnsafeBatch batch , Material materialOverride = null )
-		{
-			GetWorld();// makes sure initialized world exists
-			
-			if( materialOverride==null )
-				materialOverride = Internal.ResourceProvider.default_material;
-			
-			var buffer = new VeryUnsafeList<float3x2>( initialCapacity:32 , Allocator.Persistent );
-			
-			batch = new UnsafeBatch(
-				mat:		materialOverride ,
-				buffer:		buffer
-			);
-			Batches.Add( batch );
-		}
 
 
 		public static void DestroyAllBatches ()
@@ -80,7 +65,7 @@ namespace Segments
 			{
 				var batch = Batches[i];
 				batch.Dependency.Complete();
-				batch.DisposeNow();
+				batch.DisposeImmediate();
 				
 				Batches.RemoveAt(i);
 			}

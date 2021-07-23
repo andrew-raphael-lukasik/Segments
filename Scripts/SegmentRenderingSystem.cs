@@ -30,10 +30,10 @@ namespace Segments
 
 		protected override void OnUpdate ()
 		{
-			if( _initializationSystem.numBatchesToProcess==0 ) return;
+			if( _initializationSystem.numBatchesToPush==0 ) return;
 
 			var batches = Core.Batches;
-			int numBatches = _initializationSystem.numBatchesToProcess;
+			int numBatches = _initializationSystem.numBatchesToPush;
 
 			JobHandle.CompleteAll( _initializationSystem.DefferedBoundsJobs );
 
@@ -61,7 +61,7 @@ namespace Segments
 			}
 			Profiler.EndSample();
 
-			_initializationSystem.numBatchesToProcess = 0;
+			_initializationSystem.numBatchesToPush = 0;
 		}
 
 

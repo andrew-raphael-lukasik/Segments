@@ -22,7 +22,7 @@ namespace Segments
 		internal NativeList<JobHandle> DefferedBoundsJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent );
 		internal NativeList<JobHandle> FillMeshDataArrayJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent );
 		internal Mesh.MeshDataArray[] MeshDataArrays = new Mesh.MeshDataArray[0];
-		internal int numBatchesToProcess;
+		internal int numBatchesToPush;
 
 
 		protected override void OnCreate ()
@@ -54,14 +54,14 @@ namespace Segments
 				var batch = batches[i];
 				if( batch.disposeRequested )
 				{
-					batch.DisposeNow();
+					batch.DisposeImmediate();
 					batches.RemoveAt(i);
 				}
 			}
 			Profiler.EndSample();
 
 			int numBatches = batches.Count;
-			numBatchesToProcess = 0;
+			numBatchesToPush = 0;
 
 			// complete all batch dependencies:
 			Profiler.BeginSample("complete_dependencies");
@@ -88,7 +88,11 @@ namespace Segments
 			{
 				var batch = batches[i];
 				NativeArray<float3x2> buffer = batch.buffer;
-				DefferedBoundsJobs[i] = new BoundsJob( buffer , DefferedBounds , i ).Schedule();
+
+				var jobHandle = new BoundsJob( buffer , DefferedBounds , i ).Schedule();
+				
+				DefferedBoundsJobs[i] = jobHandle;
+				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
 			}
 			Profiler.EndSample();
 
@@ -104,16 +108,14 @@ namespace Segments
 				int numVertices = buffer.Length * 2;
 				int numIndices = numVertices;
 
-				var indices = AsArray<uint>( allIndices.GetUnsafeReadOnlyPtr() , numIndices );
 				MeshDataArrays[i] = Mesh.AllocateWritableMeshData(1);
 				var meshData = MeshDataArrays[i][0];
 				meshData.SetVertexBufferParams( numVertices , new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) );
 				meshData.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
-				var bufferFloat3 = AsArray<float3>( buffer.GetUnsafeReadOnlyPtr() , numVertices );
 				
-				JobHandle jobHandle =
+				JobHandle setupSubmeshJob =
 				Job
-					.WithName("fill_MeshDataArray_job")
+					.WithName("setup_submesh_job")
 					.WithCode( () =>
 					{
 						meshData.subMeshCount = 1;
@@ -122,14 +124,33 @@ namespace Segments
 							desc:	new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) ,
 							flags:	MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
 						);
-
-						var vertexData = meshData.GetVertexData<float3>();
+					} )
+					.WithBurst()
+					.Schedule( default(JobHandle) );
+				
+				JobHandle copyVerticesJob =
+				Job
+					.WithReadOnly( buffer )
+					.WithName("copy_vertices_job")
+					.WithCode( () =>
+					{
+						var vertexBuffer = meshData.GetVertexData<float3>();
 						UnsafeUtility.MemCpy(
-							destination:	vertexData.GetUnsafePtr() ,
+							destination:	vertexBuffer.GetUnsafePtr() ,
 							source:			buffer.GetUnsafeReadOnlyPtr() ,
 							size:			UnsafeUtility.SizeOf<float3x2>()*buffer.Length
 						);
-						
+					} )
+					.WithBurst()
+					.Schedule( setupSubmeshJob );
+				
+				JobHandle copyIndicesJob =
+				Job
+					.WithReadOnly(allIndices)
+					.WithName("copy_indices_job")
+					.WithCode( () =>
+					{
+						var indices = allIndices.GetSubArray( 0 , numIndices );
 						var indexBuffer = meshData.GetIndexData<uint>();
 						UnsafeUtility.MemCpy(
 							destination:	indexBuffer.GetUnsafePtr() ,
@@ -138,15 +159,22 @@ namespace Segments
 						);
 					} )
 					.WithBurst()
-					.Schedule( allIndicesJobHandle );
+					.Schedule( JobHandle.CombineDependencies(setupSubmeshJob,allIndicesJobHandle) );
 				
+				JobHandle jobHandle = JobHandle.CombineDependencies( copyVerticesJob , copyIndicesJob );
 				FillMeshDataArrayJobs[i] = jobHandle;
-				batch.Dependency = jobHandle;
+				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
 			}
+			Job
+				.WithReadOnly(allIndices).WithDisposeOnCompletion(allIndices)
+				.WithName("dispose_indices_job")
+				.WithCode( () => {
+					var ptr = allIndices.GetUnsafeReadOnlyPtr();
+				} )
+				.Schedule( JobHandle.CombineDependencies(FillMeshDataArrayJobs) );
 			Profiler.EndSample();
 
-			allIndices.Dispose();
-			numBatchesToProcess = numBatches;
+			numBatchesToPush = numBatches;
 		}
 
 		public unsafe NativeArray<T> AsArray <T> ( void* dataPtr , int dataLength ) where T : unmanaged
@@ -163,44 +191,46 @@ namespace Segments
 
 
 	[BurstCompile]
-	unsafe struct IndicesJob : IJobParallelFor
+	struct IndicesJob : IJobParallelFor
 	{
-		[NativeDisableUnsafePtrRestriction][WriteOnly] uint* Ptr;
+		[WriteOnly] NativeArray<uint> Output;
 		public IndicesJob ( NativeArray<uint> output )
 		{
-			this.Ptr = (uint*) output.GetUnsafePtr();
+			this.Output = output;
 
-			Assert.IsTrue( this.Ptr!=null );
+			Assert.IsTrue( this.Output.IsCreated );
 		}
-		void IJobParallelFor.Execute ( int index ) => Ptr[index] = (uint) index;
+		void IJobParallelFor.Execute ( int index ) => Output[index] = (uint) index;
 	}
 
 
 	[BurstCompile]
-	unsafe struct BoundsJob : IJob
+	struct BoundsJob : IJob
 	{
-		[NativeDisableUnsafePtrRestriction][ReadOnly] float3x2* InputPtr;
+		[ReadOnly] NativeArray<float3x2> Input;
 		[ReadOnly] int InputLength;
-		[NativeDisableUnsafePtrRestriction][WriteOnly] Bounds* OutputPtr;
+		[NativeDisableContainerSafetyRestriction][WriteOnly] NativeArray<Bounds> Output;
+		[ReadOnly] int OutputIndex;
 		public BoundsJob ( NativeArray<float3x2> input , NativeArray<Bounds> output , int outputIndex )
 		{
-			this.InputPtr = (float3x2*) input.GetUnsafeReadOnlyPtr();
+			this.Input = input;
 			this.InputLength = input.Length;
-			this.OutputPtr = ( (Bounds*) output.GetUnsafePtr() ) + outputIndex;
+			this.Output = output;
+			this.OutputIndex = outputIndex;
 
 			Assert.IsTrue( outputIndex<output.Length );
-			Assert.IsTrue( this.InputPtr!=null );
-			Assert.IsTrue( this.OutputPtr!=null );
+			Assert.IsTrue( this.Input.IsCreated );
+			Assert.IsTrue( this.Output.IsCreated );
 		}
 		void IJob.Execute ()
 		{
 			MinMaxAABB combined = MinMaxAABB.Empty;
 			for( int i=InputLength-1 ; i!=-1 ; i-- )
 			{
-				combined.Encapsulate( InputPtr[i].c0 );
-				combined.Encapsulate( InputPtr[i].c1 );
+				combined.Encapsulate( Input[i].c0 );
+				combined.Encapsulate( Input[i].c1 );
 			}
-			*OutputPtr = !combined.IsEmpty ? new Bounds{ min=combined.Min , max=combined.Max } : default(Bounds);
+			Output[OutputIndex] = !combined.IsEmpty ? new Bounds{ min=combined.Min , max=combined.Max } : default(Bounds);
 		}
 	}
 
