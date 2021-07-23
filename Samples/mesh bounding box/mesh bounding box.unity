@@ -203,8 +203,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59e433b7d00d5ff439b6440fc71aced4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _materialOverride: {fileID: 2100000, guid: 4f235d8deba0a24499d2f04cc883b7da, type: 2}
-  _widthOverride: 0.005
+  _materialOverride: {fileID: 2100000, guid: 16a2c700c9809b54eb321b99c51e09ae, type: 2}
 --- !u!4 &210953414
 Transform:
   m_ObjectHideFlags: 0
@@ -313,8 +312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59e433b7d00d5ff439b6440fc71aced4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _materialOverride: {fileID: 2100000, guid: 4f235d8deba0a24499d2f04cc883b7da, type: 2}
-  _widthOverride: 0.005
+  _materialOverride: {fileID: 2100000, guid: 16a2c700c9809b54eb321b99c51e09ae, type: 2}
 --- !u!1 &798878838
 GameObject:
   m_ObjectHideFlags: 0
@@ -395,8 +393,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59e433b7d00d5ff439b6440fc71aced4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _materialOverride: {fileID: 2100000, guid: 4f235d8deba0a24499d2f04cc883b7da, type: 2}
-  _widthOverride: 0.005
+  _materialOverride: {fileID: 2100000, guid: 16a2c700c9809b54eb321b99c51e09ae, type: 2}
 --- !u!4 &798878842
 Transform:
   m_ObjectHideFlags: 0
@@ -491,8 +488,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59e433b7d00d5ff439b6440fc71aced4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _materialOverride: {fileID: 2100000, guid: 4f235d8deba0a24499d2f04cc883b7da, type: 2}
-  _widthOverride: 0.005
+  _materialOverride: {fileID: 2100000, guid: 16a2c700c9809b54eb321b99c51e09ae, type: 2}
 --- !u!4 &1164825331
 Transform:
   m_ObjectHideFlags: 0
@@ -545,7 +541,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1640000940}
-  m_LocalRotation: {x: 0, y: -0.68162185, z: 0, w: -0.7317047}
+  m_LocalRotation: {x: 0, y: -0.9880363, z: 0, w: 0.15422183}
   m_LocalPosition: {x: 7.9, y: 0, z: 20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:

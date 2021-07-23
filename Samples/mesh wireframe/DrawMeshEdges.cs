@@ -15,13 +15,11 @@ namespace Segments.Samples
 	{
 		
 		[SerializeField] Material _materialOverride = null;
-		[SerializeField] float _widthOverride = 0.003f;
 
-		NativeList<float3x2> _segments;
 		NativeArray<Vector3> _vertices;
 		NativeArray<int2> _edges;
-		Segments.NativeListToSegmentsSystem _segmentsSystem;
-		public JobHandle Dependency;
+
+		Segments.Batch _segments;
 
 
 		void OnEnable ()
@@ -33,28 +31,30 @@ namespace Segments.Samples
 				_vertices = new NativeArray<Vector3>( mesh.vertices , Allocator.Persistent );
 				var triangles = new NativeArray<int>( mesh.triangles , Allocator.TempJob );
 				var job = new ToEdgesJob{
-					triangles = triangles.AsReadOnly() ,
-					results = new NativeList<int2>( initialCapacity:triangles.Length*3 , Allocator.Persistent )
+					Triangles = triangles.AsReadOnly() ,
+					Results = new NativeList<int2>( initialCapacity:triangles.Length*3 , Allocator.Persistent )
 				};
 				job.Run();
-				_edges = job.results.ToArray( Allocator.Persistent );
-				job.results.Dispose();
+				_edges = job.Results.ToArray( Allocator.Persistent );
+				job.Results.Dispose();
 				triangles.Dispose();
 			}
 
-			_segmentsSystem = Segments.Core.GetWorld().GetExistingSystem<Segments.NativeListToSegmentsSystem>();
-
 			// create segment buffer:
-			Entity prefab = Segments.Core.GetSegmentPrefabCopy( _materialOverride , _widthOverride );
-			_segmentsSystem.CreateBatch( prefab , out _segments );
-			_segments.Length = _edges.Length;
+			Segments.Core.CreateBatch( out _segments , _materialOverride );
+			
+			// initialize buffer size:
+			_segments.buffer.Length = _edges.Length;
 		}
 		
 
 		void OnDisable ()
 		{
-			Dependency.Complete();
-			_segmentsSystem.DestroyBatch( ref _segments , true );
+			if( _segments!=null ) 
+			{
+				_segments.Dependency.Complete();
+				_segments.Dispose();
+			}
 			if( _vertices.IsCreated ) _vertices.Dispose();
 			if( _edges.IsCreated ) _edges.Dispose();
 		}
@@ -62,34 +62,33 @@ namespace Segments.Samples
 
 		void Update ()
 		{
-			Dependency.Complete();
+			_segments.Dependency.Complete();
 			
 			var job = new UpdateSegmentsJob{
-				edges		= _edges.AsReadOnly() ,
-				vertices	= _vertices.AsReadOnly() ,
-				matrix		= transform.localToWorldMatrix ,
-				segments	= _segments
+				Edges		= _edges.AsReadOnly() ,
+				Vertices	= _vertices.AsReadOnly() ,
+				Transform	= transform.localToWorldMatrix ,
+				Segments	= _segments.buffer
 			};
 			
-			Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 , dependsOn:Dependency );
-			_segmentsSystem.Dependencies.Add( Dependency );
+			_segments.Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 , dependsOn:_segments.Dependency );
 		}
 
 
 		[BurstCompile]
 		public struct UpdateSegmentsJob : IJobParallelFor
 		{
-			[ReadOnly] public NativeArray<int2>.ReadOnly edges;
-			[ReadOnly] public NativeArray<Vector3>.ReadOnly vertices;
-			[ReadOnly] public float4x4 matrix;
-			[WriteOnly] public NativeArray<float3x2> segments;
+			[ReadOnly] public NativeArray<int2>.ReadOnly Edges;
+			[ReadOnly] public NativeArray<Vector3>.ReadOnly Vertices;
+			[ReadOnly] public float4x4 Transform;
+			[WriteOnly] public NativeArray<float3x2> Segments;
 			void IJobParallelFor.Execute ( int index )
 			{
-				int i0 = edges[index].x;
-				int i1 = edges[index].y;
-				float4 p0 = math.mul( matrix , new float4( vertices[i0] , 1 ) );
-				float4 p1 = math.mul( matrix , new float4( vertices[i1] , 1 ) );
-				segments[index] = new float3x2{
+				int i0 = Edges[index].x;
+				int i1 = Edges[index].y;
+				float4 p0 = math.mul( Transform , new float4( Vertices[i0] , 1 ) );
+				float4 p1 = math.mul( Transform , new float4( Vertices[i1] , 1 ) );
+				Segments[index] = new float3x2{
 					c0	= new float3{ x=p0.x , y=p0.y , z=p0.z } ,
 					c1	= new float3{ x=p1.x , y=p1.y , z=p1.z }
 				};
@@ -100,16 +99,16 @@ namespace Segments.Samples
 		[BurstCompile]
 		public struct ToEdgesJob : IJob
 		{
-			[ReadOnly] public NativeArray<int>.ReadOnly triangles;
-			[WriteOnly] public NativeList<int2> results;
+			[ReadOnly] public NativeArray<int>.ReadOnly Triangles;
+			[WriteOnly] public NativeList<int2> Results;
 			void IJob.Execute ()
 			{
-				var edges = new NativeHashMap<ulong,int2>( capacity:triangles.Length*3 , Allocator.Temp );
-				for( int i=0 ; i<triangles.Length ; i+=3 )
+				var edges = new NativeHashMap<ulong,int2>( capacity:Triangles.Length*3 , Allocator.Temp );
+				for( int i=0 ; i<Triangles.Length ; i+=3 )
 				{
-					int a = triangles[i];
-					int b = triangles[i+1];
-					int c = triangles[i+2];
+					int a = Triangles[i];
+					int b = Triangles[i+1];
+					int c = Triangles[i+2];
 					ulong hash;
 					
 					hash = (ulong)math.max(a,b)*(ulong)1e6 + (ulong)math.min(a,b);
@@ -124,7 +123,7 @@ namespace Segments.Samples
 					if( !edges.ContainsKey(hash) )
 						edges.Add( hash , new int2{ x=c , y=a } );
 				}
-				results.AddRange( edges.GetValueArray(Allocator.Temp) );
+				Results.AddRange( edges.GetValueArray(Allocator.Temp) );
 				edges.Dispose();
 			}
 		}

@@ -1,21 +1,22 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 using UnityEngine;
-
-using Unity.Entities;
+using UnityEngine.Assertions;
 using Unity.Mathematics;
-using Unity.Rendering;
-using Unity.Transforms;
-
+using Unity.Entities;
+using Unity.Collections;
 using Segments.Internal;
 
 namespace Segments
 {
 	public static class Core
 	{
+		
+
+		internal static List<Batch> Batches = new List<Batch>();
+
 
 		static World world;
-		static EntityManager entityManager;
-		static Entity defaultPrefab;
 
 
 		public static World GetWorld ()
@@ -35,79 +36,50 @@ namespace Segments
 				}
 				#endif
 
-				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , Prototypes.worldSystems );
+				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentInitializationSystem) , typeof(SegmentRenderingSystem) );
 				
-				entityManager = world.EntityManager;
-				defaultPrefab = entityManager.CreateEntity(
-					entityManager.CreateArchetype(Prototypes.segment_prefab_components)
-				);
-				entityManager.SetComponentData<Segment>( defaultPrefab , Prototypes.segment );
-				entityManager.SetComponentData<SegmentWidth>( defaultPrefab , Prototypes.segmentWidth );
-				entityManager.SetComponentData<SegmentAspectRatio>( defaultPrefab , new SegmentAspectRatio{ Value = 1f } );
-				entityManager.AddComponentData<RenderBounds>( defaultPrefab , Prototypes.renderBounds );
-				entityManager.AddComponentData<LocalToWorld>( defaultPrefab , new LocalToWorld{ Value = float4x4.TRS( new float3{} , quaternion.identity , new float3{x=1,y=1,z=1} ) });
-				
-				var renderMesh = Prototypes.renderMesh;
-				entityManager.SetSharedComponentData<RenderMesh>( defaultPrefab , renderMesh );
-				// entityManager.SetComponentData<MaterialColor>( _defaultPrefab , new MaterialColor{ Value=new float4{x=1,y=1,z=1,w=1} } );// change: initialize manually
-				
-				#if ENABLE_HYBRID_RENDERER_V2
-				entityManager.SetComponentData( defaultPrefab , new BuiltinMaterialPropertyUnity_RenderingLayer{ Value = new uint4{ x=(uint)renderMesh.layer } } );
-				entityManager.SetComponentData( defaultPrefab , new BuiltinMaterialPropertyUnity_LightData{ Value = new float4{ z=1 } } );
-				#endif
-
 				return world;
 			}
 		}
-		
 
-		public static Entity GetSegmentPrefabCopy ()
+
+		public static void CreateBatch ( out Batch batch , Material materialOverride = null )
 		{
-			Initialize();
-			Entity copy = entityManager.Instantiate( defaultPrefab );
-			entityManager.AddComponent<Prefab>( copy );
-			return copy;
+			GetWorld();// makes sure initialized world exists
+
+			if( materialOverride==null )
+				materialOverride = Internal.ResourceProvider.default_material;
+			
+			var buffer = new NativeList<float3x2>( Allocator.Persistent );
+			batch = new Batch(
+				mat:		materialOverride ,
+				buffer:		buffer
+			);
+			Batches.Add( batch );
 		}
-		public static Entity GetSegmentPrefabCopy ( Material material )
+
+
+		public static void DestroyAllBatches ()
 		{
-			Entity copy = GetSegmentPrefabCopy();
-			if( material!=null )
+			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
 			{
-				var renderMesh = entityManager.GetSharedComponentData<RenderMesh>( copy );
-				renderMesh.material = material;
-				entityManager.SetSharedComponentData<RenderMesh>( copy , renderMesh );
+				var batch = Batches[i];
+				batch.Dependency.Complete();
+				batch.DisposeImmediate();
+				
+				Batches.RemoveAt(i);
 			}
-			return copy;
-		}
-		public static Entity GetSegmentPrefabCopy ( float width )
-		{
-			Entity copy = GetSegmentPrefabCopy();
-			if( width>0 ) entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
-			return copy;
-		}
-		public static Entity GetSegmentPrefabCopy ( Material material , float width )
-		{
-			Entity copy = GetSegmentPrefabCopy( material );
-			if( width>0 ) entityManager.SetComponentData( copy , new SegmentWidth{ Value=(half)width } );
-			return copy;
+			Assert.AreEqual( Batches.Count , 0 );
 		}
 
 
-		public static void DestroyAllSegments ()
+		public static void Render ( Camera camera , MaterialPropertyBlock materialPropertyBlock = null )
 		{
-			var query = entityManager.CreateEntityQuery( new ComponentType[]{ typeof(Segment) } );
-			entityManager.DestroyEntity( query );
-		}
-
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Initialize () => GetWorld();
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		static void _WorldInitializedWarningCheck ()
-		{
-			if( world==null || !world.IsCreated )
-				Debug.LogError($"Call `{nameof(Segments)}.{nameof(Core)}.{nameof(Initialize)}()` first.");
+			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
+			{
+				var batch = Batches[i];
+				Graphics.DrawMesh( batch.mesh , Vector3.zero , quaternion.identity , batch.material , 0 , camera , 0 , materialPropertyBlock , false , true , true );
+			}
 		}
 
 
