@@ -23,7 +23,7 @@ namespace Segments
 		NativeArray<float3x2> IBatch.buffer => this.buffer.AsArray();
 		Material IBatch.material => this.material;
 		Mesh IBatch.mesh => this.mesh;
-		JobHandle IBatch.Dependency => this.Dependency;
+		JobHandle IBatch.Dependency { get => this.Dependency; set => this.Dependency=value; }
 		bool IBatch.disposeRequested { get => this.disposeRequested; set => this.disposeRequested=value; }
 		void IBatch.DisposeNow ()
 		{

@@ -27,6 +27,10 @@ namespace Segments.Samples
 		void OnEnable ()
 		{
 			Segments.Core.CreateBatch( out _segments , _srcMaterial );
+
+			#if UNITY_EDITOR
+			this.Update();// just to kickstart 1st frame rendering (applies to editor only outside play mode)
+			#endif
 		}
 
 
@@ -54,7 +58,7 @@ namespace Segments.Samples
 
 				// scheduel new job:
 				var job = new MyJob{
-					LocalToWorld	= transform.localToWorldMatrix ,
+					Transform		= transform.localToWorldMatrix ,
 					NumSegments		= _numSegments ,
 					Ptr				= _segments.buffer.ptr ,
 					Offset			= Time.time ,
@@ -72,7 +76,7 @@ namespace Segments.Samples
 		[BurstCompile]
 		public unsafe struct MyJob : IJobParallelFor
 		{
-			public float4x4 LocalToWorld;
+			public float4x4 Transform;
 			public int NumSegments;
 			public float Offset;
 			public float Frequency;
@@ -85,8 +89,8 @@ namespace Segments.Samples
 					x = t0*math.PI*2f + Offset ,
 					y = t1*math.PI*2f + Offset
 				} );
-				float3 vec0 = math.transform( LocalToWorld , new float3{ x=t0 , y=amp.x } );
-				float3 vec1 = math.transform( LocalToWorld , new float3{ x=t1 , y=amp.y } );
+				float3 vec0 = math.transform( Transform , new float3{ x=t0 , y=amp.x } );
+				float3 vec1 = math.transform( Transform , new float3{ x=t1 , y=amp.y } );
 				Ptr[index] = new float3x2{ c0=vec0 , c1=vec1 };
 			}
 		}

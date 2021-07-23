@@ -31,8 +31,8 @@ namespace Segments
 		{
 			var batches = Core.Batches;
 
-			// dispose requested batches:
-			Profiler.BeginSample("dispose_batches");
+			// fulfill deffered dispose requests:
+			Profiler.BeginSample("deffered_dispose");
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
