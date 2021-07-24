@@ -5,7 +5,6 @@ using UnityEngine.Assertions;
 using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Collections;
-using Segments.Internal;
 
 namespace Segments
 {
@@ -14,7 +13,7 @@ namespace Segments
 		
 
 		internal static List<Batch> Batches = new List<Batch>();
-
+		static Material default_material { get; set; }
 
 		static World world;
 
@@ -37,6 +36,17 @@ namespace Segments
 				#endif
 
 				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentInitializationSystem) , typeof(SegmentRenderingSystem) );
+
+				// load default material asset:
+				if( default_material==null )
+				{
+					const string path = "packages/Segments/default";
+					default_material = UnityEngine.Resources.Load<Material>( path );
+					if( default_material!=null )
+						default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
+					else
+						Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
+				}
 				
 				return world;
 			}
@@ -48,7 +58,8 @@ namespace Segments
 			GetWorld();// makes sure initialized world exists
 
 			if( materialOverride==null )
-				materialOverride = Internal.ResourceProvider.default_material;
+				materialOverride = default_material;
+			Assert.IsNotNull( materialOverride , $"{nameof(materialOverride)} is null" );
 			
 			var buffer = new NativeList<float3x2>( Allocator.Persistent );
 			batch = new Batch(

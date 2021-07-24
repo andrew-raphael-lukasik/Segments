@@ -2,37 +2,26 @@ Segments is a lightweight and fast line renderer for DOTS tech stack.
 
 # Getting started with Segments:
 ```csharp
-[SerializeField] Material _material = null;
-Segments.Batch _segments;
-void OnEnable ()// OnCreate
+Segments.Batch _batch;
+void OnEnable () => Segments.Core.CreateBatch( out _batch );
+void OnDisable () => _batch.Dispose();
+void Update ()
 {
-    Segments.Core.CreateBatch( out _segments , _material );
-}
-void Update ()// OnUpdate
-{
-    int index = 0;
-    var job = new Segments.Plot.CircleJob(
-        segments:       _segments ,
-        index:          ref index ,
-        r:              transform.localScale.x ,
-        pos:            transform.position ,
-        rot:            transform.rotation ,
-        numSegments:    64
-    );
-    
-    _segments.Dependency = job.Schedule( dependsOn:_segments.Dependency );
-}
-void OnDisable ()// OnDestroy
-{
-	_segments.Dispose();
+	_batch.Dependency.Complete();
+
+	var buffer = _batch.buffer;
+	buffer.Length = 3;
+	Vector3 position = transform.position;
+	buffer[0] = new float3x2( position , position+transform.right );
+	buffer[1] = new float3x2( position , position+transform.up );
+	buffer[2] = new float3x2( position , position+transform.forward );
 }
 ```
 # Performance
 
-100.000 segments stress test? No problem.
+100_000 segments? No problem!
 
 @todo: details
-
 
 # Requirements
 - Unity 2020.1
