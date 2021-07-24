@@ -29,7 +29,7 @@ namespace Segments.Samples
 			Segments.Core.CreateBatch( out _segments , _srcMaterial );
 
 			#if UNITY_EDITOR
-			this.Update();// just to kickstart 1st frame rendering (applies to editor only outside play mode)
+			this.Update();// just to kickstart 1st frame rendering in editor
 			#endif
 		}
 
