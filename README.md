@@ -1,4 +1,6 @@
-Segments is a lightweight and fast line renderer for DOTS tech stack.
+Segments is a lightweight line renderer for DOTS tech stack.
+
+It works by creating mesh batches formatted as `MeshTopology.Lines`, `SystemBase` job system schedules updates with `MeshDataArray`. `Geometry shader` creates output triangles on the GPU.
 
 # Getting started with Segments:
 ```csharp
@@ -26,6 +28,7 @@ void Update ()
 # Requirements
 - Unity 2020.1
 - Hybrid Renderer
+(tested with URP, HDRP will require few more lines here and there to be fully compatible)
 
 # Samples
 - mesh wireframe (runtime)

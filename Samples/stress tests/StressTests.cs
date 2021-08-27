@@ -94,6 +94,7 @@ namespace Segments.Samples
 		}
 		
 
+		#if UNITY_EDITOR
 		[UnityEditor.CustomEditor( typeof(StressTests) )]
 		public class MyEditor : UnityEditor.Editor
 		{
@@ -203,6 +204,7 @@ namespace Segments.Samples
 			}
 			
 		}
+		#endif
 
 		
 	}
