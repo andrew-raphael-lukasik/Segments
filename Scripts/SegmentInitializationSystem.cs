@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Profiling;
 using UnityEngine.Assertions;
+
 using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -71,8 +72,8 @@ namespace Segments
 			JobHandle.CompleteAll( batchDependencies );
 			Profiler.EndSample();
 
-			// shedule indices job:
-			Profiler.BeginSample("shedule_indices_job");
+			// schedule indices job:
+			Profiler.BeginSample("schedule_indices_job");
 			int numAllIndices = 0;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 				numAllIndices = math.max( numAllIndices , batches[i].buffer.Length*2 );
@@ -80,8 +81,8 @@ namespace Segments
 			var allIndicesJobHandle = new IndicesJob(allIndices).Schedule( allIndices.Length , 1024 );
 			Profiler.EndSample();
 
-			// shedule bounds job:
-			Profiler.BeginSample("shedule_bounds_job");
+			// schedule bounds job:
+			Profiler.BeginSample("schedule_bounds_job");
 			DefferedBoundsJobs.Length = numBatches;
 			DefferedBounds.Length = numBatches;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
@@ -175,15 +176,6 @@ namespace Segments
 			Profiler.EndSample();
 
 			numBatchesToPush = numBatches;
-		}
-
-		public unsafe NativeArray<T> AsArray <T> ( void* dataPtr , int dataLength ) where T : unmanaged
-		{
-			var nativeArray = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( dataPtr , dataLength , Allocator.None );
-			#if ENABLE_UNITY_COLLECTIONS_CHECKS
-			NativeArrayUnsafeUtility.SetAtomicSafetyHandle( ref nativeArray , AtomicSafetyHandle.Create() );
-			#endif
-			return nativeArray;
 		}
 
 

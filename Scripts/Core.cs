@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Unity.Mathematics;
