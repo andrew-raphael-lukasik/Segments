@@ -23,9 +23,7 @@ namespace Segments
 			this.buffer = buffer;
 			this.disposeRequested = false;
 			
-			this.material = new Material( mat );
-			this.material.name = $"{mat.name} (runtime copy #{this.material.GetHashCode()})";
-			
+			this.material = mat;
 			this.mesh = new Mesh();
 			this.mesh.hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor;
 			this.mesh.MarkDynamic();
@@ -46,16 +44,8 @@ namespace Segments
 			this.Dependency.Complete();
 			this.buffer.Dispose();
 			
-			if( Application.isPlaying )
-			{
-				Object.Destroy( this.mesh );
-				Object.Destroy( this.material );
-			}
-			else
-			{
-				Object.DestroyImmediate( this.mesh );
-				Object.DestroyImmediate( this.material );
-			}
+			if( Application.isPlaying ) Object.Destroy( this.mesh );
+			else Object.DestroyImmediate( this.mesh );
 		}
 
 
