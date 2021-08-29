@@ -5,6 +5,7 @@ using UnityEngine.Assertions;
 
 using Unity.Mathematics;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Rendering;
@@ -192,7 +193,7 @@ namespace Segments
 	{
 		[ReadOnly] NativeArray<float3x2> Input;
 		[ReadOnly] int InputLength;
-		[WriteOnly] NativeArray<Bounds> Output;
+		[NativeDisableContainerSafetyRestriction][WriteOnly] NativeArray<Bounds> Output;
 		[ReadOnly] int OutputIndex;
 		public BoundsJob ( NativeArray<float3x2> input , NativeArray<Bounds> output , int outputIndex )
 		{
