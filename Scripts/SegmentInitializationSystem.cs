@@ -5,7 +5,6 @@ using UnityEngine.Assertions;
 
 using Unity.Mathematics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Rendering;
@@ -44,7 +43,7 @@ namespace Segments
 		}
 
 
-		protected override unsafe void OnUpdate ()
+		protected override void OnUpdate ()
 		{
 			var batches = Core.Batches;
 
@@ -135,12 +134,8 @@ namespace Segments
 					.WithName("copy_vertices_job")
 					.WithCode( () =>
 					{
-						var vertexBuffer = meshData.GetVertexData<float3>();
-						UnsafeUtility.MemCpy(
-							destination:	vertexBuffer.GetUnsafePtr() ,
-							source:			buffer.GetUnsafeReadOnlyPtr() ,
-							size:			UnsafeUtility.SizeOf<float3x2>()*buffer.Length
-						);
+						var vertexBuffer = meshData.GetVertexData<float3x2>();
+						buffer.CopyTo( vertexBuffer );
 					} )
 					.WithBurst()
 					.Schedule( setupSubmeshJob );
@@ -153,11 +148,7 @@ namespace Segments
 					{
 						var indices = allIndices.GetSubArray( 0 , numIndices );
 						var indexBuffer = meshData.GetIndexData<uint>();
-						UnsafeUtility.MemCpy(
-							destination:	indexBuffer.GetUnsafePtr() ,
-							source:			indices.GetUnsafeReadOnlyPtr() ,
-							size:			UnsafeUtility.SizeOf<int>()*indices.Length
-						);
+						indices.CopyTo( indexBuffer );
 					} )
 					.WithBurst()
 					.Schedule( JobHandle.CombineDependencies(setupSubmeshJob,allIndicesJobHandle) );
@@ -170,7 +161,7 @@ namespace Segments
 				.WithReadOnly(allIndices).WithDisposeOnCompletion(allIndices)
 				.WithName("dispose_indices_job")
 				.WithCode( () => {
-					var ptr = allIndices.GetUnsafeReadOnlyPtr();
+					var _ = allIndices;
 				} )
 				.Schedule( JobHandle.CombineDependencies(FillMeshDataArrayJobs) );
 			Profiler.EndSample();
@@ -201,7 +192,7 @@ namespace Segments
 	{
 		[ReadOnly] NativeArray<float3x2> Input;
 		[ReadOnly] int InputLength;
-		[NativeDisableContainerSafetyRestriction][WriteOnly] NativeArray<Bounds> Output;
+		[WriteOnly] NativeArray<Bounds> Output;
 		[ReadOnly] int OutputIndex;
 		public BoundsJob ( NativeArray<float3x2> input , NativeArray<Bounds> output , int outputIndex )
 		{
