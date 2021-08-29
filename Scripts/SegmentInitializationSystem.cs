@@ -213,7 +213,9 @@ namespace Segments
 				combined.Encapsulate( Input[i].c0 );
 				combined.Encapsulate( Input[i].c1 );
 			}
-			Output[OutputIndex] = !combined.IsEmpty ? new Bounds{ min=combined.Min , max=combined.Max } : default(Bounds);
+			Output[OutputIndex] = !combined.IsEmpty
+				?	new Bounds{ min=combined.Min , max=combined.Max }
+				:	default(Bounds);
 		}
 	}
 
