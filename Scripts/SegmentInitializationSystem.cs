@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Profiling;
 using UnityEngine.Assertions;
+
 using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -43,7 +44,7 @@ namespace Segments
 		}
 
 
-		protected override unsafe void OnUpdate ()
+		protected override void OnUpdate ()
 		{
 			var batches = Core.Batches;
 
@@ -71,8 +72,8 @@ namespace Segments
 			JobHandle.CompleteAll( batchDependencies );
 			Profiler.EndSample();
 
-			// shedule indices job:
-			Profiler.BeginSample("shedule_indices_job");
+			// schedule indices job:
+			Profiler.BeginSample("schedule_indices_job");
 			int numAllIndices = 0;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 				numAllIndices = math.max( numAllIndices , batches[i].buffer.Length*2 );
@@ -80,8 +81,8 @@ namespace Segments
 			var allIndicesJobHandle = new IndicesJob(allIndices).Schedule( allIndices.Length , 1024 );
 			Profiler.EndSample();
 
-			// shedule bounds job:
-			Profiler.BeginSample("shedule_bounds_job");
+			// schedule bounds job:
+			Profiler.BeginSample("schedule_bounds_job");
 			DefferedBoundsJobs.Length = numBatches;
 			DefferedBounds.Length = numBatches;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
@@ -134,12 +135,8 @@ namespace Segments
 					.WithName("copy_vertices_job")
 					.WithCode( () =>
 					{
-						var vertexBuffer = meshData.GetVertexData<float3>();
-						UnsafeUtility.MemCpy(
-							destination:	vertexBuffer.GetUnsafePtr() ,
-							source:			buffer.GetUnsafeReadOnlyPtr() ,
-							size:			UnsafeUtility.SizeOf<float3x2>()*buffer.Length
-						);
+						var vertexBuffer = meshData.GetVertexData<float3x2>();
+						buffer.CopyTo( vertexBuffer );
 					} )
 					.WithBurst()
 					.Schedule( setupSubmeshJob );
@@ -152,11 +149,7 @@ namespace Segments
 					{
 						var indices = allIndices.GetSubArray( 0 , numIndices );
 						var indexBuffer = meshData.GetIndexData<uint>();
-						UnsafeUtility.MemCpy(
-							destination:	indexBuffer.GetUnsafePtr() ,
-							source:			indices.GetUnsafeReadOnlyPtr() ,
-							size:			UnsafeUtility.SizeOf<int>()*indices.Length
-						);
+						indices.CopyTo( indexBuffer );
 					} )
 					.WithBurst()
 					.Schedule( JobHandle.CombineDependencies(setupSubmeshJob,allIndicesJobHandle) );
@@ -169,21 +162,12 @@ namespace Segments
 				.WithReadOnly(allIndices).WithDisposeOnCompletion(allIndices)
 				.WithName("dispose_indices_job")
 				.WithCode( () => {
-					var ptr = allIndices.GetUnsafeReadOnlyPtr();
+					var _ = allIndices;
 				} )
 				.Schedule( JobHandle.CombineDependencies(FillMeshDataArrayJobs) );
 			Profiler.EndSample();
 
 			numBatchesToPush = numBatches;
-		}
-
-		public unsafe NativeArray<T> AsArray <T> ( void* dataPtr , int dataLength ) where T : unmanaged
-		{
-			var nativeArray = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( dataPtr , dataLength , Allocator.None );
-			#if ENABLE_UNITY_COLLECTIONS_CHECKS
-			NativeArrayUnsafeUtility.SetAtomicSafetyHandle( ref nativeArray , AtomicSafetyHandle.Create() );
-			#endif
-			return nativeArray;
 		}
 
 
@@ -230,7 +214,9 @@ namespace Segments
 				combined.Encapsulate( Input[i].c0 );
 				combined.Encapsulate( Input[i].c1 );
 			}
-			Output[OutputIndex] = !combined.IsEmpty ? new Bounds{ min=combined.Min , max=combined.Max } : default(Bounds);
+			Output[OutputIndex] = !combined.IsEmpty
+				?	new Bounds{ min=combined.Min , max=combined.Max }
+				:	default(Bounds);
 		}
 	}
 

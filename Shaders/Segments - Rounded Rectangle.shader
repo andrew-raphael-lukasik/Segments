@@ -5,12 +5,12 @@ Properties
 	_Roundness ( "Roundness" , Range(0,1) ) = 1.0
 	_Smoothness ( "Smoothness" , Range(0,1) ) = 0.8
 
-	[MainColor][Header(NEAR)]
+	[MainColor][HDR][Header(NEAR)]
 	_Color ( "Color" , Color ) = (0.4,1,0,1)
 	// _Width ( "Width" , Range(0,1) ) = 0.1
 	_DepthNear ( "Depth" , Range(0,1) ) = 0.99
 
-	[Header(FAR)]
+	[HDR][Header(FAR)]
 	_ColorFar ( "Color" , Color ) = (0.4,1,0,1)
 	// _WidthFar ( "Width" , Range(0,1) ) = 0.01
 	_DepthFar ( "Depth" , Range(0,1) ) = 1.0

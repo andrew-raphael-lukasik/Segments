@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Unity.Mathematics;
@@ -89,7 +88,19 @@ namespace Segments
 			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
 			{
 				var batch = Batches[i];
-				Graphics.DrawMesh( batch.mesh , Vector3.zero , quaternion.identity , batch.material , 0 , camera , 0 , materialPropertyBlock , false , true , true );
+				var mesh = batch.mesh;
+				var material = batch.material;
+				
+				if( mesh.bounds.size.sqrMagnitude!=0 )
+				{
+					Graphics.DrawMesh(
+						mesh ,
+						Vector3.zero , quaternion.identity ,
+						material ,
+						0 , camera , 0 , materialPropertyBlock ,
+						false , true , true
+					);
+				}
 			}
 		}
 

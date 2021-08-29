@@ -5,7 +5,6 @@ using UnityEngine.Assertions;
 using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Burst;
 
@@ -44,7 +43,7 @@ namespace Segments.Samples
 		}
 
 
-		unsafe void Update ()
+		void Update ()
 		{
 			if( _segments==null ) return;
 
@@ -72,7 +71,7 @@ namespace Segments.Samples
 
 
 		[BurstCompile]
-		public unsafe struct MyJob : IJobParallelFor
+		public struct MyJob : IJobParallelFor
 		{
 			public float4x4 Transform;
 			public int NumSegments;
