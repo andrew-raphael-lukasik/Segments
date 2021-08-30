@@ -71,9 +71,8 @@ namespace Segments
 			if( camera.name=="Preview Scene Camera" ) return;
 			#endif
 
-			Core.Render( camera , _defaultMaterialPropertyBlock );
+			Core.Render( camera );
 		}
-		static readonly MaterialPropertyBlock _defaultMaterialPropertyBlock = new MaterialPropertyBlock{};
 
 
 	}

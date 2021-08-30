@@ -13,10 +13,11 @@ namespace Segments
 		/// <remarks> Calling <see cref="buffer"/>.Dispose() will result in undefined program behaviour (crash). </remarks>
 		public NativeList<float3x2> buffer;
 
-		public Material material;
-		internal Mesh mesh;
-		public JobHandle Dependency;
-		internal bool disposeRequested;
+		public Material material = null;
+		public MaterialPropertyBlock materialPropertyBlock = new MaterialPropertyBlock{};
+		internal Mesh mesh = null;
+		public JobHandle Dependency = default(JobHandle);
+		internal bool disposeRequested = false;
 
 		public Batch ( NativeList<float3x2> buffer , Material mat )
 		{
