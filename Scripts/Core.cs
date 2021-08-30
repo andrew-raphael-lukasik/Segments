@@ -83,7 +83,7 @@ namespace Segments
 		}
 
 
-		public static void Render ( Camera camera , MaterialPropertyBlock materialPropertyBlock = null )
+		public static void Render ( Camera camera )
 		{
 			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
 			{
@@ -97,7 +97,8 @@ namespace Segments
 						mesh ,
 						Vector3.zero , quaternion.identity ,
 						material ,
-						0 , camera , 0 , materialPropertyBlock ,
+						0 , camera , 0 ,
+						batch.materialPropertyBlock ,
 						false , true , true
 					);
 				}
