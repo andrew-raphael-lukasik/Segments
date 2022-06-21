@@ -8,7 +8,7 @@ namespace Segments
 {
 	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(PresentationSystemGroup) )]
-	internal class SegmentRenderingSystem : SystemBase
+	internal partial class SegmentRenderingSystem : SystemBase
 	{
 
 
