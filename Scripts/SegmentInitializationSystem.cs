@@ -15,7 +15,7 @@ namespace Segments
 {
 	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(InitializationSystemGroup) )]
-	internal class SegmentInitializationSystem : SystemBase
+	internal partial class SegmentInitializationSystem : SystemBase
 	{
 
 
