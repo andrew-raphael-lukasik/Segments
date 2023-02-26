@@ -57,7 +57,7 @@ namespace Segments.Samples
 				var job = new MyJob{
 					Transform		= transform.localToWorldMatrix ,
 					NumSegments		= _numSegments ,
-					Segments		= _segments.buffer ,
+					Segments		= _segments.buffer.AsArray() ,
 					Offset			= Time.time ,
 					Frequency		= _frequency ,
 				};
@@ -131,7 +131,7 @@ namespace Segments.Samples
 				} );
 				ROOT.Add( MATERIAL );
 
-				var NUM = new UnityEditor.UIElements.IntegerField("Num Segments");
+				var NUM = new UnityEngine.UIElements.IntegerField("Num Segments");
 				NUM.value = instance._numSegments;
 				NUM.RegisterValueChangedCallback( (ctx) => {
 					instance._numSegments = ctx.newValue;
@@ -156,7 +156,7 @@ namespace Segments.Samples
 				} );
 				ROOT.Add( NUM );
 
-				var FREQ = new UnityEditor.UIElements.FloatField("Frequency");
+				var FREQ = new UnityEngine.UIElements.FloatField("Frequency");
 				FREQ.value = instance._frequency;
 				FREQ.RegisterValueChangedCallback( (ctx) => {
 					instance._frequency = ctx.newValue;
