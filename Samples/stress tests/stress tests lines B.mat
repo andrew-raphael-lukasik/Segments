@@ -85,8 +85,8 @@ Material:
     - _Cull: 0
     - _Cutoff: 0.5
     - _DepthEffectPower: 1
-    - _DepthFar: 1
-    - _DepthNear: 0.35
+    - _DepthFar: 0.561
+    - _DepthNear: 0.26
     - _DetailNormalMapScale: 1
     - _DstBlend: 10
     - _GlossMapScale: 1

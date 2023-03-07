@@ -57,7 +57,7 @@ namespace Segments.Samples
 				var job = new MyJob{
 					Transform		= transform.localToWorldMatrix ,
 					NumSegments		= _numSegments ,
-					Segments		= _segments.buffer ,
+					Segments		= _segments.buffer.AsArray() ,
 					Offset			= Time.time ,
 					Frequency		= _frequency ,
 				};
@@ -131,7 +131,7 @@ namespace Segments.Samples
 				} );
 				ROOT.Add( MATERIAL );
 
-				var NUM = new UnityEditor.UIElements.IntegerField("Num Segments");
+				var NUM = new UnityEngine.UIElements.IntegerField("Num Segments");
 				NUM.value = instance._numSegments;
 				NUM.RegisterValueChangedCallback( (ctx) => {
 					instance._numSegments = ctx.newValue;
@@ -156,7 +156,7 @@ namespace Segments.Samples
 				} );
 				ROOT.Add( NUM );
 
-				var FREQ = new UnityEditor.UIElements.FloatField("Frequency");
+				var FREQ = new UnityEngine.UIElements.FloatField("Frequency");
 				FREQ.value = instance._frequency;
 				FREQ.RegisterValueChangedCallback( (ctx) => {
 					instance._frequency = ctx.newValue;
@@ -184,15 +184,15 @@ namespace Segments.Samples
 					LABEL.style.marginTop = LABEL.style.marginTop.value.value + 12f;
 					ROOT.Add( LABEL );
 
-					var MATERIAL_INSTANCE = new UnityEditor.UIElements.ObjectField("Material instance (copy)");
-					MATERIAL_INSTANCE.objectType = typeof(Material);
-					MATERIAL_INSTANCE.value = instance._segments.material;
-					ROOT.Add( MATERIAL_INSTANCE );
+					var BATCH_MATERIAL = new UnityEditor.UIElements.ObjectField("Material");
+					BATCH_MATERIAL.objectType = typeof(Material);
+					BATCH_MATERIAL.value = instance._segments.material;
+					ROOT.Add( BATCH_MATERIAL );
 
-					var MESH_INSTANCE = new UnityEditor.UIElements.ObjectField("Mesh instance");
-					MESH_INSTANCE.objectType = typeof(Mesh);
-					MESH_INSTANCE.value = instance._segments.mesh;
-					ROOT.Add( MESH_INSTANCE );
+					var BATCH_MESH = new UnityEditor.UIElements.ObjectField("Mesh");
+					BATCH_MESH.objectType = typeof(Mesh);
+					BATCH_MESH.value = instance._segments.mesh;
+					ROOT.Add( BATCH_MESH );
 				}
 				else
 				{

@@ -18,7 +18,7 @@ namespace Segments
 		protected override void OnCreate ()
 		{
 			RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
-			_initializationSystem = World.GetExistingSystem<SegmentInitializationSystem>();
+			_initializationSystem = World.GetExistingSystemManaged<SegmentInitializationSystem>();
 		}
 
 
@@ -35,7 +35,7 @@ namespace Segments
 			var batches = Core.Batches;
 			int numBatches = _initializationSystem.numBatchesToPush;
 
-			JobHandle.CompleteAll( _initializationSystem.DefferedBoundsJobs );
+			JobHandle.CompleteAll( _initializationSystem.DefferedBoundsJobs.AsArray() );
 
 			// push bounds:
 			Profiler.BeginSample("push_bounds");
@@ -44,7 +44,7 @@ namespace Segments
 					batches[i].mesh.bounds = _initializationSystem.DefferedBounds[i];
 			Profiler.EndSample();
 
-			JobHandle.CompleteAll( _initializationSystem.FillMeshDataArrayJobs );
+			JobHandle.CompleteAll( _initializationSystem.FillMeshDataArrayJobs.AsArray() );
 
 			// push mesh data:
 			Profiler.BeginSample("push_mesh_data");

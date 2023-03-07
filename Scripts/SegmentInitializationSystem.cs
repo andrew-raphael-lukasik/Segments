@@ -8,7 +8,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.Rendering;
 using BurstCompile = Unity.Burst.BurstCompileAttribute;
 
 namespace Segments
@@ -35,8 +34,8 @@ namespace Segments
 		protected override void OnDestroy ()
 		{
 			Dependency.Complete();
-			JobHandle.CompleteAll( DefferedBoundsJobs );
-			JobHandle.CompleteAll( FillMeshDataArrayJobs );
+			JobHandle.CompleteAll( DefferedBoundsJobs.AsArray() );
+			JobHandle.CompleteAll( FillMeshDataArrayJobs.AsArray() );
 			if( DefferedBounds.IsCreated ) DefferedBounds.Dispose();
 			if( DefferedBoundsJobs.IsCreated ) DefferedBoundsJobs.Dispose();
 			if( FillMeshDataArrayJobs.IsCreated ) FillMeshDataArrayJobs.Dispose();
@@ -88,9 +87,9 @@ namespace Segments
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
-				NativeArray<float3x2> buffer = batch.buffer;
+				NativeArray<float3x2> buffer = batch.buffer.AsArray();
 
-				var jobHandle = new BoundsJob( buffer , DefferedBounds , i ).Schedule();
+				var jobHandle = new BoundsJob( buffer , DefferedBounds.AsArray() , i ).Schedule();
 				
 				DefferedBoundsJobs[i] = jobHandle;
 				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
@@ -104,7 +103,7 @@ namespace Segments
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
-				NativeArray<float3x2> buffer = batch.buffer;
+				NativeArray<float3x2> buffer = batch.buffer.AsArray();
 				Mesh mesh = batch.mesh;
 				int numVertices = buffer.Length * 2;
 				int numIndices = numVertices;
@@ -164,7 +163,7 @@ namespace Segments
 				.WithCode( () => {
 					var _ = allIndices;
 				} )
-				.Schedule( JobHandle.CombineDependencies(FillMeshDataArrayJobs) );
+				.Schedule( JobHandle.CombineDependencies(FillMeshDataArrayJobs.AsArray()) );
 			Profiler.EndSample();
 
 			numBatchesToPush = numBatches;

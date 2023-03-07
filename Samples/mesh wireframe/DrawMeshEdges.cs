@@ -68,7 +68,7 @@ namespace Segments.Samples
 				Edges		= _edges.AsReadOnly() ,
 				Vertices	= _vertices.AsReadOnly() ,
 				Transform	= transform.localToWorldMatrix ,
-				Segments	= _segments.buffer
+				Segments	= _segments.buffer.AsArray()
 			};
 			
 			_segments.Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 , dependsOn:_segments.Dependency );
@@ -103,7 +103,7 @@ namespace Segments.Samples
 			[WriteOnly] public NativeList<int2> Results;
 			void IJob.Execute ()
 			{
-				var edges = new NativeHashMap<ulong,int2>( capacity:Triangles.Length*3 , Allocator.Temp );
+				var edges = new NativeHashMap<ulong,int2>( Triangles.Length*3 , Allocator.Temp );
 				for( int i=0 ; i<Triangles.Length ; i+=3 )
 				{
 					int a = Triangles[i];
