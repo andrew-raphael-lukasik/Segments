@@ -28,7 +28,7 @@ EDIT: Still working on improving this as plotting shapes is not as fast as I wan
 @todo: details
 
 # Requirements
-- Unity 2022.x
+- Unity 2022.2
 - `Entities Graphics` package
 - Universal Render Pipeline
 
@@ -39,7 +39,7 @@ EDIT: Still working on improving this as plotting shapes is not as fast as I wan
 - drawing mesh bounding boxes (runtime)
 <img src="https://i.imgur.com/J1mzvSbl.jpg" height="200">
 
-# Installation Unity 2022.x
+# Installation Unity 2022.2
 Select `Add package from git URL` from `Package Manager` window and pass this address:
 ```
 https://github.com/andrew-raphael-lukasik/segments.git#upm
