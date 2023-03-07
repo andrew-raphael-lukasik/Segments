@@ -37,13 +37,8 @@ void Update ()
 - drawing mesh bounding boxes (runtime)
 <img src="https://i.imgur.com/J1mzvSbl.jpg" height="200">
 
-# Installation Unity 2020.x
-Add this line in `manifest.json` / `dependencies`:
-```
-"com.andrewraphaellukasik.segments": "https://github.com/andrew-raphael-lukasik/segments.git#upm",
-```
-
-Or via `Package Manager` / `Add package from git URL`:
+# Installation Unity 2022.x
+Select `Add package from git URL` from `Package Manager` window and pass this address:
 ```
 https://github.com/andrew-raphael-lukasik/segments.git#upm
 ```
