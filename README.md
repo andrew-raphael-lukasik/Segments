@@ -23,12 +23,14 @@ void Update ()
 
 100_000 segments? No problem!
 
+EDIT: Still working on improving this as plotting shapes is not as fast as I wanted
+
 @todo: details
 
 # Requirements
-- Unity 2020.1
-- Hybrid Renderer
-(tested with URP, HDRP will require few more lines here and there to be fully compatible)
+- Unity 2022.x
+- `Entities Graphics` package
+- Universal Render Pipeline
 
 # Samples
 - mesh wireframe (runtime)
