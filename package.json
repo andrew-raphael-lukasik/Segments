@@ -6,8 +6,8 @@
     "url": "https://github.com/andrew-raphael-lukasik"
   },
   "displayName": "Segments",
-  "version": "2021.1.1",
-  "unity": "2020.1",
+  "version": "2022.2.1",
+  "unity": "2022.2",
   "description": "Line rendering for DOTS tech stack",
   "documentationUrl": "https://github.com/andrew-raphael-lukasik/Segments",
   "dependencies": {
