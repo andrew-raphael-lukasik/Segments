@@ -115,62 +115,74 @@ namespace Segments
 				meshData.SetVertexBufferParams( numVertices , new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) );
 				meshData.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
 				
-				JobHandle setupSubmeshJob =
-				Job
-					.WithName("setup_submesh_job")
-					.WithCode( () =>
-					{
-						meshData.subMeshCount = 1;
-						meshData.SetSubMesh(
-							index:	0 ,
-							desc:	new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) ,
-							flags:	MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
-						);
-					} )
-					.WithBurst()
-					.Schedule( default(JobHandle) );
+				JobHandle setupSubmeshJob = new SetupSubmeshJob{
+					meshData = meshData ,
+					numIndices = numIndices ,
+				}.Schedule( default(JobHandle) );
 				
-				JobHandle copyVerticesJob =
-				Job
-					.WithReadOnly( buffer )
-					.WithName("copy_vertices_job")
-					.WithCode( () =>
-					{
-						var vertexBuffer = meshData.GetVertexData<float3x2>();
-						buffer.CopyTo( vertexBuffer );
-					} )
-					.WithBurst()
-					.Schedule( setupSubmeshJob );
+				JobHandle copyVerticesJob = new CopyVerticesJob{
+					meshData = meshData ,
+					buffer = buffer ,
+				}.Schedule( setupSubmeshJob );
 				
-				JobHandle copyIndicesJob =
-				Job
-					.WithReadOnly(allIndices)
-					.WithName("copy_indices_job")
-					.WithCode( () =>
-					{
-						var indices = allIndices.GetSubArray( 0 , numIndices );
-						var indexBuffer = meshData.GetIndexData<uint>();
-						indices.CopyTo( indexBuffer );
-					} )
-					.WithBurst()
-					.Schedule( JobHandle.CombineDependencies(setupSubmeshJob,allIndicesJobHandle) );
+				JobHandle copyIndicesJob = new CopyIndicesJob{
+					meshData = meshData ,
+					numIndices = numIndices ,
+					allIndices = allIndices ,
+				}.Schedule( JobHandle.CombineDependencies(setupSubmeshJob,allIndicesJobHandle) );
 				
 				JobHandle jobHandle = JobHandle.CombineDependencies( copyVerticesJob , copyIndicesJob );
 				FillMeshDataArrayJobs[i] = jobHandle;
 				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
 			}
-			Job
-				.WithReadOnly(allIndices).WithDisposeOnCompletion(allIndices)
-				.WithName("dispose_indices_job")
-				.WithCode( () => {
-					var _ = allIndices;
-				} )
-				.Schedule( JobHandle.CombineDependencies(FillMeshDataArrayJobs.AsArray()) );
+
+			allIndices.Dispose( JobHandle.CombineDependencies(FillMeshDataArrayJobs.AsArray()) );
 			____create_mesh_data.End();
 
 			numBatchesToPush = numBatches;
 		}
+	}
 
+	[BurstCompile]
+	struct SetupSubmeshJob : IJob
+	{
+		public Mesh.MeshData meshData;
+		public int numIndices;
+		void IJob.Execute ()
+		{
+			meshData.subMeshCount = 1;
+			meshData.SetSubMesh(
+				index:	0 ,
+				desc:	new SubMeshDescriptor( indexStart:0 , indexCount:numIndices , topology:MeshTopology.Lines ) ,
+				flags:	MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
+			);
+		}
+	}
+
+	[BurstCompile]
+	struct CopyVerticesJob : IJob
+	{
+		public Mesh.MeshData meshData;
+		[ReadOnly] public NativeArray<float3x2> buffer;
+		void IJob.Execute ()
+		{
+			var vertexBuffer = meshData.GetVertexData<float3x2>();
+			buffer.CopyTo( vertexBuffer );
+		}
+	}
+
+	[BurstCompile]
+	struct CopyIndicesJob : IJob
+	{
+		public Mesh.MeshData meshData;
+		public int numIndices;
+		[ReadOnly] public NativeArray<uint> allIndices;
+		void IJob.Execute ()
+		{
+			var indices = allIndices.GetSubArray( 0 , numIndices );
+			var indexBuffer = meshData.GetIndexData<uint>();
+			indices.CopyTo( indexBuffer );
+		}
 	}
 
 	[BurstCompile]
