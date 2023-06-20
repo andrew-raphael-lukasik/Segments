@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Profiling;
+using Unity.Profiling;
 using UnityEngine.Assertions;
-
 using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
+
 using BurstCompile = Unity.Burst.BurstCompileAttribute;
 
 namespace Segments
@@ -17,19 +17,22 @@ namespace Segments
 	internal partial class SegmentInitializationSystem : SystemBase
 	{
 
-
+		static readonly ProfilerMarker
+            ____deferred_dispose = new ProfilerMarker("deferred_dispose") ,
+            ____complete_dependencies = new ProfilerMarker("complete_dependencies"),
+            ____schedule_indices_job = new ProfilerMarker("schedule_indices_job"),
+            ____schedule_bounds_job = new ProfilerMarker("schedule_bounds_job"),
+            ____create_mesh_data = new ProfilerMarker("create_mesh_data");
 		internal NativeList<Bounds> DefferedBounds = new NativeList<Bounds>( initialCapacity:2 , Allocator.Persistent );
 		internal NativeList<JobHandle> DefferedBoundsJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent );
 		internal NativeList<JobHandle> FillMeshDataArrayJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent );
 		internal Mesh.MeshDataArray[] MeshDataArrays = new Mesh.MeshDataArray[0];
 		internal int numBatchesToPush;
 
-
 		protected override void OnCreate ()
 		{
 			this.OnUpdate();
 		}
-
 
 		protected override void OnDestroy ()
 		{
@@ -42,13 +45,12 @@ namespace Segments
 			Core.DestroyAllBatches();
 		}
 
-
 		protected override void OnUpdate ()
 		{
 			var batches = Core.Batches;
 
 			// fulfill deffered dispose requests:
-			Profiler.BeginSample("deffered_dispose");
+			____deferred_dispose.Begin();
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
@@ -58,30 +60,30 @@ namespace Segments
 					batches.RemoveAt(i);
 				}
 			}
-			Profiler.EndSample();
+			____deferred_dispose.End();
 
 			int numBatches = batches.Count;
 			numBatchesToPush = 0;
 
 			// complete all batch dependencies:
-			Profiler.BeginSample("complete_dependencies");
+			____complete_dependencies.Begin();
 			NativeArray<JobHandle> batchDependencies = new NativeArray<JobHandle>( numBatches , Allocator.Temp );
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 				batchDependencies[i] = batches[i].Dependency;
 			JobHandle.CompleteAll( batchDependencies );
-			Profiler.EndSample();
+			____complete_dependencies.End();
 
 			// schedule indices job:
-			Profiler.BeginSample("schedule_indices_job");
+			____schedule_indices_job.Begin();
 			int numAllIndices = 0;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 				numAllIndices = math.max( numAllIndices , batches[i].buffer.Length*2 );
 			var allIndices = new NativeArray<uint>( numAllIndices , Allocator.TempJob );
 			var allIndicesJobHandle = new IndicesJob(allIndices).Schedule( allIndices.Length , 1024 );
-			Profiler.EndSample();
+			____schedule_indices_job.End();
 
 			// schedule bounds job:
-			Profiler.BeginSample("schedule_bounds_job");
+			____schedule_bounds_job.Begin();
 			DefferedBoundsJobs.Length = numBatches;
 			DefferedBounds.Length = numBatches;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
@@ -94,10 +96,10 @@ namespace Segments
 				DefferedBoundsJobs[i] = jobHandle;
 				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
 			}
-			Profiler.EndSample();
+			____schedule_bounds_job.End();
 
 			// create mesh data:
-			Profiler.BeginSample("create_mesh_data");
+			____create_mesh_data.Begin();
 			if( MeshDataArrays.Length!=numBatches ) MeshDataArrays = new Mesh.MeshDataArray[ numBatches ];
 			FillMeshDataArrayJobs.Length = numBatches;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
@@ -164,14 +166,12 @@ namespace Segments
 					var _ = allIndices;
 				} )
 				.Schedule( JobHandle.CombineDependencies(FillMeshDataArrayJobs.AsArray()) );
-			Profiler.EndSample();
+			____create_mesh_data.End();
 
 			numBatchesToPush = numBatches;
 		}
 
-
 	}
-
 
 	[BurstCompile]
 	struct IndicesJob : IJobParallelFor
@@ -185,7 +185,6 @@ namespace Segments
 		}
 		void IJobParallelFor.Execute ( int index ) => Output[index] = (uint) index;
 	}
-
 
 	[BurstCompile]
 	struct BoundsJob : IJob
@@ -218,6 +217,5 @@ namespace Segments
 				:	default(Bounds);
 		}
 	}
-
 
 }
