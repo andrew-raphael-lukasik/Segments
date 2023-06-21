@@ -31,11 +31,14 @@ namespace Segments
 	internal partial struct SegmentInitializationSystem : ISystem
 	{
 		static readonly ProfilerMarker
-            ____deferred_dispose = new ProfilerMarker("deferred_dispose") ,
-            ____complete_dependencies = new ProfilerMarker("complete_dependencies"),
-            ____schedule_indices_job = new ProfilerMarker("schedule_indices_job"),
-            ____schedule_bounds_job = new ProfilerMarker("schedule_bounds_job"),
-            ____create_mesh_data = new ProfilerMarker("create_mesh_data");
+            ____deferred_dispose = new ProfilerMarker("deferred Dispose") ,
+            ____complete_dependencies = new ProfilerMarker("Complete dependencies"),
+            ____schedule_indices_job = new ProfilerMarker("Schedule indices job"),
+            ____schedule_bounds_job = new ProfilerMarker("Schedule bounds job"),
+            ____create_mesh_data = new ProfilerMarker("create mesh data"),
+			____AllocateWritableMeshData = new ProfilerMarker("Mesh.AllocateWritableMeshData"),
+			____SetBufferParams = new ProfilerMarker("Set___BufferParams"),
+			____ScheduleJobs = new ProfilerMarker("Schedule jobs");
 
 		public void OnCreate ( ref SystemState state )
 		{
@@ -89,7 +92,7 @@ namespace Segments
 
 			// complete all batch dependencies:
 			____complete_dependencies.Begin();
-			NativeArray<JobHandle> batchDependencies = new NativeArray<JobHandle>( numBatches , Allocator.Temp );
+			var batchDependencies = new NativeArray<JobHandle>( numBatches , Allocator.Temp );
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 				batchDependencies[i] = batches[i].Dependency;
 			JobHandle.CompleteAll( batchDependencies );
@@ -131,11 +134,17 @@ namespace Segments
 				int numVertices = buffer.Length * 2;
 				int numIndices = numVertices;
 
+				____AllocateWritableMeshData.Begin();
 				systemData.MeshDataArrays[i] = Mesh.AllocateWritableMeshData(1);
+				____AllocateWritableMeshData.End();
+
+				____SetBufferParams.Begin();
 				var meshData = systemData.MeshDataArrays[i][0];
 				meshData.SetVertexBufferParams( numVertices , new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) );
 				meshData.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
+				____SetBufferParams.End();
 				
+				____ScheduleJobs.Begin();
 				JobHandle setupSubmeshJob = new SetupSubmeshJob{
 					meshData = meshData ,
 					numIndices = numIndices ,
@@ -154,7 +163,9 @@ namespace Segments
 				
 				JobHandle jobHandle = JobHandle.CombineDependencies( copyVerticesJob , copyIndicesJob );
 				systemData.FillMeshDataArrayJobs[i] = jobHandle;
+				
 				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
+				____ScheduleJobs.End();
 			}
 
 			allIndices.Dispose( JobHandle.CombineDependencies(systemData.FillMeshDataArrayJobs.AsArray()) );
