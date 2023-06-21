@@ -191,6 +191,7 @@ namespace Segments
 		}
 	}
 
+	/// <summary> This job adds overhead but is here to isolate user-facing Batch data from the internal Mesh one. </summary>
 	[BurstCompile]
 	struct CopyVerticesJob : IJob
 	{
@@ -203,6 +204,7 @@ namespace Segments
 		}
 	}
 
+	/// <summary> This job adds overhead but is here to isolate user-facing Batch data from the internal Mesh one. </summary>
 	[BurstCompile]
 	struct CopyIndicesJob : IJob
 	{
