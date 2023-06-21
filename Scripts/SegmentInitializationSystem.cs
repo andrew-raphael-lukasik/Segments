@@ -36,6 +36,7 @@ namespace Segments
             ____schedule_indices_job = new ProfilerMarker("Schedule indices job"),
             ____schedule_bounds_job = new ProfilerMarker("Schedule bounds job"),
             ____create_mesh_data = new ProfilerMarker("create mesh data"),
+			____batch = new ProfilerMarker("batch"),
 			____AllocateWritableMeshData = new ProfilerMarker("Mesh.AllocateWritableMeshData"),
 			____SetBufferParams = new ProfilerMarker("Set___BufferParams"),
 			____ScheduleJobs = new ProfilerMarker("Schedule jobs");
@@ -129,6 +130,7 @@ namespace Segments
 			systemData.FillMeshDataArrayJobs.Length = numBatches;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
+				____batch.Begin();
 				var batch = batches[i];
 				NativeArray<float3x2> buffer = batch.buffer.AsArray();
 				int numVertices = buffer.Length * 2;
@@ -166,6 +168,7 @@ namespace Segments
 				
 				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
 				____ScheduleJobs.End();
+				____batch.End();
 			}
 
 			allIndices.Dispose( JobHandle.CombineDependencies(systemData.FillMeshDataArrayJobs.AsArray()) );
