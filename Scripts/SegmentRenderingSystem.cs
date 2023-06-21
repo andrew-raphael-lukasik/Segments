@@ -3,14 +3,13 @@ using UnityEngine.Rendering;
 using Unity.Profiling;
 using Unity.Entities;
 using Unity.Jobs;
-
-using BurstCompile = Unity.Burst.BurstCompileAttribute;
+using Unity.Collections;
 
 namespace Segments
 {
 	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(PresentationSystemGroup) )]
-	[BurstCompile]
+	[Unity.Burst.BurstCompile]
 	internal partial struct SegmentRenderingSystem : ISystem
 	{
 		static readonly ProfilerMarker
@@ -30,21 +29,27 @@ namespace Segments
 
 		public void OnUpdate ( ref SystemState state )
 		{
-			var systemData = state.EntityManager.GetSharedComponentManaged<SegmentsSharedData>( SystemAPI.GetSingletonEntity<Singleton>() );
-			int numBatches = systemData.NumBatchesToPush[0];
+			Entity singleton = SystemAPI.GetSingletonEntity<Singleton>();
+			var meshDataArrays = SystemAPI.GetBuffer<MeshDataArrayElement>( singleton );
+			var deferredBounds = SystemAPI.GetBuffer<DeferredBoundsElement>( singleton );
+			var deferredBoundsJobs = SystemAPI.GetBuffer<DeferredBoundsJobsElement>( singleton );
+			var fillMeshDataArrayJobs = SystemAPI.GetBuffer<FillMeshDataArrayJobsElement>( singleton );
+			var numBatchesToPush = SystemAPI.GetBuffer<NumBatchesToPushElement>( singleton );
+
+			int numBatches = numBatchesToPush[0].Value;
 			if( numBatches==0 ) return;
 			
-			JobHandle.CompleteAll( systemData.DeferredBoundsJobs.AsArray() );
+			JobHandle.CompleteAll( deferredBoundsJobs.Reinterpret<JobHandle>().ToNativeArray(Allocator.Temp) );
 
 			// push bounds:
 			var batches = Core.Batches;
 			____push_bounds.Begin();
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
-				if( i<systemData.DeferredBounds.Length )
-					batches[i].mesh.bounds = systemData.DeferredBounds[i];
+				if( i<deferredBounds.Length )
+					batches[i].mesh.bounds = deferredBounds[i].Value;
 			____push_bounds.End();
 
-			JobHandle.CompleteAll( systemData.FillMeshDataArrayJobs.AsArray() );
+			JobHandle.CompleteAll( fillMeshDataArrayJobs.Reinterpret<JobHandle>().ToNativeArray(Allocator.Temp) );
 
 			// push mesh data:
 			____push_mesh_data.Begin();
@@ -52,7 +57,7 @@ namespace Segments
 			{
 				var batch = batches[i];
 				var mesh = batch.mesh;
-				var data = systemData.MeshDataArrays[i];
+				var data = meshDataArrays[i].Value;
 				Mesh.ApplyAndDisposeWritableMeshData(
 					data: data ,
 					mesh: mesh ,
@@ -62,7 +67,7 @@ namespace Segments
 			}
 			____push_mesh_data.End();
 
-			systemData.NumBatchesToPush[0] = 0;
+			numBatchesToPush[0] = new NumBatchesToPushElement{ Value=0 };
 		}
 
 		void OnBeginCameraRendering ( ScriptableRenderContext context , Camera camera )
