@@ -12,44 +12,65 @@ using BurstCompile = Unity.Burst.BurstCompileAttribute;
 
 namespace Segments
 {
+	internal struct Singleton : IComponentData {} 
+	internal struct SegmentsSharedData : ISharedComponentData, System.IEquatable<SegmentsSharedData>
+    {
+		public NativeList<Mesh.MeshDataArray> MeshDataArrays;
+		public NativeList<Bounds> DeferredBounds;
+		public NativeList<JobHandle> DeferredBoundsJobs;
+		public NativeList<JobHandle> FillMeshDataArrayJobs;
+		public NativeArray<int> NumBatchesToPush;
+
+        public bool Equals ( SegmentsSharedData other ) => this.GetHashCode()==other.GetHashCode();
+        public override int GetHashCode () => System.HashCode.Combine( base.GetHashCode() , MeshDataArrays , DeferredBounds , DeferredBoundsJobs , FillMeshDataArrayJobs , NumBatchesToPush );
+    }
+
 	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(InitializationSystemGroup) )]
 	internal partial class SegmentInitializationSystem : SystemBase
 	{
-
 		static readonly ProfilerMarker
             ____deferred_dispose = new ProfilerMarker("deferred_dispose") ,
             ____complete_dependencies = new ProfilerMarker("complete_dependencies"),
             ____schedule_indices_job = new ProfilerMarker("schedule_indices_job"),
             ____schedule_bounds_job = new ProfilerMarker("schedule_bounds_job"),
             ____create_mesh_data = new ProfilerMarker("create_mesh_data");
-		internal NativeList<Bounds> DefferedBounds = new NativeList<Bounds>( initialCapacity:2 , Allocator.Persistent );
-		internal NativeList<JobHandle> DefferedBoundsJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent );
-		internal NativeList<JobHandle> FillMeshDataArrayJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent );
-		internal Mesh.MeshDataArray[] MeshDataArrays = new Mesh.MeshDataArray[0];
-		internal int numBatchesToPush;
 
 		protected override void OnCreate ()
 		{
-			this.OnUpdate();
+			Entity singleton = EntityManager.CreateSingleton<Singleton>( typeof(Singleton).FullName );
+			EntityManager.AddSharedComponentManaged( singleton , new SegmentsSharedData{
+				MeshDataArrays = new NativeList<Mesh.MeshDataArray>( initialCapacity:2 , Allocator.Persistent ) ,
+				DeferredBounds = new NativeList<Bounds>( initialCapacity:2 , Allocator.Persistent ) ,
+				DeferredBoundsJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent ) ,
+				FillMeshDataArrayJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent ) ,
+				NumBatchesToPush = new NativeArray<int>( 1 , Allocator.Persistent ) ,
+			} );
 		}
 
 		protected override void OnDestroy ()
 		{
 			Dependency.Complete();
-			JobHandle.CompleteAll( DefferedBoundsJobs.AsArray() );
-			JobHandle.CompleteAll( FillMeshDataArrayJobs.AsArray() );
-			if( DefferedBounds.IsCreated ) DefferedBounds.Dispose();
-			if( DefferedBoundsJobs.IsCreated ) DefferedBoundsJobs.Dispose();
-			if( FillMeshDataArrayJobs.IsCreated ) FillMeshDataArrayJobs.Dispose();
+
+			if( SystemAPI.TryGetSingletonEntity<Singleton>(out Entity entity) )
+			{
+				var systemData = EntityManager.GetSharedComponentManaged<SegmentsSharedData>(entity);
+				JobHandle.CompleteAll( systemData.DeferredBoundsJobs.AsArray() );
+				JobHandle.CompleteAll( systemData.FillMeshDataArrayJobs.AsArray() );
+				systemData.DeferredBounds.Dispose();
+				systemData.DeferredBoundsJobs.Dispose();
+				systemData.FillMeshDataArrayJobs.Dispose();
+				systemData.NumBatchesToPush.Dispose();
+			}
 			Core.DestroyAllBatches();
 		}
 
 		protected override void OnUpdate ()
 		{
 			var batches = Core.Batches;
+			var systemData = EntityManager.GetSharedComponentManaged<SegmentsSharedData>( SystemAPI.GetSingletonEntity<Singleton>() );
 
-			// fulfill deffered dispose requests:
+			// fulfill deferred dispose requests:
 			____deferred_dispose.Begin();
 			for( int i=batches.Count-1 ; i!=-1 ; i-- )
 			{
@@ -63,7 +84,7 @@ namespace Segments
 			____deferred_dispose.End();
 
 			int numBatches = batches.Count;
-			numBatchesToPush = 0;
+			systemData.NumBatchesToPush[0] = 0;
 
 			// complete all batch dependencies:
 			____complete_dependencies.Begin();
@@ -84,24 +105,24 @@ namespace Segments
 
 			// schedule bounds job:
 			____schedule_bounds_job.Begin();
-			DefferedBoundsJobs.Length = numBatches;
-			DefferedBounds.Length = numBatches;
+			systemData.DeferredBoundsJobs.Length = numBatches;
+			systemData.DeferredBounds.Length = numBatches;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
 				NativeArray<float3x2> buffer = batch.buffer.AsArray();
 
-				var jobHandle = new BoundsJob( buffer , DefferedBounds.AsArray() , i ).Schedule();
+				var jobHandle = new BoundsJob( buffer , systemData.DeferredBounds.AsArray() , i ).Schedule();
 				
-				DefferedBoundsJobs[i] = jobHandle;
+				systemData.DeferredBoundsJobs[i] = jobHandle;
 				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
 			}
 			____schedule_bounds_job.End();
 
 			// create mesh data:
 			____create_mesh_data.Begin();
-			if( MeshDataArrays.Length!=numBatches ) MeshDataArrays = new Mesh.MeshDataArray[ numBatches ];
-			FillMeshDataArrayJobs.Length = numBatches;
+			systemData.MeshDataArrays.Length = numBatches;
+			systemData.FillMeshDataArrayJobs.Length = numBatches;
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
@@ -110,8 +131,8 @@ namespace Segments
 				int numVertices = buffer.Length * 2;
 				int numIndices = numVertices;
 
-				MeshDataArrays[i] = Mesh.AllocateWritableMeshData(1);
-				var meshData = MeshDataArrays[i][0];
+				systemData.MeshDataArrays[i] = Mesh.AllocateWritableMeshData(1);
+				var meshData = systemData.MeshDataArrays[i][0];
 				meshData.SetVertexBufferParams( numVertices , new VertexAttributeDescriptor( VertexAttribute.Position , VertexAttributeFormat.Float32 , 3 ) );
 				meshData.SetIndexBufferParams( numIndices , IndexFormat.UInt32 );
 				
@@ -132,14 +153,14 @@ namespace Segments
 				}.Schedule( JobHandle.CombineDependencies(setupSubmeshJob,allIndicesJobHandle) );
 				
 				JobHandle jobHandle = JobHandle.CombineDependencies( copyVerticesJob , copyIndicesJob );
-				FillMeshDataArrayJobs[i] = jobHandle;
+				systemData.FillMeshDataArrayJobs[i] = jobHandle;
 				batch.Dependency = JobHandle.CombineDependencies( batch.Dependency , jobHandle );
 			}
 
-			allIndices.Dispose( JobHandle.CombineDependencies(FillMeshDataArrayJobs.AsArray()) );
+			allIndices.Dispose( JobHandle.CombineDependencies(systemData.FillMeshDataArrayJobs.AsArray()) );
 			____create_mesh_data.End();
 
-			numBatchesToPush = numBatches;
+			systemData.NumBatchesToPush[0] = numBatches;
 		}
 	}
 

@@ -13,13 +13,13 @@ namespace Segments
 	[BurstCompile]
 	internal partial struct SegmentRenderingSystem : ISystem
 	{
-
 		static readonly ProfilerMarker
             ____push_bounds = new ProfilerMarker("push_bounds") ,
             ____push_mesh_data = new ProfilerMarker("push_mesh_data");
 
 		public void OnCreate ( ref SystemState state )
 		{
+			state.RequireForUpdate<Singleton>();
 			RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
 		}
 
@@ -30,22 +30,21 @@ namespace Segments
 
 		public void OnUpdate ( ref SystemState state )
 		{
-			var initializationSystem = state.World.GetExistingSystemManaged<SegmentInitializationSystem>();
-			if( initializationSystem.numBatchesToPush==0 ) return;
-
-			var batches = Core.Batches;
-			int numBatches = initializationSystem.numBatchesToPush;
-
-			JobHandle.CompleteAll( initializationSystem.DefferedBoundsJobs.AsArray() );
+			var systemData = state.EntityManager.GetSharedComponentManaged<SegmentsSharedData>( SystemAPI.GetSingletonEntity<Singleton>() );
+			int numBatches = systemData.NumBatchesToPush[0];
+			if( numBatches==0 ) return;
+			
+			JobHandle.CompleteAll( systemData.DeferredBoundsJobs.AsArray() );
 
 			// push bounds:
+			var batches = Core.Batches;
 			____push_bounds.Begin();
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
-				if( i<initializationSystem.DefferedBounds.Length )
-					batches[i].mesh.bounds = initializationSystem.DefferedBounds[i];
+				if( i<systemData.DeferredBounds.Length )
+					batches[i].mesh.bounds = systemData.DeferredBounds[i];
 			____push_bounds.End();
 
-			JobHandle.CompleteAll( initializationSystem.FillMeshDataArrayJobs.AsArray() );
+			JobHandle.CompleteAll( systemData.FillMeshDataArrayJobs.AsArray() );
 
 			// push mesh data:
 			____push_mesh_data.Begin();
@@ -53,16 +52,17 @@ namespace Segments
 			{
 				var batch = batches[i];
 				var mesh = batch.mesh;
+				var data = systemData.MeshDataArrays[i];
 				Mesh.ApplyAndDisposeWritableMeshData(
-					initializationSystem.MeshDataArrays[i] ,
-					mesh ,
-					MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
+					data: data ,
+					mesh: mesh ,
+					flags: MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
 				);
 				mesh.UploadMeshData( false );
 			}
 			____push_mesh_data.End();
 
-			initializationSystem.numBatchesToPush = 0;
+			systemData.NumBatchesToPush[0] = 0;
 		}
 
 		void OnBeginCameraRendering ( ScriptableRenderContext context , Camera camera )
