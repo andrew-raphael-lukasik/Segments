@@ -27,7 +27,8 @@ namespace Segments
 
 	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(InitializationSystemGroup) )]
-	internal partial class SegmentInitializationSystem : SystemBase
+	[BurstCompile]
+	internal partial struct SegmentInitializationSystem : ISystem
 	{
 		static readonly ProfilerMarker
             ____deferred_dispose = new ProfilerMarker("deferred_dispose") ,
@@ -36,10 +37,10 @@ namespace Segments
             ____schedule_bounds_job = new ProfilerMarker("schedule_bounds_job"),
             ____create_mesh_data = new ProfilerMarker("create_mesh_data");
 
-		protected override void OnCreate ()
+		public void OnCreate ( ref SystemState state )
 		{
-			Entity singleton = EntityManager.CreateSingleton<Singleton>( typeof(Singleton).FullName );
-			EntityManager.AddSharedComponentManaged( singleton , new SegmentsSharedData{
+			Entity singleton = state.EntityManager.CreateSingleton<Singleton>( typeof(Singleton).FullName );
+			state.EntityManager.AddSharedComponentManaged( singleton , new SegmentsSharedData{
 				MeshDataArrays = new NativeList<Mesh.MeshDataArray>( initialCapacity:2 , Allocator.Persistent ) ,
 				DeferredBounds = new NativeList<Bounds>( initialCapacity:2 , Allocator.Persistent ) ,
 				DeferredBoundsJobs = new NativeList<JobHandle>( initialCapacity:2 , Allocator.Persistent ) ,
@@ -48,13 +49,13 @@ namespace Segments
 			} );
 		}
 
-		protected override void OnDestroy ()
+		public void OnDestroy ( ref SystemState state )
 		{
-			Dependency.Complete();
+			state.Dependency.Complete();
 
 			if( SystemAPI.TryGetSingletonEntity<Singleton>(out Entity entity) )
 			{
-				var systemData = EntityManager.GetSharedComponentManaged<SegmentsSharedData>(entity);
+				var systemData = state.EntityManager.GetSharedComponentManaged<SegmentsSharedData>(entity);
 				JobHandle.CompleteAll( systemData.DeferredBoundsJobs.AsArray() );
 				JobHandle.CompleteAll( systemData.FillMeshDataArrayJobs.AsArray() );
 				systemData.DeferredBounds.Dispose();
@@ -65,10 +66,10 @@ namespace Segments
 			Core.DestroyAllBatches();
 		}
 
-		protected override void OnUpdate ()
+		public void OnUpdate ( ref SystemState state )
 		{
 			var batches = Core.Batches;
-			var systemData = EntityManager.GetSharedComponentManaged<SegmentsSharedData>( SystemAPI.GetSingletonEntity<Singleton>() );
+			var systemData = state.EntityManager.GetSharedComponentManaged<SegmentsSharedData>( SystemAPI.GetSingletonEntity<Singleton>() );
 
 			// fulfill deferred dispose requests:
 			____deferred_dispose.Begin();
@@ -127,7 +128,6 @@ namespace Segments
 			{
 				var batch = batches[i];
 				NativeArray<float3x2> buffer = batch.buffer.AsArray();
-				Mesh mesh = batch.mesh;
 				int numVertices = buffer.Length * 2;
 				int numIndices = numVertices;
 
