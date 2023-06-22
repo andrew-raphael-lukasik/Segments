@@ -33,7 +33,7 @@ namespace Segments
 		}
 
 
-		/// <summary> Deffered dispose. </summary>
+		/// <summary> Deferred dispose. </summary>
 		public void Dispose ()
 		{
 			this.Dependency.Complete();
