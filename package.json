@@ -11,7 +11,7 @@
   "description": "Line rendering for DOTS tech stack",
   "documentationUrl": "https://github.com/andrew-raphael-lukasik/Segments",
   "dependencies": {
-    "com.unity.entities.graphics": "1.0.0-pre.44"
+    "com.unity.entities.graphics": "1.0.11"
   },
   "keywords": [
     "segments",
