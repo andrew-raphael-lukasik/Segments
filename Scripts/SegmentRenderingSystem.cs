@@ -1,69 +1,74 @@
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Profiling;
+using Unity.Profiling;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.Collections;
 
 namespace Segments
 {
 	[WorldSystemFilter( 0 )]
 	[UpdateInGroup( typeof(PresentationSystemGroup) )]
-	internal partial class SegmentRenderingSystem : SystemBase
+	[Unity.Burst.BurstCompile]
+	internal partial struct SegmentRenderingSystem : ISystem
 	{
+		static readonly ProfilerMarker
+            ____push_bounds = new ProfilerMarker("push_bounds") ,
+            ____push_mesh_data = new ProfilerMarker("push_mesh_data");
 
-
-		SegmentInitializationSystem _initializationSystem;
-
-
-		protected override void OnCreate ()
+		public void OnCreate ( ref SystemState state )
 		{
+			state.RequireForUpdate<Singleton>();
 			RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
-			_initializationSystem = World.GetExistingSystemManaged<SegmentInitializationSystem>();
 		}
 
-
-		protected override void OnDestroy ()
+		public void OnDestroy ( ref SystemState state )
 		{
 			RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
 		}
 
-
-		protected override void OnUpdate ()
+		public void OnUpdate ( ref SystemState state )
 		{
-			if( _initializationSystem.numBatchesToPush==0 ) return;
+			Entity singleton = SystemAPI.GetSingletonEntity<Singleton>();
+			var meshDataArrays = SystemAPI.GetBuffer<MeshDataArrayElement>( singleton );
+			var deferredBounds = SystemAPI.GetBuffer<DeferredBoundsElement>( singleton );
+			var deferredBoundsJobs = SystemAPI.GetBuffer<DeferredBoundsJobsElement>( singleton );
+			var fillMeshDataArrayJobs = SystemAPI.GetBuffer<FillMeshDataArrayJobsElement>( singleton );
+			var numBatchesToPush = SystemAPI.GetBuffer<NumBatchesToPushElement>( singleton );
 
-			var batches = Core.Batches;
-			int numBatches = _initializationSystem.numBatchesToPush;
-
-			JobHandle.CompleteAll( _initializationSystem.DefferedBoundsJobs.AsArray() );
+			int numBatches = numBatchesToPush[0].Value;
+			if( numBatches==0 ) return;
+			
+			JobHandle.CompleteAll( deferredBoundsJobs.Reinterpret<JobHandle>().ToNativeArray(Allocator.Temp) );
 
 			// push bounds:
-			Profiler.BeginSample("push_bounds");
+			var batches = Core.Batches;
+			____push_bounds.Begin();
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
-				if( i<_initializationSystem.DefferedBounds.Length )
-					batches[i].mesh.bounds = _initializationSystem.DefferedBounds[i];
-			Profiler.EndSample();
+				if( i<deferredBounds.Length )
+					batches[i].mesh.bounds = deferredBounds[i].Value;
+			____push_bounds.End();
 
-			JobHandle.CompleteAll( _initializationSystem.FillMeshDataArrayJobs.AsArray() );
+			JobHandle.CompleteAll( fillMeshDataArrayJobs.Reinterpret<JobHandle>().ToNativeArray(Allocator.Temp) );
 
 			// push mesh data:
-			Profiler.BeginSample("push_mesh_data");
+			____push_mesh_data.Begin();
 			for( int i=numBatches-1 ; i!=-1 ; i-- )
 			{
 				var batch = batches[i];
 				var mesh = batch.mesh;
+				var data = meshDataArrays[i].Value;
 				Mesh.ApplyAndDisposeWritableMeshData(
-					_initializationSystem.MeshDataArrays[i] ,
-					mesh ,
-					MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
+					data: data ,
+					mesh: mesh ,
+					flags: MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
 				);
 				mesh.UploadMeshData( false );
 			}
-			Profiler.EndSample();
+			____push_mesh_data.End();
 
-			_initializationSystem.numBatchesToPush = 0;
+			numBatchesToPush[0] = new NumBatchesToPushElement{ Value=0 };
 		}
-
 
 		void OnBeginCameraRendering ( ScriptableRenderContext context , Camera camera )
 		{
@@ -73,7 +78,6 @@ namespace Segments
 
 			Core.Render( camera );
 		}
-
 
 	}
 }

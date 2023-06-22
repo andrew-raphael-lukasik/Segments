@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.Assertions;
-
 using Unity.Mathematics;
 using Unity.Entities;
+using Unity.Transforms;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
@@ -53,8 +53,8 @@ namespace Segments.Samples
 			{
 				_segments.buffer.Length = _numSegments;
 
-				// scheduel new job:
-				var job = new MyJob{
+				// schedule new job:
+				var job = new StressTestJob{
 					Transform		= transform.localToWorldMatrix ,
 					NumSegments		= _numSegments ,
 					Segments		= _segments.buffer.AsArray() ,
@@ -63,7 +63,7 @@ namespace Segments.Samples
 				};
 				_segments.Dependency = job.Schedule(
 					arrayLength:			_numSegments ,
-					innerloopBatchCount:	64 ,
+					indicesPerJobCount:		64 ,
 					dependsOn:				_segments.Dependency
 				);
 			}
@@ -71,24 +71,33 @@ namespace Segments.Samples
 
 
 		[BurstCompile]
-		public struct MyJob : IJobParallelFor
+		public struct StressTestJob : IJobParallelForBatch
 		{
 			public float4x4 Transform;
 			public int NumSegments;
 			public float Offset;
 			public float Frequency;
 			[WriteOnly] public NativeArray<float3x2> Segments;
-			void IJobParallelFor.Execute ( int index )
+			void IJobParallelForBatch.Execute ( int startIndex , int count )
 			{
-				float t0 = (float) index / (float) NumSegments;
-				float t1 = (float)( index+1 ) / (float) NumSegments;
-				float2 amp = math.sin( Frequency * new float2{
-					x = t0*math.PI*2f + Offset ,
-					y = t1*math.PI*2f + Offset
-				} );
-				float3 vec0 = math.transform( Transform , new float3{ x=t0 , y=amp.x } );
-				float3 vec1 = math.transform( Transform , new float3{ x=t1 , y=amp.y } );
-				Segments[index] = new float3x2{ c0=vec0 , c1=vec1 };
+				float3 translation = new float3( Transform.c3.x , Transform.c3.y , Transform.c3.z );
+				float3 right = Transform.Right();
+				float3 up = Transform.Up();
+
+				for( int i=0 ; i<count ; i++ )
+				{
+					int index = startIndex + i;
+
+					float t0 = (float) index / (float) NumSegments;
+					float t1 = (float)( index+1 ) / (float) NumSegments;
+					float2 amp = math.sin( Frequency * new float2{
+						x = t0*math.PI*2f + Offset ,
+						y = t1*math.PI*2f + Offset
+					} );
+					float3 vec0 = translation + right*t0 + up*amp.x;
+					float3 vec1 = translation + right*t1 + up*amp.y;
+					Segments[index] = new float3x2{ c0=vec0 , c1=vec1 };
+				}
 			}
 		}
 		
