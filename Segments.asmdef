@@ -10,7 +10,7 @@
         "Unity.Mathematics",
         "Unity.Mathematics.Extensions",
         "Unity.Mathematics.Extensions.Hybrid",
-        "Unity.Rendering.Hybrid",
+        "Unity.Entities.Graphics",
         "Unity.Transforms",
         "Unity.Transforms.Hybrid"
     ],
