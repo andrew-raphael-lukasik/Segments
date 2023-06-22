@@ -13,22 +13,31 @@ namespace Segments
 
 	internal struct Singleton : IComponentData {}
 
+	[InternalBufferCapacity(0)]
 	internal struct MeshDataArrayElement : IBufferElementData
 	{
 		public Mesh.MeshDataArray Value;
 	}
+
+	[InternalBufferCapacity(0)]
 	internal struct DeferredBoundsElement : IBufferElementData
 	{
 		public Bounds Value;
 	}
+
+	[InternalBufferCapacity(0)]
 	internal struct DeferredBoundsJobsElement : IBufferElementData
 	{
 		public JobHandle Value;
 	}
+
+	[InternalBufferCapacity(0)]
 	internal struct FillMeshDataArrayJobsElement : IBufferElementData
 	{
 		public JobHandle Value;
 	}
+
+	[InternalBufferCapacity(1)]
 	internal struct NumBatchesToPushElement : IBufferElementData
 	{
 		public int Value;
