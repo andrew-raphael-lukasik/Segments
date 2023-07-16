@@ -6,7 +6,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
 
-namespace Segments.Samples
+namespace Samples
 {
 	[ExecuteAlways]
 	[AddComponentMenu("")]
@@ -16,11 +16,11 @@ namespace Segments.Samples
 		
 		[SerializeField] Material _materialOverride = null;
 
-		NativeArray<Vector3> _vertices;
+		NativeArray<float3> _vertices;
 		NativeArray<int2> _edges;
 
-		Segments.Batch _segments;
-
+		Entity _segments;
+		EntityManager _entityManager;
 
 		void OnEnable ()
 		{
@@ -28,7 +28,7 @@ namespace Segments.Samples
 			var mf = GetComponent<MeshFilter>();
 			{
 				var mesh = mf.sharedMesh;
-				_vertices = new NativeArray<Vector3>( mesh.vertices , Allocator.Persistent );
+				_vertices = new NativeArray<Vector3>( mesh.vertices , Allocator.Persistent ).Reinterpret<float3>();
 				var triangles = new NativeArray<int>( mesh.triangles , Allocator.TempJob );
 				var job = new ToEdgesJob{
 					Triangles = triangles.AsReadOnly() ,
@@ -41,49 +41,50 @@ namespace Segments.Samples
 			}
 
 			// create segment buffer:
-			Segments.Core.CreateBatch( out _segments , _materialOverride );
+			Segments.Core.CreateBatch( out _segments , out _entityManager , _materialOverride );
 			
 			// initialize buffer size:
-			_segments.buffer.Length = _edges.Length;
+			var buffer = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
+			buffer.Length = _edges.Length;
 		}
-		
 
 		void OnDisable ()
 		{
-			if( _segments!=null ) 
-			{
-				_segments.Dependency.Complete();
-				_segments.Dispose();
-			}
+			Segments.Core.DestroyBatch( _segments );
 			if( _vertices.IsCreated ) _vertices.Dispose();
 			if( _edges.IsCreated ) _edges.Dispose();
 		}
 
-
 		void Update ()
 		{
-			_segments.Dependency.Complete();
-			
-			var job = new UpdateSegmentsJob{
+			//var dependencies = Segments.Utilities.GetDependencies( _segments , _entityManager );
+			//Segments.Utilities.CompleteAllDependencies( dependencies );
+			Segments.Core.CompleteDependency();
+
+			var buffer = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
+			var jobHandle = new UpdateSegmentsJob{
 				Edges		= _edges.AsReadOnly() ,
 				Vertices	= _vertices.AsReadOnly() ,
 				Transform	= transform.localToWorldMatrix ,
-				Segments	= _segments.buffer.AsArray()
-			};
+				Segments	= buffer.AsNativeArray() ,
+			}.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 );
 			
-			_segments.Dependency = job.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 , dependsOn:_segments.Dependency );
+			Segments.Core.AddDependency( jobHandle );
+			//dependencies.Add( jobHandle );
 		}
-
 
 		[BurstCompile]
 		public struct UpdateSegmentsJob : IJobParallelFor
 		{
 			[ReadOnly] public NativeArray<int2>.ReadOnly Edges;
-			[ReadOnly] public NativeArray<Vector3>.ReadOnly Vertices;
+			[ReadOnly] public NativeArray<float3>.ReadOnly Vertices;
 			[ReadOnly] public float4x4 Transform;
 			[WriteOnly] public NativeArray<float3x2> Segments;
+			//public BufferLookup<Segments.Segment> SegmentBufferLookup;
 			void IJobParallelFor.Execute ( int index )
 			{
+				//var buffer = SegmentBufferLookup[ default ];
+
 				int i0 = Edges[index].x;
 				int i1 = Edges[index].y;
 				float4 p0 = math.mul( Transform , new float4( Vertices[i0] , 1 ) );
@@ -94,7 +95,6 @@ namespace Segments.Samples
 				};
 			}
 		}
-
 
 		[BurstCompile]
 		public struct ToEdgesJob : IJob
@@ -127,7 +127,6 @@ namespace Segments.Samples
 				edges.Dispose();
 			}
 		}
-		
 		
 	}
 }

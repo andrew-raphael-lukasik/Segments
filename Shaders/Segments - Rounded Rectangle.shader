@@ -23,7 +23,7 @@ Properties
 SubShader
 {
 	LOD 200
-	Tags { "Queue"="Transparent" "RenderType"="Transparent" "RenderPipeline"="UniversalPipeline" }
+	Tags { "Queue"="Transparent" "RenderType"="Transparent" "RenderPipeline"="UniversalRenderPipeline" }
 	
 	BlendOp Add
 	Blend SrcAlpha OneMinusSrcAlpha
@@ -32,24 +32,35 @@ SubShader
 
 	Pass
 	{
-		CGPROGRAM
+		Name "Forward"
+        Tags
+        {
+            "LightMode" = "UniversalForward"
+        }
+		
+		Cull OFF
+
+		HLSLPROGRAM
 		#pragma vertex vert
 		#pragma fragment frag
 		#pragma geometry geom
 		#pragma require geometry
-		// #pragma target 4.0
 		#pragma target 4.5
 		#pragma multi_compile _TEXTURE _TEXTURE_ON
-		#include "UnityCG.cginc"
-		
+		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl"
+		//#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-		struct vertexIn {
+		struct Attributes {
 			float4 vertex : POSITION;
 			float4 color : COLOR;
+			UNITY_VERTEX_INPUT_INSTANCE_ID
 		};
-		struct vertexOut {
+		struct Varyings {
 			float4 vertex : SV_POSITION;
 			float4 color : COLOR0;
+			UNITY_VERTEX_INPUT_INSTANCE_ID
 		};
 		struct geomOut {
 			float4 vertex : POSITION;
@@ -60,23 +71,34 @@ SubShader
 				// uv.w - depth (clip space)
 		};
 
-
 		// uniform float _ArrayVertices [1363*3];
 		// uniform float4 _ArrayColors [1363];
-		float4 _Color;
-		float _Width;
-		// float _WidthFar;
-		float _Roundness;
-		float _Smoothness;
-		float _DepthNear;
-		float _DepthFar;
-		float4 _ColorFar;
 
 		#ifdef _TEXTURE_ON
-			sampler2D _MainTex;
-			float4 _MainTex_ST;
+			TEXTURE2D(_MainTex);
+			SAMPLER(sampler_MainTex);
 		#endif
 
+		CBUFFER_START(UnityPerMaterial)
+			float4 _Color;
+			float4 _ColorFar;
+			float _Width;
+			// float _WidthFar;
+			float _Roundness;
+			float _Smoothness;
+			float _DepthNear;
+			float _DepthFar;
+			#ifdef _TEXTURE_ON
+				float4 _MainTex_ST;
+			#endif
+		CBUFFER_END
+		
+#ifdef UNITY_DOTS_INSTANCING_ENABLED
+		UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
+			UNITY_DOTS_INSTANCED_PROP(float4, _Color)
+			UNITY_DOTS_INSTANCED_PROP(float4, _ColorFar)
+		UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
+#endif
 
 		#define PI 3.1415926535897932384626433832795
 		#define epsilon 0.0000001
@@ -129,30 +151,37 @@ SubShader
 		}
 
 
-		vertexOut vert ( vertexIn i )
+		Varyings vert ( Attributes IN )
 		{
-			vertexOut o;
-			float4 vec = i.vertex;
+			Varyings OUT;
 			
-			// src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
-			float4 clipPos = UnityObjectToClipPos( vec );
-			vec.w = clipPos.z / clipPos.w;// depth
-			#if !defined(UNITY_REVERSED_Z)// if OpenGL
-				vec.w = vec.w * 0.5 + 0.5;// remap -1 to 1 range to 0.0 to 1.0
-			#endif
+			UNITY_SETUP_INSTANCE_ID( IN );
+            UNITY_TRANSFER_INSTANCE_ID( IN , OUT );
+
+			//GetVertexPositionInputs
+
+			float4 vec = IN.vertex;
+			{
+				// src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
+				float4 clipPos = TransformObjectToHClip( vec );
+				vec.w = clipPos.z / clipPos.w;// depth
+				#if !defined(UNITY_REVERSED_Z)// if OpenGL
+					vec.w = vec.w * 0.5 + 0.5;// remap -1 to 1 range to 0.0 to 1.0
+				#endif
+			}
+			OUT.vertex = vec;
 			
-			o.vertex = vec;
-			o.color = i.color;
+			OUT.color = IN.color;
 			
-			return o;
+			return OUT;
 		}
 
 
 		[maxvertexcount(4)]
-		void geom ( line vertexOut IN[2] , inout TriangleStream<geomOut> STREAM )
+		void geom ( line Varyings IN[2] , inout TriangleStream<geomOut> STREAM )
 		{
-			vertexOut IN0 = IN[0];
-			vertexOut IN1 = IN[1];
+			Varyings IN0 = IN[0];
+			Varyings IN1 = IN[1];
 
 			float3 cameraPosition = _WorldSpaceCameraPos;
 			float3 lineVec = IN1.vertex - IN0.vertex;
@@ -170,16 +199,19 @@ SubShader
 			float2 aspect = width / ( lineLen + overlap );
 			float3 bscale = float3( width.x , 1 , lineLen.x );
 			float3 tscale = float3( width.y , 1 , lineLen.y );
-			float3x3 rot = LookRotation( lineDir , normalize(cameraPosition-IN0.vertex) );
+			float3x3 rot = LookRotation(
+				lineDir ,
+				GetWorldSpaceViewDir(IN0.vertex)// normalize(cameraPosition-IN0.vertex)
+			);
 			float3x3 bltw = rot * S(bscale);
 			float3x3 tltw = rot * S(tscale);
 
 			// quad 1x1, pivot at bottom center
 			float2 capWidth = float2(1,1)/lineLen * overlap*float2(0.5,0.5);
-			float4 bl = UnityObjectToClipPos( IN0.vertex + float4( mul( float3(-0.5,0,-capWidth.x) , bltw ) , 0 ) );
-			float4 br = UnityObjectToClipPos( IN0.vertex + float4( mul( float3( 0.5,0,-capWidth.x) , bltw ) , 0 ) );
-			float4 tl = UnityObjectToClipPos( IN0.vertex + float4( mul( float3(-0.5,0,1+capWidth.y) , tltw ) , 0 ) );
-			float4 tr = UnityObjectToClipPos( IN0.vertex + float4( mul( float3( 0.5,0,1+capWidth.y) , tltw ) , 0 ) );
+			float4 bl = TransformObjectToHClip( IN0.vertex + float4( mul( float3(-0.5,0,-capWidth.x) , bltw ) , 0 ) );
+			float4 br = TransformObjectToHClip( IN0.vertex + float4( mul( float3( 0.5,0,-capWidth.x) , bltw ) , 0 ) );
+			float4 tl = TransformObjectToHClip( IN0.vertex + float4( mul( float3(-0.5,0,1+capWidth.y) , tltw ) , 0 ) );
+			float4 tr = TransformObjectToHClip( IN0.vertex + float4( mul( float3( 0.5,0,1+capWidth.y) , tltw ) , 0 ) );
 			
 			geomOut vertex;
 
@@ -209,14 +241,14 @@ SubShader
 		}
 
 
-		float4 frag ( geomOut i ) : COLOR
+		float4 frag ( geomOut IN ) : COLOR
 		{
 			float margin = _Roundness * 0.5;
-			float aspect = i.uv.z;
-			float depth = i.uv.w;
+			float aspect = IN.uv.z;
+			float depth = IN.uv.w;
 			// return float4(depth,depth,depth,1);
 
-			float2 ruv = abs( i.uv - 0.5 );
+			float2 ruv = abs( IN.uv - 0.5 );
 			float rw = 0.5 - margin;
 			float rh = 0.5 - margin * aspect;
 			float dx = ruv.x - rw;
@@ -226,13 +258,13 @@ SubShader
 			
 			float case3 = ruv.x>rw & ruv.y>rh;// corner margins
 			float alphaRaw = case3 ? a3 : a12;
-			
+
 			float alpha = remap01( 0 , _Smoothness , easeOutCirc(alphaRaw) );
-			float4 col = saturate( i.color * lerp(_ColorFar,_Color,depth) * float4(1,1,1,alpha) );
+			float4 col = saturate( IN.color * lerp(_ColorFar,_Color,depth) * float4(1,1,1,alpha) );
 
 			#ifdef _TEXTURE_ON
-				i.uv.xy = TRANSFORM_TEX( i.uv.xy , _MainTex );
-				float4 texCol = tex2D( _MainTex , i.uv.xy );
+				IN.uv.xy = TRANSFORM_TEX( IN.uv.xy , _MainTex );
+				float4 texCol = SAMPLE_TEXTURE2D( _MainTex , sampler_MainTex , IN.uv.xy );
 				col *= texCol;
 				if( col.a<=0 ) discard;
 			#else
@@ -243,7 +275,7 @@ SubShader
 		}
 
 		
-		ENDCG
+		ENDHLSL
 	}
 }
 	FallBack Off

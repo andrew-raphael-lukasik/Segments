@@ -1,23 +1,24 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Assertions;
 using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Rendering;
+using Unity.Transforms;
 
 namespace Segments
 {
 	public static class Core
 	{
-		
 
-		internal static List<Batch> Batches = new List<Batch>();
-		static Material default_material { get; set; }
+		public static EntityQuery Query { get; private set; }
 
-		static World world;
+		static Material default_material;
+		internal static World world;
 
-
-		public static World GetWorld ()
+		internal static World GetWorld ()
 		{
 			if( world!=null && world.IsCreated )
 				return world;
@@ -34,9 +35,8 @@ namespace Segments
 				}
 				#endif
 
-				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentInitializationSystem) , typeof(SegmentRenderingSystem) );
+				Query = world.EntityManager.CreateEntityQuery( typeof(Segment) );
 
-				// load default material asset:
 				if( default_material==null )
 				{
 					const string path = "packages/Segments/default";
@@ -46,65 +46,103 @@ namespace Segments
 					else
 						Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
 				}
-				
+
+				//DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( Entities.world , typeof(SegmentInitializationSystem) , typeof(SegmentRenderingSystem) );
+
 				return world;
 			}
 		}
 
-
-		public static void CreateBatch ( out Batch batch , Material materialOverride = null )
+		public static void CreateBatch ( out Entity entity , out EntityManager entityManager , Material material = null )
 		{
-			GetWorld();// makes sure initialized world exists
-
-			if( materialOverride==null )
-				materialOverride = default_material;
-			Assert.IsNotNull( materialOverride , $"{nameof(materialOverride)} is null" );
-			
-			var buffer = new NativeList<float3x2>( Allocator.Persistent );
-			batch = new Batch(
-				mat:		materialOverride ,
-				buffer:		buffer
-			);
-			Batches.Add( batch );
+			entityManager = GetWorld().EntityManager;
+			CreateBatch( entityManager , out entity , material );
 		}
+		public static void CreateBatch ( EntityManager entityManager , out Entity entity , Material material = null )
+		{
+			Query.CompleteDependency();
 
+			entity = entityManager.CreateEntity( typeof(Segment) );
+			if( material==null ) material = default_material;
+
+            if( default_material==null )
+			{
+				const string path = "packages/Segments/default";
+				default_material = UnityEngine.Resources.Load<Material>( path );
+				if( default_material!=null )
+					default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
+				else
+					Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
+			}
+			
+			var mesh = new Mesh();
+            mesh.name = $"Segments mesh {entity}";
+            mesh.MarkDynamic();
+                
+            var renderMeshDescription = new RenderMeshDescription( shadowCastingMode:ShadowCastingMode.On , receiveShadows:true , renderingLayerMask:1 );
+            var meshArray = new RenderMeshArray(
+                new[]{ material ?? default_material } ,
+                new[]{ mesh }
+            );
+            var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(0,0);
+            RenderMeshUtility.AddComponents( entity , entityManager , renderMeshDescription , meshArray , materialMeshInfo );
+
+			entityManager.SetComponentData( entity , new LocalToWorld{
+				Value = float4x4.identity
+			} );
+                
+            entityManager.SetName( entity , mesh.name );
+		}
 
 		public static void DestroyAllBatches ()
 		{
-			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
-			{
-				var batch = Batches[i];
-				batch.Dependency.Complete();
-				batch.DisposeImmediate();
-				
-				Batches.RemoveAt(i);
-			}
-			Assert.AreEqual( Batches.Count , 0 );
+			var entityManager = world.EntityManager;
+			var query = entityManager.CreateEntityQuery( ComponentType.ReadOnly<Segment>() );
+			entityManager.DestroyEntity( query );
 		}
 
-
-		public static void Render ( Camera camera )
+		public static void DestroyBatch ( Entity entity )
 		{
-			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
-			{
-				var batch = Batches[i];
-				var mesh = batch.mesh;
-				var material = batch.material;
-				
-				if( mesh.bounds.size.sqrMagnitude!=0 )
-				{
-					Graphics.DrawMesh(
-						mesh ,
-						Vector3.zero , quaternion.identity ,
-						material ,
-						0 , camera , 0 ,
-						batch.materialPropertyBlock ,
-						false , true , true
-					);
-				}
-			}
+			var entityManager = world.EntityManager;
+			Query.CompleteDependency();
+			entityManager.DestroyEntity( entity );
 		}
 
+		public static void CompleteDependency ()
+			=> Query.CompleteDependency();
+
+		public static void AddDependency ( JobHandle dependency )
+		{
+			JobHandle combined = JobHandle.CombineDependencies( dependency , Query.GetDependency() );
+			Query.AddDependency( combined );
+		}
+
+		public static JobHandle GetDependency ()
+			=> Query.GetDependency();
 
 	}
+	
+	public struct Segment : IBufferElementData
+	{
+
+		public float3x2 Value;
+
+		public float3 C0 { get => Value.c0; set => Value.c0=value; }
+		public float3 C1 { get => Value.c1; set => Value.c1=value; }
+
+		public static implicit operator float3x2 ( Segment component ) => component.Value;
+		public static implicit operator Segment ( float3x2 value ) => new Segment{ Value=value };
+
+	}
+
+	public struct MeshVertexIndex : IBufferElementData
+	{
+		
+		public uint Value;
+
+		public static implicit operator uint ( MeshVertexIndex component ) => component.Value;
+		public static implicit operator MeshVertexIndex ( uint value ) => new MeshVertexIndex{ Value=value };
+
+	}
+
 }

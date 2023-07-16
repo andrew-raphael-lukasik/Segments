@@ -4,79 +4,84 @@ using Unity.Profiling;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Collections;
+using Unity.Rendering;
+using Unity.Transforms;
+using Unity.Mathematics;
 
 namespace Segments
 {
-	[WorldSystemFilter( 0 )]
+	[WorldSystemFilter( WorldSystemFilterFlags.Presentation | WorldSystemFilterFlags.Editor )]
 	[UpdateInGroup( typeof(PresentationSystemGroup) )]
 	[Unity.Burst.BurstCompile]
 	internal partial struct SegmentRenderingSystem : ISystem
 	{
 		static readonly ProfilerMarker
+			___allocate_writable_mesh_data = new ProfilerMarker("allocate_writable_mesh_data") ,
+			___set_vertex_buffer_params = new ProfilerMarker("set_vertex_buffer_params") ,
+			___copy_segment_buffer_data = new ProfilerMarker("copy_segment_buffer_data") ,
+			___set_index_buffer_params = new ProfilerMarker("set_index_buffer_params") ,
+			___set_sub_mesh = new ProfilerMarker("set_sub_mesh") ,
             ____push_bounds = new ProfilerMarker("push_bounds") ,
             ____push_mesh_data = new ProfilerMarker("push_mesh_data");
 
-		public void OnCreate ( ref SystemState state )
-		{
-			state.RequireForUpdate<Singleton>();
-			RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
-		}
+		[Unity.Burst.BurstCompile]
+		public void OnCreate ( ref SystemState state ) {}
 
-		public void OnDestroy ( ref SystemState state )
-		{
-			RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
-		}
+		[Unity.Burst.BurstCompile]
+		public void OnDestroy ( ref SystemState state ) {}
 
+		//[Unity.Burst.BurstCompile]
 		public void OnUpdate ( ref SystemState state )
 		{
-			Entity singleton = SystemAPI.GetSingletonEntity<Singleton>();
-			var meshDataArrays = SystemAPI.GetBuffer<MeshDataArrayElement>( singleton );
-			var deferredBounds = SystemAPI.GetBuffer<DeferredBoundsElement>( singleton );
-			var deferredBoundsJobs = SystemAPI.GetBuffer<DeferredBoundsJobsElement>( singleton );
-			var fillMeshDataArrayJobs = SystemAPI.GetBuffer<FillMeshDataArrayJobsElement>( singleton );
-			var numBatchesToPush = SystemAPI.GetBuffer<NumBatchesToPushElement>( singleton );
-
-			int numBatches = numBatchesToPush[0].Value;
-			if( numBatches==0 ) return;
-			
-			JobHandle.CompleteAll( deferredBoundsJobs.Reinterpret<JobHandle>().ToNativeArray(Allocator.Temp) );
-
-			// push bounds:
-			var batches = Core.Batches;
-			____push_bounds.Begin();
-			for( int i=numBatches-1 ; i!=-1 ; i-- )
-				if( i<deferredBounds.Length )
-					batches[i].mesh.bounds = deferredBounds[i].Value;
-			____push_bounds.End();
-
-			JobHandle.CompleteAll( fillMeshDataArrayJobs.Reinterpret<JobHandle>().ToNativeArray(Allocator.Temp) );
-
-			// push mesh data:
-			____push_mesh_data.Begin();
-			for( int i=numBatches-1 ; i!=-1 ; i-- )
+			foreach(
+				var ( segmentBuffer , renderMeshArray , materialMeshInfo , renderBounds ) in
+				SystemAPI.Query< DynamicBuffer<Segment> , RenderMeshArray , MaterialMeshInfo , RefRW<RenderBounds> >()
+				.WithChangeFilter<Segment>()
+			)
 			{
-				var batch = batches[i];
-				var mesh = batch.mesh;
-				var data = meshDataArrays[i].Value;
-				Mesh.ApplyAndDisposeWritableMeshData(
-					data: data ,
-					mesh: mesh ,
-					flags: MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds
-				);
-				mesh.UploadMeshData( false );
+				___allocate_writable_mesh_data.Begin();
+				var dataArray = Mesh.AllocateWritableMeshData(1);
+				var data = dataArray[0];
+				___allocate_writable_mesh_data.End();
+				
+				int numSegments = segmentBuffer.Length;
+				int numVertices = numSegments * 2;
+				
+				___set_vertex_buffer_params.Begin();
+				data.SetVertexBufferParams( numVertices , new VertexAttributeDescriptor(VertexAttribute.Position) );
+				___set_vertex_buffer_params.End();
+
+				___copy_segment_buffer_data.Begin();
+				{
+					var src = segmentBuffer.Reinterpret<float3x2>().AsNativeArray();
+					var dst = data.GetVertexData<float3x2>();
+					src.CopyTo( dst );
+				}
+				___copy_segment_buffer_data.End();
+				
+				___set_index_buffer_params.Begin();
+				data.SetIndexBufferParams( numVertices , IndexFormat.UInt32 );
+				var indexBuffer = data.GetIndexData<uint>();
+				for( uint i=0 ; i<numVertices ; ++i )
+					indexBuffer[ (int) i ] = i;
+				___set_index_buffer_params.End();
+
+				___set_sub_mesh.Begin();
+				data.subMeshCount = 1;
+				data.SetSubMesh( 0 , new SubMeshDescriptor(0,numVertices,MeshTopology.Lines) );
+				___set_sub_mesh.End();
+
+				var mesh = renderMeshArray.GetMesh( materialMeshInfo );
+				
+				____push_mesh_data.Begin();
+				Mesh.ApplyAndDisposeWritableMeshData( dataArray , mesh );
+				____push_mesh_data.End();
+				
+				____push_bounds.Begin();
+				mesh.RecalculateBounds();
+				renderBounds.ValueRW.Value = mesh.bounds.ToAABB();
+				____push_bounds.End();
 			}
-			____push_mesh_data.End();
-
-			numBatchesToPush[0] = new NumBatchesToPushElement{ Value=0 };
-		}
-
-		void OnBeginCameraRendering ( ScriptableRenderContext context , Camera camera )
-		{
-			#if UNITY_EDITOR
-			if( camera.name=="Preview Scene Camera" ) return;
-			#endif
-
-			Core.Render( camera );
 		}
 
 	}

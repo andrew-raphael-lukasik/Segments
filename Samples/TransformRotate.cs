@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Segments.Samples
+namespace Samples
 {
 	[AddComponentMenu("")]
 	class TransformRotate : MonoBehaviour
