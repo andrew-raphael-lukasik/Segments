@@ -135,14 +135,4 @@ namespace Segments
 
 	}
 
-	public struct MeshVertexIndex : IBufferElementData
-	{
-		
-		public uint Value;
-
-		public static implicit operator uint ( MeshVertexIndex component ) => component.Value;
-		public static implicit operator MeshVertexIndex ( uint value ) => new MeshVertexIndex{ Value=value };
-
-	}
-
 }

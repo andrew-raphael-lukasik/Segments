@@ -100,7 +100,7 @@ namespace Segments
 	}
 
 	[System.Obsolete("RenderMesh is no longer a temporary baking type now, replace")]
-	[WithAll( typeof(Segment) , typeof(MeshVertexIndex) )]
+	[WithAll( typeof(Segment) )]
 	partial struct PushBoundsJob : IJobEntity
 	{
 		[ReadOnly] public NativeArray<Bounds> Bounds;
@@ -112,7 +112,7 @@ namespace Segments
 	}
 
 	[System.Obsolete("RenderMesh is no longer a temporary baking type now, replace")]
-	[WithAll( typeof(Segment) , typeof(MeshVertexIndex) )]
+	[WithAll( typeof(Segment) )]
 	partial struct PushMeshDataJob : IJobEntity
 	{
 		[ReadOnly] public NativeArray<Mesh.MeshDataArray> MeshDataArrays;
