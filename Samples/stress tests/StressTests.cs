@@ -23,10 +23,6 @@ namespace Samples
 		void OnEnable ()
 		{
 			Segments.Core.CreateBatch( out _segments , out _entityManager , _srcMaterial );
-
-#if UNITY_EDITOR
-			this.Update();// just to kickstart 1st frame rendering in editor
-#endif
 		}
 
 		void OnDisable () => Segments.Core.DestroyBatch( _segments );

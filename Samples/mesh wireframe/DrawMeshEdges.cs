@@ -57,8 +57,6 @@ namespace Samples
 
 		void Update ()
 		{
-			//var dependencies = Segments.Utilities.GetDependencies( _segments , _entityManager );
-			//Segments.Utilities.CompleteAllDependencies( dependencies );
 			Segments.Core.CompleteDependency();
 
 			var buffer = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
@@ -70,7 +68,6 @@ namespace Samples
 			}.Schedule( arrayLength:_edges.Length , innerloopBatchCount:128 );
 			
 			Segments.Core.AddDependency( jobHandle );
-			//dependencies.Add( jobHandle );
 		}
 
 		[BurstCompile]

@@ -118,21 +118,15 @@ namespace Segments
 		}
 
 		public static JobHandle GetDependency ()
-			=> Query.GetDependency();
+		{
+			return Query.GetDependency();
+		}
 
 	}
 	
 	public struct Segment : IBufferElementData
 	{
-
 		public float3x2 Value;
-
-		public float3 C0 { get => Value.c0; set => Value.c0=value; }
-		public float3 C1 { get => Value.c1; set => Value.c1=value; }
-
-		public static implicit operator float3x2 ( Segment component ) => component.Value;
-		public static implicit operator Segment ( float3x2 value ) => new Segment{ Value=value };
-
 	}
 
 }
