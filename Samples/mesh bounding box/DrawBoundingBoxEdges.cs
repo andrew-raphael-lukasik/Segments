@@ -16,17 +16,16 @@ namespace Samples
 
 		MeshRenderer _meshRenderer = null;
 		Entity _segments;
-		EntityManager _entityManager;
 		
 		void OnEnable ()
 		{
 			_meshRenderer = GetComponent<MeshRenderer>();
 
 			// create segment buffer:
-			Segments.Core.CreateBatch( out _segments , out _entityManager , _materialOverride );
+			Segments.Core.CreateBatch( out _segments , _materialOverride );
 			
 			// set buffer size as it won't change here:
-			var buffer = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
+			var buffer = Segments.Core.GetSegmentBuffer( _segments );
 			buffer.Length = 12;
 		}
 
@@ -36,7 +35,7 @@ namespace Samples
 		{
 			Segments.Core.CompleteDependency();
 
-			var buffer = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
+			var buffer = Segments.Core.GetSegmentBuffer( _segments );
 			var bounds = _meshRenderer.bounds;
 			int index = 0;
 			var jobHandle = new Segments.Plot.BoxJob(

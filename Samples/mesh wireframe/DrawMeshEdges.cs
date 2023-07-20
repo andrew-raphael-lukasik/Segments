@@ -20,7 +20,6 @@ namespace Samples
 		NativeArray<int2> _edges;
 
 		Entity _segments;
-		EntityManager _entityManager;
 
 		void OnEnable ()
 		{
@@ -41,10 +40,10 @@ namespace Samples
 			}
 
 			// create segment buffer:
-			Segments.Core.CreateBatch( out _segments , out _entityManager , _materialOverride );
+			Segments.Core.CreateBatch( out _segments , _materialOverride );
 			
 			// initialize buffer size:
-			var buffer = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
+			var buffer = Segments.Core.GetSegmentBuffer( _segments );
 			buffer.Length = _edges.Length;
 		}
 
@@ -59,7 +58,7 @@ namespace Samples
 		{
 			Segments.Core.CompleteDependency();
 
-			var buffer = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
+			var buffer = Segments.Core.GetSegmentBuffer( _segments );
 			var jobHandle = new UpdateSegmentsJob{
 				Edges		= _edges.AsReadOnly() ,
 				Vertices	= _vertices.AsReadOnly() ,

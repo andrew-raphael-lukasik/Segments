@@ -18,20 +18,15 @@ namespace Samples
 		[SerializeField] bool _everyFrame = false;
 
 		Entity _segments;
-		EntityManager _entityManager;
 
-		void OnEnable ()
-		{
-			Segments.Core.CreateBatch( out _segments , out _entityManager , _srcMaterial );
-		}
-
+		void OnEnable () => Segments.Core.CreateBatch( out _segments , _srcMaterial );
 		void OnDisable () => Segments.Core.DestroyBatch( _segments );
 
 		void Update ()
 		{
 			Segments.Core.Query.CompleteDependency();
 
-			var segments = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
+			var segments = Segments.Core.GetSegmentBuffer( _segments );
 			if( segments.Length!=_numSegments || _everyFrame )
 			{
 				segments.Length = _numSegments;

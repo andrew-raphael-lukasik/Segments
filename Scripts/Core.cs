@@ -53,6 +53,11 @@ namespace Segments
 			}
 		}
 
+		public static void CreateBatch ( out Entity entity , Material material = null )
+		{
+			var entityManager = GetWorld().EntityManager;
+			CreateBatch( entityManager , out entity , material );
+		}
 		public static void CreateBatch ( out Entity entity , out EntityManager entityManager , Material material = null )
 		{
 			entityManager = GetWorld().EntityManager;
@@ -120,6 +125,12 @@ namespace Segments
 		public static JobHandle GetDependency ()
 		{
 			return Query.GetDependency();
+		}
+
+		public static DynamicBuffer<float3x2> GetSegmentBuffer ( Entity entity , bool isReadOnly = false )
+		{
+			var entityManager = world.EntityManager;
+			return entityManager.GetBuffer<Segment>( entity , isReadOnly ).Reinterpret<float3x2>();
 		}
 
 	}

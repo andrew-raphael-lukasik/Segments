@@ -15,16 +15,15 @@ namespace Samples
 	{
 
 		Entity _segments;
-		EntityManager _entityManager;
 
-		void OnEnable () => Segments.Core.CreateBatch( out _segments , out _entityManager );
+		void OnEnable () => Segments.Core.CreateBatch( out _segments );
 		void OnDisable () => Segments.Core.DestroyBatch( _segments );
 
 		void Update ()
 		{
 			Segments.Core.CompleteDependency();
 
-			var segments = Segments.Utilities.GetSegmentBuffer( _segments , _entityManager );
+			var segments = Segments.Core.GetSegmentBuffer( _segments );
 			segments.Length = 3;
 
 			var jobHandle = new MyBasicJob
