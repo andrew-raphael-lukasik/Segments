@@ -1,5 +1,7 @@
 Segments is a lightweight line renderer for DOTS tech stack.
 
+> This repo is a work in progress so it's not ready for production and expect occasional changes in any of this works (especially since entitties package is changing as well).
+
 It works by creating mesh batches formatted as `MeshTopology.Lines`, `SystemBase` job system schedules updates with `MeshDataArray`. `Geometry shader` creates output triangles on the GPU.
 
 # Getting started with Segments:
@@ -23,7 +25,7 @@ void Update ()
 
 100_000 segments? No problem!
 
-EDIT: Still working on improving this as plotting shapes is not as fast as I wanted
+> **EDIT**: Still working on improving this as plotting shapes is not as fast as I wanted...
 
 @todo: details
 
