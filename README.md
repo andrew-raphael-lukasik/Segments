@@ -1,7 +1,8 @@
 Segments is a lightweight line renderer for DOTS tech stack.
 
-You create and then fill the `Segment` buffer (pairs of points) plotting shapes you want, `SegmentUpdateSystem` then pushes this data to the GPU where `geometry shader` creates output triangles on screen.
-Shape lifetime control and plotting can happen either in a system, job or a monobehaviour - your choice.
+- You create and then fill the `Segment` buffer (pairs of points) plotting shapes you want, `SegmentUpdateSystem` then pushes this data to the GPU where `geometry shader` creates output triangles on screen.
+- Shape lifetime control and plotting can happen either in a system, job, editor window or a monobehaviour - your choice.
+- Can be used for runtime shapes only or in the editor for debug gizmos.
 
 # Getting started with Segments:
 ```csharp
@@ -21,7 +22,8 @@ void Update ()
 
 # Performance
 
-100_000 segments? No problem!
+Stress tested with 300k segments on my laptop (i7-7700HQ, GTX1060M) and bottleneck turned out to be the GPU (shader).
+See for yourself, this exact test scene is provided as one of the samples.
 
 @todo: details
 
@@ -30,11 +32,12 @@ void Update ()
 - URP (not tested with HDRP yet)
 
 # Samples
-- mesh wireframe (runtime)
-<img src="https://i.imgur.com/NCC71mD.gif" height="200">
+- mesh wireframe
+<img height="300" alt="image" src="https://github.com/user-attachments/assets/b401f24c-e612-4d2e-9640-27e0b330f982" />
 
-- drawing mesh bounding boxes (runtime)
-<img src="https://i.imgur.com/J1mzvSbl.jpg" height="200">
+- drawing mesh bounding boxes
+<img height="300" alt="image" src="https://github.com/user-attachments/assets/3ee90180-6176-469c-8cea-ffa49bd41c76" />
+
 
 # Installation Unity 6000.x
 Add this line in `manifest.json` / `dependencies`:
