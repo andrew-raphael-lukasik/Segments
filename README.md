@@ -1,6 +1,7 @@
 Segments is a lightweight line renderer for DOTS tech stack.
 
-How it works: You create and then fill the `Segment` buffer (pairs of points) plotting shapes you want, `SegmentUpdateSystem` then pushes this data to the GPU where `geometry shader` creates output triangles on screen.
+You create and then fill the `Segment` buffer (pairs of points) plotting shapes you want, `SegmentUpdateSystem` then pushes this data to the GPU where `geometry shader` creates output triangles on screen.
+Shape lifetime control and plotting can happen either in a system, job or a monobehaviour - your choice.
 
 # Getting started with Segments:
 ```csharp
