@@ -15,8 +15,8 @@ namespace Segments
 
 		public static EntityQuery Query { get; private set; }
 
-		static Material default_material;
 		internal static World world;
+		static Material _default_material;
 
 		internal static World GetWorld ()
 		{
@@ -37,12 +37,12 @@ namespace Segments
 
 				Query = world.EntityManager.CreateEntityQuery( typeof(Segment) );
 
-				if( default_material==null )
+				if( _default_material==null )
 				{
-					const string path = "packages/Segments/default";
-					default_material = UnityEngine.Resources.Load<Material>( path );
-					if( default_material!=null )
-						default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
+					const string path = "packages/com.andrewraphaellukasik.segments/default";
+					_default_material = Resources.Load<Material>( path );
+					if( _default_material!=null )
+						_default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
 					else
 						Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
 				}
@@ -68,16 +68,19 @@ namespace Segments
 			Query.CompleteDependency();
 
 			entity = entityManager.CreateEntity( typeof(Segment) );
-			if( material==null ) material = default_material;
-
-            if( default_material==null )
+			if( material==null )
 			{
-				const string path = "packages/Segments/default";
-				default_material = UnityEngine.Resources.Load<Material>( path );
-				if( default_material!=null )
-					default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
-				else
-					Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
+				if( _default_material==null )
+				{
+					const string path = "packages/com.andrewraphaellukasik.segments/default";
+					_default_material = Resources.Load<Material>( path );
+					if( _default_material!=null )
+						_default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
+					else
+						Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
+				}
+				
+				material = _default_material;
 			}
 			
 			var mesh = new Mesh();
