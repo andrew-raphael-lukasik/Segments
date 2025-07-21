@@ -3,12 +3,10 @@ using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Collections;
 using Unity.Jobs;
-using Unity.Burst;
 
 namespace Samples
 {
 	[ExecuteAlways]
-	[AddComponentMenu("")]
 	[RequireComponent( typeof(MeshFilter) )]
 	class DrawMeshEdges : MonoBehaviour
 	{
@@ -17,7 +15,6 @@ namespace Samples
 
 		NativeArray<float3> _vertices;
 		NativeArray<int2> _edges;
-
 		Entity _segments;
 
 		void OnEnable ()
@@ -55,8 +52,6 @@ namespace Samples
 
 		void Update ()
 		{
-			Segments.Core.CompleteDependency();
-
 			var buffer = Segments.Core.GetSegmentBuffer( _segments );
 			var jobHandle = new UpdateSegmentsJob{
 				Edges		= _edges.AsReadOnly() ,
@@ -68,18 +63,19 @@ namespace Samples
 			Segments.Core.AddDependency( jobHandle );
 		}
 
-		[BurstCompile]
+		#if UNITY_EDITOR
+		void OnDrawGizmos () => Gizmos.DrawIcon(transform.position, "");// draws a white square icon to help with object selection in Scene view
+		#endif
+
+        [Unity.Burst.BurstCompile]
 		public struct UpdateSegmentsJob : IJobParallelFor
 		{
 			[ReadOnly] public NativeArray<int2>.ReadOnly Edges;
 			[ReadOnly] public NativeArray<float3>.ReadOnly Vertices;
 			[ReadOnly] public float4x4 Transform;
 			[WriteOnly] public NativeArray<float3x2> Segments;
-			//public BufferLookup<Segments.Segment> SegmentBufferLookup;
 			void IJobParallelFor.Execute ( int index )
 			{
-				//var buffer = SegmentBufferLookup[ default ];
-
 				int i0 = Edges[index].x;
 				int i1 = Edges[index].y;
 				float4 p0 = math.mul( Transform , new float4( Vertices[i0] , 1 ) );
@@ -91,7 +87,7 @@ namespace Samples
 			}
 		}
 
-		[BurstCompile]
+		[Unity.Burst.BurstCompile]
 		public struct ToEdgesJob : IJob
 		{
 			[ReadOnly] public NativeArray<int>.ReadOnly Triangles;

@@ -13,29 +13,30 @@ namespace Segments
 	public static class Core
 	{
 
-		public static EntityQuery Query { get; private set; }
+		static EntityQuery _query;
+		public static EntityQuery Query => _query;
 
-		internal static World world;
 		static Material _default_material;
+		internal static World _world;
 
 		internal static World GetWorld ()
 		{
-			if( world!=null && world.IsCreated )
-				return world;
+			if( _world!=null && _world.IsCreated )
+				return _world;
 			else
 			{
-				world = World.DefaultGameObjectInjectionWorld;
+				_world = World.DefaultGameObjectInjectionWorld;
 				
 				#if UNITY_EDITOR
-				if( world==null )
+				if( _world==null )
 				{
 					// create editor world:
-					world = DefaultWorldInitialization.Initialize( "Editor World" , true );
+					_world = DefaultWorldInitialization.Initialize( "Editor World" , true );
 					// DefaultWorldInitialization.DefaultLazyEditModeInitialize();// not immediate
 				}
 				#endif
 
-				Query = world.EntityManager.CreateEntityQuery( typeof(Segment) );
+				_query = _world.EntityManager.CreateEntityQuery( typeof(Segment) );
 
 				if( _default_material==null )
 				{
@@ -47,9 +48,7 @@ namespace Segments
 						Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
 				}
 
-				//DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( Entities.world , typeof(SegmentInitializationSystem) , typeof(SegmentRenderingSystem) );
-
-				return world;
+				return _world;
 			}
 		}
 
@@ -65,8 +64,8 @@ namespace Segments
 		}
 		public static void CreateBatch ( EntityManager entityManager , out Entity entity , Material material = null )
 		{
-			Query.CompleteDependency();
-
+			_query.CompleteDependency();
+			
 			entity = entityManager.CreateEntity( typeof(Segment) );
 			if( material==null )
 			{
@@ -82,59 +81,45 @@ namespace Segments
 				
 				material = _default_material;
 			}
+			entityManager.AddSharedComponentManaged( entity , new SegmentCreationRequestData{
+				material = material
+			} );
 			
-			var mesh = new Mesh();
-            mesh.name = $"Segments mesh {entity}";
-            mesh.MarkDynamic();
-                
-            var renderMeshDescription = new RenderMeshDescription( shadowCastingMode:ShadowCastingMode.On , receiveShadows:true , renderingLayerMask:1 );
-            var meshArray = new RenderMeshArray(
-                new[]{ material ?? default_material } ,
-                new[]{ mesh }
-            );
-            var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(0,0);
-            RenderMeshUtility.AddComponents( entity , entityManager , renderMeshDescription , meshArray , materialMeshInfo );
-
-			entityManager.SetComponentData( entity , new LocalToWorld{
+			entityManager.AddComponentData( entity , new LocalToWorld{
 				Value = float4x4.identity
 			} );
-                
-            entityManager.SetName( entity , mesh.name );
 		}
 
 		public static void DestroyAllBatches ()
 		{
-			var entityManager = world.EntityManager;
-			var query = entityManager.CreateEntityQuery( ComponentType.ReadOnly<Segment>() );
-			entityManager.DestroyEntity( query );
+			if( _world.IsCreated )
+			{
+				_query.CompleteDependency();
+				_world.EntityManager.DestroyEntity( _query );
+			}
 		}
 
 		public static void DestroyBatch ( Entity entity )
 		{
-			var entityManager = world.EntityManager;
-			Query.CompleteDependency();
+			if( _world.IsCreated )
+			{
+				_query.CompleteDependency();
+				_world.EntityManager.DestroyEntity( entity );
+			}
+		}
+		/// <summary> Can be called from a Burst-compiled ISystem </summary>
+		public static void DestroyBatch ( Entity entity , EntityManager entityManager )
+		{
+			entityManager.CreateEntityQuery( new EntityQueryBuilder(Allocator.Temp).WithAll<Segment>() ).CompleteDependency();
 			entityManager.DestroyEntity( entity );
 		}
 
-		public static void CompleteDependency ()
-			=> Query.CompleteDependency();
+		// public static void CompleteDependency () => _query.CompleteDependency();
+		// public static JobHandle GetDependency () => _query.GetDependency();
 
-		public static void AddDependency ( JobHandle dependency )
-		{
-			JobHandle combined = JobHandle.CombineDependencies( dependency , Query.GetDependency() );
-			Query.AddDependency( combined );
-		}
+		public static void AddDependency ( JobHandle dependency ) => _query.AddDependency( dependency );
 
-		public static JobHandle GetDependency ()
-		{
-			return Query.GetDependency();
-		}
-
-		public static DynamicBuffer<float3x2> GetSegmentBuffer ( Entity entity , bool isReadOnly = false )
-		{
-			var entityManager = world.EntityManager;
-			return entityManager.GetBuffer<Segment>( entity , isReadOnly ).Reinterpret<float3x2>();
-		}
+		public static DynamicBuffer<float3x2> GetSegmentBuffer ( Entity entity , bool isReadOnly = false ) => _world.EntityManager.GetBuffer<Segment>( entity , isReadOnly ).Reinterpret<float3x2>();
 
 	}
 	

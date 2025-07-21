@@ -6,12 +6,12 @@
     "url": "https://github.com/andrew-raphael-lukasik"
   },
   "displayName": "Segments",
-  "version": "2022.3.2",
-  "unity": "2022.2",
+  "version": "6000.0.1",
+  "unity": "6000.0",
   "description": "Line rendering for DOTS tech stack",
   "documentationUrl": "https://github.com/andrew-raphael-lukasik/Segments",
   "dependencies": {
-    "com.unity.entities.graphics": "1.0.11"
+    "com.unity.entities.graphics": "1.4.12"
   },
   "keywords": [
     "segments",

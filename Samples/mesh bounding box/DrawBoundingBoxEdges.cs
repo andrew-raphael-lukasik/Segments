@@ -7,7 +7,6 @@ using Unity.Jobs;
 namespace Samples
 {
 	[ExecuteAlways]
-	[AddComponentMenu("")]
 	[RequireComponent( typeof(MeshRenderer) )]
 	class DrawBoundingBoxEdges : MonoBehaviour
 	{
@@ -21,21 +20,21 @@ namespace Samples
 		{
 			_meshRenderer = GetComponent<MeshRenderer>();
 
-			// create segment buffer:
+			// create segment buffer entity:
 			Segments.Core.CreateBatch( out _segments , _materialOverride );
-			
-			// set buffer size as it won't change here:
-			var buffer = Segments.Core.GetSegmentBuffer( _segments );
-			buffer.Length = 12;
 		}
 
-		void OnDisable () => Segments.Core.DestroyBatch( _segments );
+		void OnDisable ()
+		{
+			Segments.Core.DestroyBatch( _segments );
+		}
 
 		void Update ()
 		{
-			Segments.Core.CompleteDependency();
-
 			var buffer = Segments.Core.GetSegmentBuffer( _segments );
+			
+			// schedules a job that plots a bounding box
+			buffer.Length = 12;// box needs 12 edges
 			var bounds = _meshRenderer.bounds;
 			int index = 0;
 			var jobHandle = new Segments.Plot.BoxJob(
@@ -46,8 +45,13 @@ namespace Samples
 				rot:		quaternion.identity
 			).Schedule();
 
+			// pass along the job handle so Segments knows aobut this job (needed when scheduling from Monobehaviours)
 			Segments.Core.AddDependency( jobHandle );
 		}
 
-	}
+		#if UNITY_EDITOR
+		void OnDrawGizmos () => Gizmos.DrawIcon(transform.position, "");// draws a white square icon to help with object selection in Scene view
+		#endif
+
+    }
 }
