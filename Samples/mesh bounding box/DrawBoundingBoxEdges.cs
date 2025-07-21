@@ -21,17 +21,17 @@ namespace Samples
             _meshRenderer = GetComponent<MeshRenderer>();
 
             // create segment buffer entity:
-            Segments.Core.CreateBatch( out _segments , _materialOverride );
+            Segments.Core.Create( out _segments , _materialOverride );
         }
 
         void OnDisable ()
         {
-            Segments.Core.DestroyBatch( _segments );
+            Segments.Core.Destroy( _segments );
         }
 
         void Update ()
         {
-            var buffer = Segments.Core.GetSegmentBuffer( _segments );
+            var buffer = Segments.Core.GetBuffer( _segments );
             
             // schedules a job that plots a bounding box
             buffer.Length = 12;// box needs 12 edges

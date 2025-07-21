@@ -14,13 +14,13 @@ namespace Samples
     {
         Entity _segments;
 
-        void OnEnable () => Segments.Core.CreateBatch( out _segments );
-        void OnDisable () => Segments.Core.DestroyBatch( _segments );
+        void OnEnable () => Segments.Core.Create( out _segments );
+        void OnDisable () => Segments.Core.Destroy( _segments );
 
         void Update ()
         {
             // accesses the Segment beffer component of our Entity where every Segment is a pair of float3 values (start & end of a line segment)
-            var segments = Segments.Core.GetSegmentBuffer( _segments );
+            var segments = Segments.Core.GetBuffer( _segments );
 
             // we already know ahead of time that we want 3 segments here
             segments.Length = 3;

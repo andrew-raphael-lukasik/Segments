@@ -52,17 +52,17 @@ namespace Segments
             }
         }
 
-        public static void CreateBatch ( out Entity entity , Material material = null )
+        public static void Create ( out Entity entity , Material material = null )
         {
             var entityManager = GetWorld().EntityManager;
-            CreateBatch( entityManager , out entity , material );
+            Create( entityManager , out entity , material );
         }
-        public static void CreateBatch ( out Entity entity , out EntityManager entityManager , Material material = null )
+        public static void Create ( out Entity entity , out EntityManager entityManager , Material material = null )
         {
             entityManager = GetWorld().EntityManager;
-            CreateBatch( entityManager , out entity , material );
+            Create( entityManager , out entity , material );
         }
-        public static void CreateBatch ( EntityManager entityManager , out Entity entity , Material material = null )
+        public static void Create ( EntityManager entityManager , out Entity entity , Material material = null )
         {
             _query.CompleteDependency();
             
@@ -90,7 +90,7 @@ namespace Segments
             } );
         }
 
-        public static void DestroyAllBatches ()
+        public static void DestroyAll ()
         {
             if( _world.IsCreated )
             {
@@ -99,7 +99,7 @@ namespace Segments
             }
         }
 
-        public static void DestroyBatch ( Entity entity )
+        public static void Destroy ( Entity entity )
         {
             if( _world.IsCreated )
             {
@@ -108,18 +108,16 @@ namespace Segments
             }
         }
         /// <summary> Can be called from a Burst-compiled ISystem </summary>
-        public static void DestroyBatch ( Entity entity , EntityManager entityManager )
+        public static void Destroy ( Entity entity , EntityManager entityManager )
         {
             entityManager.CreateEntityQuery( new EntityQueryBuilder(Allocator.Temp).WithAll<Segment>() ).CompleteDependency();
             entityManager.DestroyEntity( entity );
         }
 
-        // public static void CompleteDependency () => _query.CompleteDependency();
-        // public static JobHandle GetDependency () => _query.GetDependency();
-
+        /// <summary> Pass jobhandle when scheduling a job, that accesses a segment buffer, from where ECS can't track it automatically (Monobehaviours) </summary>
         public static void AddDependency ( JobHandle dependency ) => _query.AddDependency( dependency );
 
-        public static DynamicBuffer<float3x2> GetSegmentBuffer ( Entity entity , bool isReadOnly = false ) => _world.EntityManager.GetBuffer<Segment>( entity , isReadOnly ).Reinterpret<float3x2>();
+        public static DynamicBuffer<float3x2> GetBuffer ( Entity entity , bool isReadOnly = false ) => _world.EntityManager.GetBuffer<Segment>( entity , isReadOnly ).Reinterpret<float3x2>();
 
     }
     

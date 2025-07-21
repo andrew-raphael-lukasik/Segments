@@ -18,12 +18,12 @@ namespace Samples
 
         Entity _segments;
 
-        void OnEnable () => Segments.Core.CreateBatch( out _segments , _srcMaterial );
-        void OnDisable () => Segments.Core.DestroyBatch( _segments );
+        void OnEnable () => Segments.Core.Create( out _segments , _srcMaterial );
+        void OnDisable () => Segments.Core.Destroy( _segments );
 
         void Update ()
         {
-            var segments = Segments.Core.GetSegmentBuffer( _segments );
+            var segments = Segments.Core.GetBuffer( _segments );
             if( segments.Length!=_numSegments || _everyFrame )
             {
                 segments.Length = _numSegments;

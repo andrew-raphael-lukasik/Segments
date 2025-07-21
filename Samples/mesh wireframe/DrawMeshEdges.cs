@@ -36,23 +36,23 @@ namespace Samples
             }
 
             // create segment buffer:
-            Segments.Core.CreateBatch( out _segments , _materialOverride );
+            Segments.Core.Create( out _segments , _materialOverride );
             
             // initialize buffer size:
-            var buffer = Segments.Core.GetSegmentBuffer( _segments );
+            var buffer = Segments.Core.GetBuffer( _segments );
             buffer.Length = _edges.Length;
         }
 
         void OnDisable ()
         {
-            Segments.Core.DestroyBatch( _segments );
+            Segments.Core.Destroy( _segments );
             if( _vertices.IsCreated ) _vertices.Dispose();
             if( _edges.IsCreated ) _edges.Dispose();
         }
 
         void Update ()
         {
-            var buffer = Segments.Core.GetSegmentBuffer( _segments );
+            var buffer = Segments.Core.GetBuffer( _segments );
             var jobHandle = new UpdateSegmentsJob{
                 Edges        = _edges.AsReadOnly() ,
                 Vertices    = _vertices.AsReadOnly() ,

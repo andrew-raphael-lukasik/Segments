@@ -16,19 +16,19 @@ namespace Samples
         void OnEnable ()
         {
             // creates an Entity that will hold all the vertex data and will be responsible for drawing them
-            Segments.Core.CreateBatch( out _segments );
+            Segments.Core.Create( out _segments );
         }
 
         void OnDisable ()
         {
             // destroys the entity and all data associated with it
-            Segments.Core.DestroyBatch( _segments );
+            Segments.Core.Destroy( _segments );
         }
         
         void Update ()
         {
             // accesses the Segment beffer component of our Entity where every Segment is a pair of float3 values (start & end of a line segment)
-            var segments = Segments.Core.GetSegmentBuffer( _segments );
+            var segments = Segments.Core.GetBuffer( _segments );
             
             // we already know ahead of time that we want 3 segments here
             segments.Length = 3;
