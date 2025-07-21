@@ -1,3 +1,5 @@
+# Segments
+
 Segments is a lightweight line renderer for DOTS tech stack.
 
 - You create and then fill the `Segment` buffer (pairs of points) plotting shapes you want, `SegmentUpdateSystem` then pushes this data to the GPU where `geometry shader` creates output triangles on screen.
@@ -6,7 +8,7 @@ Segments is a lightweight line renderer for DOTS tech stack.
 
 ![Screencast_20250721_000319-ezgif com-video-to-gif-converter (2)](https://github.com/user-attachments/assets/8ab05960-c7dc-420b-9300-fadd06554574)
 
-# Getting started with Segments:
+# Getting started:
 ```csharp
 Entity _segments;
 void OnEnable () => Segments.Core.Create(out _segments);// creates an Entity that will hold all the vertex data and will be responsible for drawing them
