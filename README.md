@@ -4,6 +4,8 @@ Segments is a lightweight line renderer for DOTS tech stack.
 - Shape lifetime control and plotting can happen either in a system, job, editor window or a monobehaviour - your choice.
 - Can be used for runtime shapes only or in the editor for debug gizmos.
 
+![Screencast_20250721_000319-ezgif com-video-to-gif-converter (2)](https://github.com/user-attachments/assets/8ab05960-c7dc-420b-9300-fadd06554574)
+
 # Getting started with Segments:
 ```csharp
 Entity _segments;
