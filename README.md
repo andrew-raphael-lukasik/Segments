@@ -6,6 +6,10 @@ Segments is a lightweight line renderer for DOTS tech stack.
 - Shape lifetime control and plotting can happen either in a system, job, editor window or a monobehaviour - your choice.
 - Can be used for runtime shapes only or in the editor for debug gizmos.
 
+
+<img width="1894" height="837" alt="image" src="https://github.com/user-attachments/assets/dfc38b18-52c0-4e91-af14-1fb9fa2d14a0" />
+
+
 ## Getting started:
 
 Here is a minimum code that will draw lines on screen:
@@ -27,6 +31,7 @@ void Update ()
 
 Code above is just an illustration of the workflow to get you started. The best way of doing this is with use of job system as these will result in the best performance. Look into Samples to learn more.
 
+
 ## Performance
 
 Stress tested with 300k segments on my laptop (i7-7700HQ, GTX1060M) and bottleneck turned out to be the GPU (shader).
@@ -34,9 +39,6 @@ See for yourself, this exact test scene is provided as one of the samples.
 
 @todo: details
 
-## Requirements
-- Unity 6000.0
-- URP (not tested with HDRP yet)
 
 ## Samples
 - stress test
@@ -47,6 +49,11 @@ See for yourself, this exact test scene is provided as one of the samples.
 
 - drawing mesh bounding boxes
 <img height="300" alt="image" src="https://github.com/user-attachments/assets/3ee90180-6176-469c-8cea-ffa49bd41c76" />
+
+
+## Requirements
+- Unity 6000.0
+- URP (not tested with HDRP yet)
 
 
 ## Installation Unity 6000.x
