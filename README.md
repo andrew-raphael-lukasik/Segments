@@ -6,9 +6,10 @@ Segments is a lightweight line renderer for DOTS tech stack.
 - Shape lifetime control and plotting can happen either in a system, job, editor window or a monobehaviour - your choice.
 - Can be used for runtime shapes only or in the editor for debug gizmos.
 
-![Screencast_20250721_000319-ezgif com-video-to-gif-converter (2)](https://github.com/user-attachments/assets/8ab05960-c7dc-420b-9300-fadd06554574)
+## Getting started:
 
-# Getting started:
+Here is a minimum code that will draw lines on screen:
+
 ```csharp
 Entity _segments;
 void OnEnable () => Segments.Core.Create(out _segments);// creates an Entity that will hold all the vertex data and will be responsible for drawing them
@@ -24,18 +25,23 @@ void Update ()
 }
 ```
 
-# Performance
+Code above is just an illustration of the workflow to get you started. The best way of doing this is with use of job system as these will result in the best performance. Look into Samples to learn more.
+
+## Performance
 
 Stress tested with 300k segments on my laptop (i7-7700HQ, GTX1060M) and bottleneck turned out to be the GPU (shader).
 See for yourself, this exact test scene is provided as one of the samples.
 
 @todo: details
 
-# Requirements
+## Requirements
 - Unity 6000.0
 - URP (not tested with HDRP yet)
 
-# Samples
+## Samples
+- stress test
+<img height="300" alt="image" src="https://github.com/user-attachments/assets/8ab05960-c7dc-420b-9300-fadd06554574" />
+
 - mesh wireframe
 <img height="300" alt="image" src="https://github.com/user-attachments/assets/b401f24c-e612-4d2e-9640-27e0b330f982" />
 
@@ -43,7 +49,7 @@ See for yourself, this exact test scene is provided as one of the samples.
 <img height="300" alt="image" src="https://github.com/user-attachments/assets/3ee90180-6176-469c-8cea-ffa49bd41c76" />
 
 
-# Installation Unity 6000.x
+## Installation Unity 6000.x
 Add this line in `manifest.json` / `dependencies`:
 ```
 "com.andrewraphaellukasik.segments": "https://github.com/andrew-raphael-lukasik/segments.git#upm",
