@@ -1,110 +1,124 @@
-﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Assertions;
 using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Rendering;
+using Unity.Transforms;
 
 namespace Segments
 {
-	public static class Core
-	{
-		
+    public static class Core
+    {
 
-		internal static List<Batch> Batches = new List<Batch>();
-		static Material default_material { get; set; }
+        static EntityQuery _query;
+        public static EntityQuery Query => _query;
 
-		static World world;
+        static Material _default_material;
+        internal static World _world;
 
+        internal static World GetWorld ()
+        {
+            if( _world!=null && _world.IsCreated )
+                return _world;
+            else
+            {
+                _world = World.DefaultGameObjectInjectionWorld;
+                
+                #if UNITY_EDITOR
+                if( _world==null )
+                {
+                    // create editor world:
+                    _world = DefaultWorldInitialization.Initialize( "Editor World" , true );
+                    // DefaultWorldInitialization.DefaultLazyEditModeInitialize();// not immediate
+                }
+                #endif
 
-		public static World GetWorld ()
-		{
-			if( world!=null && world.IsCreated )
-				return world;
-			else
-			{
-				world = World.DefaultGameObjectInjectionWorld;
-				
-				#if UNITY_EDITOR
-				if( world==null )
-				{
-					// create editor world:
-					world = DefaultWorldInitialization.Initialize( "Editor World" , true );
-					// DefaultWorldInitialization.DefaultLazyEditModeInitialize();// not immediate
-				}
-				#endif
+                _query = _world.EntityManager.CreateEntityQuery( typeof(Segment) );
 
-				DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups( world , typeof(SegmentInitializationSystem) , typeof(SegmentRenderingSystem) );
+                if( _default_material==null )
+                {
+                    const string path = "packages/com.andrewraphaellukasik.segments/default";
+                    _default_material = Resources.Load<Material>( path );
+                    if( _default_material!=null )
+                        _default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
+                    else
+                        Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
+                }
 
-				// load default material asset:
-				if( default_material==null )
-				{
-					const string path = "packages/Segments/default";
-					default_material = UnityEngine.Resources.Load<Material>( path );
-					if( default_material!=null )
-						default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
-					else
-						Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
-				}
-				
-				return world;
-			}
-		}
+                return _world;
+            }
+        }
 
+        public static void Create ( out Entity entity , Material material = null )
+        {
+            var entityManager = GetWorld().EntityManager;
+            Create( entityManager , out entity , material );
+        }
+        public static void Create ( out Entity entity , out EntityManager entityManager , Material material = null )
+        {
+            entityManager = GetWorld().EntityManager;
+            Create( entityManager , out entity , material );
+        }
+        public static void Create ( EntityManager entityManager , out Entity entity , Material material = null )
+        {
+            _query.CompleteDependency();
+            
+            entity = entityManager.CreateEntity( typeof(Segment) );
+            if( material==null )
+            {
+                if( _default_material==null )
+                {
+                    const string path = "packages/com.andrewraphaellukasik.segments/default";
+                    _default_material = Resources.Load<Material>( path );
+                    if( _default_material!=null )
+                        _default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
+                    else
+                        Debug.LogWarning($"loading Material asset failed, path: \'{path}\'");
+                }
+                
+                material = _default_material;
+            }
+            entityManager.AddSharedComponentManaged( entity , new SegmentCreationRequestData{
+                material = material
+            } );
+            
+            entityManager.AddComponentData( entity , new LocalToWorld{
+                Value = float4x4.identity
+            } );
+        }
 
-		public static void CreateBatch ( out Batch batch , Material materialOverride = null )
-		{
-			GetWorld();// makes sure initialized world exists
+        public static void DestroyAll ()
+        {
+            if( _world.IsCreated )
+            {
+                _query.CompleteDependency();
+                _world.EntityManager.DestroyEntity( _query );
+            }
+        }
 
-			if( materialOverride==null )
-				materialOverride = default_material;
-			Assert.IsNotNull( materialOverride , $"{nameof(materialOverride)} is null" );
-			
-			var buffer = new NativeList<float3x2>( Allocator.Persistent );
-			batch = new Batch(
-				mat:		materialOverride ,
-				buffer:		buffer
-			);
-			Batches.Add( batch );
-		}
+        public static void Destroy ( Entity entity )
+        {
+            if( _world.IsCreated )
+            {
+                _query.CompleteDependency();
+                _world.EntityManager.DestroyEntity( entity );
+            }
+        }
+        /// <summary> Can be called from a Burst-compiled ISystem </summary>
+        public static void Destroy ( Entity entity , EntityManager entityManager )
+        {
+            entityManager.CreateEntityQuery( new EntityQueryBuilder(Allocator.Temp).WithAll<Segment>() ).CompleteDependency();
+            entityManager.DestroyEntity( entity );
+        }
 
+        /// <summary> Pass jobhandle when scheduling a job, that accesses a segment buffer, from where ECS can't track it automatically (Monobehaviours) </summary>
+        public static void AddDependency ( JobHandle dependency ) => _query.AddDependency( dependency );
 
-		public static void DestroyAllBatches ()
-		{
-			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
-			{
-				var batch = Batches[i];
-				batch.Dependency.Complete();
-				batch.DisposeImmediate();
-				
-				Batches.RemoveAt(i);
-			}
-			Assert.AreEqual( Batches.Count , 0 );
-		}
+        /// <summary> Returns a Segment buffer reintepreted as float3x2 for convenience </summary>
+        public static DynamicBuffer<float3x2> GetBuffer ( Entity entity , bool isReadOnly = false ) => _world.EntityManager.GetBuffer<Segment>( entity , isReadOnly ).Reinterpret<float3x2>();
 
-
-		public static void Render ( Camera camera )
-		{
-			for( int i=Batches.Count-1 ; i!=-1 ; i-- )
-			{
-				var batch = Batches[i];
-				var mesh = batch.mesh;
-				var material = batch.material;
-				
-				if( mesh.bounds.size.sqrMagnitude!=0 )
-				{
-					Graphics.DrawMesh(
-						mesh ,
-						Vector3.zero , quaternion.identity ,
-						material ,
-						0 , camera , 0 ,
-						batch.materialPropertyBlock ,
-						false , true , true
-					);
-				}
-			}
-		}
-
-
-	}
+    }
 }
