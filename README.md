@@ -1,48 +1,68 @@
+# Segments
+
 Segments is a lightweight line renderer for DOTS tech stack.
 
-> This repo is a work in progress so it's not ready for production and expect occasional changes in any of this works (especially since entitties package is changing as well).
+- You create and then fill the `Segment` buffer (pairs of points) plotting shapes you want, `SegmentUpdateSystem` then pushes this data to the GPU where `geometry shader` creates output triangles on screen.
+- Shape lifetime control and plotting can happen either in a system, job, editor window or a monobehaviour - your choice.
+- Can be used for runtime shapes only or in the editor for debug gizmos.
 
-It works by creating mesh batches formatted as `MeshTopology.Lines`, `SystemBase` job system schedules updates with `MeshDataArray`. `Geometry shader` creates output triangles on the GPU.
 
-# Getting started with Segments:
+<img width="1894" height="837" alt="image" src="https://github.com/user-attachments/assets/dfc38b18-52c0-4e91-af14-1fb9fa2d14a0" />
+
+
+## Getting started:
+
+Here is a minimum code that will draw lines on screen:
+
 ```csharp
-Segments.Batch _batch;
-void OnEnable () => Segments.Core.CreateBatch( out _batch );
-void OnDisable () => _batch.Dispose();
+Entity _segments;
+void OnEnable () => Segments.Core.Create(out _segments);// creates an Entity that will hold all the vertex data and will be responsible for drawing them
+void OnDisable () => Segments.Core.Destroy(_segments);// destroys the entity and all data associated with it
 void Update ()
 {
-	_batch.Dependency.Complete();
-
-	var buffer = _batch.buffer;
-	buffer.Length = 3;
-	Vector3 position = transform.position;
-	buffer[0] = new float3x2( position , position+transform.right );
-	buffer[1] = new float3x2( position , position+transform.up );
-	buffer[2] = new float3x2( position , position+transform.forward );
+    DynamicBuffer<float3x2> segments = Segments.Core.GetBuffer(_segments);
+    segments.Length = 3;
+    Vector3 pos = transform.position;
+    segments[0] = new float3x2( pos , pos+transform.right );
+    segments[1] = new float3x2( pos , pos+transform.up );
+    segments[2] = new float3x2( pos , pos+transform.forward );
 }
 ```
-# Performance
 
-100_000 segments? No problem!
+Code above is just an illustration of the workflow to get you started. The best way of doing this is with use of job system as these will result in the best performance. Look into Samples to learn more.
 
-> **EDIT**: Still working on improving this as plotting shapes is not as fast as I wanted...
+
+## Performance
+
+Stress tested with 300k segments on my laptop (i7-7700HQ, GTX1060M) and bottleneck turned out to be the GPU (shader).
+See for yourself, this exact test scene is provided as one of the samples.
 
 @todo: details
 
-# Requirements
-- Unity 2022.2
-- `Entities Graphics` package
-- Universal Render Pipeline
 
-# Samples
-- mesh wireframe (runtime)
-<img src="https://i.imgur.com/NCC71mD.gif" height="200">
+## Samples
+- stress test
+<img height="300" alt="image" src="https://github.com/user-attachments/assets/8ab05960-c7dc-420b-9300-fadd06554574" />
 
-- drawing mesh bounding boxes (runtime)
-<img src="https://i.imgur.com/J1mzvSbl.jpg" height="200">
+- mesh wireframe
+<img height="300" alt="image" src="https://github.com/user-attachments/assets/b401f24c-e612-4d2e-9640-27e0b330f982" />
 
-# Installation Unity 2022.2
-Select `Add package from git URL` from `Package Manager` window and pass this address:
+- drawing mesh bounding boxes
+<img height="300" alt="image" src="https://github.com/user-attachments/assets/3ee90180-6176-469c-8cea-ffa49bd41c76" />
+
+
+## Requirements
+- Unity 6000.0
+- URP (not tested with HDRP yet)
+
+
+## Installation Unity 6000.x
+Add this line in `manifest.json` / `dependencies`:
+```
+"com.andrewraphaellukasik.segments": "https://github.com/andrew-raphael-lukasik/segments.git#upm",
+```
+
+Or via `Package Manager` / `Add package from git URL`:
 ```
 https://github.com/andrew-raphael-lukasik/segments.git#upm
 ```
