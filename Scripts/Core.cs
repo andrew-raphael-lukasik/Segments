@@ -120,10 +120,4 @@ namespace Segments
         public static DynamicBuffer<float3x2> GetBuffer ( Entity entity , bool isReadOnly = false ) => _world.EntityManager.GetBuffer<Segment>( entity , isReadOnly ).Reinterpret<float3x2>();
 
     }
-    
-    public struct Segment : IBufferElementData
-    {
-        public float3x2 Value;
-    }
-
 }
