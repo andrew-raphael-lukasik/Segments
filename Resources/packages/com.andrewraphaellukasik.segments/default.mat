@@ -30,23 +30,23 @@ Material:
     m_Ints: []
     m_Floats:
     - _AlphaCutoff: 0.01
-    - _AlphaPow: 5.5
+    - _AlphaPow: 1
     - _DitherStrength: 1
-    - _FarColorDistance: 50
-    - _FarCutoffDistaneEnd: 1000
-    - _FarCutoffDistaneStart: 500
-    - _FarWidth: 7
-    - _FarWidthDistance: 1000
-    - _NearColorDistance: 1
+    - _FarColorDistance: 100
+    - _FarCutoffDistaneEnd: 200
+    - _FarCutoffDistaneStart: 100
+    - _FarWidth: 0.13
+    - _FarWidthDistance: 50
+    - _NearColorDistance: 10
     - _NearCutoffDistane: 0.5
-    - _NearWidth: 0.25
-    - _NearWidthDistance: 200
+    - _NearWidth: 0.005
+    - _NearWidthDistance: 1
     - _Roundness: 1
     - _Smoothness: 1
     - _Texture: 0
     m_Colors:
-    - _Color: {r: 0, g: 0, b: 0, a: 1}
-    - _ColorFar: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 0.8533139, b: 0, a: 1}
+    - _ColorFar: {r: 1, g: 0.85490197, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &5208139201979794064
