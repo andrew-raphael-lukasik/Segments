@@ -57,19 +57,19 @@ SubShader
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
         struct Attributes {
-            float4 vertex : POSITION;
+            float4 vertexO : POSITION;
             float4 color : COLOR0;
             UNITY_VERTEX_INPUT_INSTANCE_ID
         };
         struct Varyings {
-            float4 vertex : SV_POSITION;
+            float4 vertexW : SV_POSITION;
             float4 color : COLOR0;
             float4 screenPos : TEXCOORD1;
             float worldDepth : TEXCOORD2;
             UNITY_VERTEX_INPUT_INSTANCE_ID
         };
         struct geomOut {
-            float4 vertex : POSITION;
+            float4 vertexHC : POSITION;
             float4 color : COLOR0;
             float3 uv : TEXCOORD0;
                 // uv.xy - uv
@@ -182,13 +182,13 @@ SubShader
             
             UNITY_SETUP_INSTANCE_ID( IN );
             UNITY_TRANSFER_INSTANCE_ID( IN , OUT );
-            OUT.vertex = float4(TransformObjectToWorld(IN.vertex.xyz),1);
+            OUT.vertexW = float4(TransformObjectToWorld(IN.vertexO.xyz),1);
 
             // src: https://forum.unity.com/threads/is-there-a-way-to-get-screen-pos-depth-in-shader.1009465/#post-6544999
-            float4 clipPos = TransformObjectToHClip( IN.vertex.xyz );
+            float4 clipPos = TransformObjectToHClip( IN.vertexO.xyz );
             OUT.screenPos = ComputeScreenPos(clipPos);
 
-            float3 viewPos = TransformWorldToView( OUT.vertex.xyz );
+            float3 viewPos = TransformWorldToView( OUT.vertexW.xyz );
             OUT.worldDepth = -viewPos.z;
             
             OUT.color = IN.color;
@@ -203,7 +203,7 @@ SubShader
             Varyings IN0 = IN[0];
             Varyings IN1 = IN[1];
 
-            float3 lineVec = IN1.vertex.xyz - IN0.vertex.xyz;
+            float3 lineVec = IN1.vertexW.xyz - IN0.vertexW.xyz;
             float3 lineDir = normalize(lineVec);
             float2 lineLen = (float2) length(lineVec);
 
@@ -218,7 +218,7 @@ SubShader
             float3 tScale = float3( tWidth.y , 1 , lineLen.y );
             float3x3 rot = LookRotation(
                 lineDir ,
-                normalize(_WorldSpaceCameraPos-IN0.vertex)
+                normalize(_WorldSpaceCameraPos-IN0.vertexW.xyz)
             );
             float3x3 bltw = rot * S(bScale);
             float3x3 tltw = rot * S(tScale);
@@ -226,15 +226,15 @@ SubShader
             // quad 1x1, pivot at bottom center
             float2 bCapWidth = float2(1,1)/lineLen * bOverlap*float2(0.5,0.5);
             float2 tCapWidth = float2(1,1)/lineLen * tOverlap*float2(0.5,0.5);
-            float4 bl = TransformWorldToHClip( IN0.vertex.xyz + float3( mul( float3(-0.5,0,-bCapWidth.x) , bltw ) ) );
-            float4 br = TransformWorldToHClip( IN0.vertex.xyz + float3( mul( float3( 0.5,0,-bCapWidth.x) , bltw ) ) );
-            float4 tl = TransformWorldToHClip( IN0.vertex.xyz + float3( mul( float3(-0.5,0,1+tCapWidth.y) , tltw ) ) );
-            float4 tr = TransformWorldToHClip( IN0.vertex.xyz + float3( mul( float3( 0.5,0,1+tCapWidth.y) , tltw ) ) );
+            float4 bl = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3(-0.5,0,-bCapWidth.x) , bltw ) ) );
+            float4 br = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3( 0.5,0,-bCapWidth.x) , bltw ) ) );
+            float4 tl = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3(-0.5,0,1+tCapWidth.y) , tltw ) ) );
+            float4 tr = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3( 0.5,0,1+tCapWidth.y) , tltw ) ) );
             
             geomOut vertex;
 
             // bottom right
-            vertex.vertex = br;
+            vertex.vertexHC = br;
             vertex.color = IN0.color;
             vertex.uv = float3( 1 , 0 , bAspect.x );
             vertex.screenPos = ComputeScreenPos(br);
@@ -242,7 +242,7 @@ SubShader
             STREAM.Append(vertex);
 
             // bottom left
-            vertex.vertex = bl;
+            vertex.vertexHC = bl;
             vertex.color = IN0.color;
             vertex.uv = float3( 0 , 0 , bAspect.x );
             vertex.screenPos = ComputeScreenPos(bl);
@@ -250,7 +250,7 @@ SubShader
             STREAM.Append(vertex);
 
             // top right
-            vertex.vertex = tr;
+            vertex.vertexHC = tr;
             vertex.color = IN1.color;
             vertex.uv = float3( 1 , 1 , tAspect.y );
             vertex.screenPos = ComputeScreenPos(tr);
@@ -258,7 +258,7 @@ SubShader
             STREAM.Append(vertex);
 
             // top left
-            vertex.vertex = tl;
+            vertex.vertexHC = tl;
             vertex.color = IN1.color;
             vertex.uv = float3( 0 , 1 , tAspect.y );
             vertex.screenPos = ComputeScreenPos(tl);
@@ -290,9 +290,9 @@ SubShader
             float4 col = saturate( IN.color * lerp(_Color, _ColorFar, depth_t) * float4(1,1,1,alpha_mul) );
 
             #ifdef _TEXTURE_ON
-                IN.uv.xy = TRANSFORM_TEX( IN.uv.xy , _MainTex );
-                float4 texCol = SAMPLE_TEXTURE2D( _MainTex , sampler_MainTex , IN.uv.xy );
-                col *= texCol;
+            IN.uv.xy = TRANSFORM_TEX( IN.uv.xy , _MainTex );
+            float4 texCol = SAMPLE_TEXTURE2D( _MainTex , sampler_MainTex , IN.uv.xy );
+            col *= texCol;
             #endif
 
             // if( depth > _FarCutoffDistaneStart )// attempt to make lines disappear in less noisy way when very thin
