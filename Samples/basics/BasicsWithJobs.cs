@@ -26,7 +26,7 @@ namespace Samples
             segments.Length = 3;
 
             var jobHandle = new MyBasicJob{
-                Buffer            = segments.AsNativeArray() ,
+                SegmentBuffer   = segments.AsNativeArray() ,
                 LocalToWorld    = transform.localToWorldMatrix// this matrix holds directions (scale per axis) and position of the transform
             }.Schedule();
             
@@ -36,7 +36,7 @@ namespace Samples
         [Unity.Burst.BurstCompile]
         struct MyBasicJob : IJob
         {
-            public NativeArray<float3x2> Buffer;
+            [WriteOnly] public NativeArray<float3x2> SegmentBuffer;
             public float4x4 LocalToWorld;
             void IJob.Execute ()
             {
@@ -53,9 +53,9 @@ namespace Samples
                 float3 forward    = new float3( c2.x , c2.y , c2.z );
 
                 // set points where all these segments will start and end
-                Buffer[0] = new float3x2( pos , pos+right );
-                Buffer[1] = new float3x2( pos , pos+up );
-                Buffer[2] = new float3x2( pos , pos+forward );
+                SegmentBuffer[0] = new float3x2( pos , pos+right );
+                SegmentBuffer[1] = new float3x2( pos , pos+up );
+                SegmentBuffer[2] = new float3x2( pos , pos+forward );
             }
         }
 

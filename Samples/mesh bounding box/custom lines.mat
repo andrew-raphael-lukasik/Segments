@@ -105,8 +105,8 @@ Material:
     - _DstBlend: 10
     - _FarColorDistance: 50
     - _FarCutoffDistane: 0.5
-    - _FarCutoffDistaneEnd: 100
-    - _FarCutoffDistaneStart: 30
+    - _FarCutoffDistaneEnd: 1000
+    - _FarCutoffDistaneStart: 200
     - _FarWidth: 1
     - _FarWidthDistance: 30
     - _GlossMapScale: 1
