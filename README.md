@@ -3,9 +3,9 @@
 Segments is a lightweight line renderer for DOTS tech stack.
 
 - You create and then fill the `Segment` buffer (pairs of points) plotting shapes you want, `SegmentUpdateSystem` then pushes this data to the GPU where `geometry shader` creates output triangles on screen.
-- Shape lifetime control and plotting can happen either in a system, job, editor window or a monobehaviour - your choice.
-- Can be used for runtime shapes only or in the editor for debug gizmos.
-
+- `Segment` buffer's lifetime control and plotting, being part of an `Entity`, can happen either in a system, job, editor window or a monobehaviour - your choice.
+- Can be used for runtime shapes only or in the editor for debug gizmos as well.
+- To develop the look of the lines to your specific needs you are expected to know shader programming basics to be able to fork and modify the base shader on your own
 
 <img width="1894" height="837" alt="image" src="https://github.com/user-attachments/assets/dfc38b18-52c0-4e91-af14-1fb9fa2d14a0" />
 
