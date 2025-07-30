@@ -3,8 +3,9 @@
 Segments is a lightweight line renderer for DOTS tech stack.
 
 - You create and then fill the `Segment` buffer (pairs of points) plotting shapes you want, `SegmentUpdateSystem` then pushes this data to the GPU where `geometry shader` creates output triangles on screen.
-- Shape lifetime control and plotting can happen either in a system, job, editor window or a monobehaviour - your choice.
-- Can be used for runtime shapes only or in the editor for debug gizmos.
+- `Segment` buffer's lifetime control and plotting, being part of an `Entity`, can happen either in a system, job, editor window or a monobehaviour - your choice.
+- Can be used for runtime shapes only or in the editor for debug gizmos as well.
+- To develop the look of the lines to your specific needs you are expected to know shader programming basics to be able to fork and modify the base shader on your own
 
 
 <img width="1894" height="837" alt="image" src="https://github.com/user-attachments/assets/dfc38b18-52c0-4e91-af14-1fb9fa2d14a0" />
@@ -35,10 +36,14 @@ Code above is just an illustration of the workflow to get you started. The best 
 ## Performance
 
 Stress tested with 300k segments on my laptop (i7-7700HQ, GTX1060M) and bottleneck turned out to be the GPU (shader).
-See for yourself, this exact test scene is provided as one of the samples.
 
-@todo: details
+RenderDoc debugger shows that stress test scene generates very high amount of PS invocations (at 1920x876 res). I thought about maybe adding depth-only prepass to reduce this but that would require ingerention into URP renderer which is something I don't find fitting for this project - I want it to be plug&play, with minimum dependencies.
 
+<img height="300" alt="image" src="https://github.com/user-attachments/assets/c6b02d4f-1620-4708-a37f-56171a2e56c2" />
+
+I'm investigating whenever replacing geometry shader with a compute shader will reduce the GPU time.
+
+Also, this exact test scene is provided as one of the samples so you can test it yourself.
 
 ## Samples
 - stress test
