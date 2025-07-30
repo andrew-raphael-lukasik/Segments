@@ -37,7 +37,7 @@ Code above is just an illustration of the workflow to get you started. The best 
 
 Stress tested with 300k segments on my laptop (i7-7700HQ, GTX1060M) and bottleneck turned out to be the GPU (shader).
 
-RenderDoc debugger shows that stress test scene generates very high amount of PS invocations (at 1920x876 res). I thought about maybe adding depth-only prepass to reduce this but that would require ingerention into URP renderer which is something I don't find fitting for this project - I want it to be plug&play, with minimum dependencies.
+RenderDoc debugger shows that stress test scene generates very high amount of PS invocations (at 1920x876 res). I thought about maybe adding depth-only prepass to reduce this but that would require changes to URP renderer which is something I don't find fitting for this project - I want it to be plug&play, with minimum dependencies.
 
 <img height="300" alt="image" src="https://github.com/user-attachments/assets/c6b02d4f-1620-4708-a37f-56171a2e56c2" />
 
