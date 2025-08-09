@@ -121,7 +121,6 @@ SubShader
         float2 inverselerp ( float2 from , float2 to , float2 x ) { return remap(from,to,x); }
 
         float lengthSq ( float2 vec ) { return dot( vec , vec ); }
-
         
         float easeOutCirc ( float x ) { return sqrt( 1.0 - pow(x-1.0,2.0) ); }// src: https://easings.net/#easeOutCirc
         float easeOutQuad( float x ) { return 1 - (1 - x) * (1 - x); }// src: https://easings.net/#easeOutQuad
@@ -207,27 +206,25 @@ SubShader
             float3 lineDir = normalize(lineVec);
             float lineLen = length(lineVec);
 
-            float bWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,bottom.worldDepth) );
-            float tWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,top.worldDepth) );
+            float bWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,bottom.worldDepth) ) * 0.5f;
+            float tWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,top.worldDepth) ) * 0.5f;
 
             float bAspect = bWidth / ( lineLen + bWidth );
             float tAspect = tWidth / ( lineLen + tWidth );
 
-            float3x3 rot = lookrotation(
-                lineDir ,
-                normalize(_WorldSpaceCameraPos-bottom.vertexW.xyz)
-            );
-            float3x3 bltw = rot * S(bWidth, 1, lineLen);
-            float3x3 tltw = rot * S(tWidth, 1, lineLen);
-
+            // float3 widthDir = cross(lineDir, normalize(_WorldSpaceCameraPos-bottom.vertexW.xyz));
+            float3 widthDir = normalize(cross(normalize(_WorldSpaceCameraPos-bottom.vertexW.xyz), lineDir));
+            float3 bWidthVec = widthDir * bWidth;
+            float3 tWidthVec = widthDir * tWidth;
+            
             // quad 1x1, pivot at bottom center
-            float bCapWidth = 1.0f/lineLen * bWidth*0.5f;
-            float tCapWidth = 1.0f/lineLen * tWidth*0.5f;
+            float bCapWidth = 1.0f/lineLen * bWidth;
+            float tCapWidth = 1.0f/lineLen * tWidth;
 
-            float3 blWS = bottom.vertexW.xyz + mul( float3(-0.5,0,-bCapWidth) , bltw );
-            float3 brWS = bottom.vertexW.xyz + mul( float3( 0.5,0,-bCapWidth) , bltw );
-            float3 tlWS = bottom.vertexW.xyz + mul( float3(-0.5,0,1+tCapWidth) , tltw );
-            float3 trWS = bottom.vertexW.xyz + mul( float3( 0.5,0,1+tCapWidth) , tltw );
+            float3 blWS = bottom.vertexW.xyz - bWidthVec + lineVec*-bCapWidth;
+            float3 brWS = bottom.vertexW.xyz + bWidthVec + lineVec*-bCapWidth;
+            float3 tlWS = top.vertexW.xyz - tWidthVec + lineVec*tCapWidth;
+            float3 trWS = top.vertexW.xyz + tWidthVec + lineVec*tCapWidth;
 
             float4 blCS = TransformWorldToHClip(blWS);
             float4 brCS = TransformWorldToHClip(brWS);
