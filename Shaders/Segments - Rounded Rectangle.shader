@@ -205,17 +205,15 @@ SubShader
 
             float3 lineVec = IN1.vertexW.xyz - IN0.vertexW.xyz;
             float3 lineDir = normalize(lineVec);
-            float2 lineLen = (float2) length(lineVec);
+            float lineLen = length(lineVec);
 
-            float2 bWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,IN0.worldDepth) );
-            float2 tWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,IN1.worldDepth) );
+            float bWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,IN0.worldDepth) );
+            float tWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,IN1.worldDepth) );
 
-            float2 bOverlap = bWidth;
-            float2 tOverlap = tWidth;
-            float2 bAspect = bWidth / ( lineLen + bOverlap );
-            float2 tAspect = tWidth / ( lineLen + tOverlap );
-            float3 bScale = float3( bWidth.x , 1 , lineLen.x );
-            float3 tScale = float3( tWidth.y , 1 , lineLen.y );
+            float bAspect = bWidth / ( lineLen + bWidth );
+            float tAspect = tWidth / ( lineLen + tWidth );
+            float3 bScale = float3( bWidth , 1 , lineLen );
+            float3 tScale = float3( tWidth , 1 , lineLen );
             float3x3 rot = LookRotation(
                 lineDir ,
                 normalize(_WorldSpaceCameraPos-IN0.vertexW.xyz)
@@ -224,19 +222,19 @@ SubShader
             float3x3 tltw = rot * S(tScale);
 
             // quad 1x1, pivot at bottom center
-            float2 bCapWidth = float2(1,1)/lineLen * bOverlap*float2(0.5,0.5);
-            float2 tCapWidth = float2(1,1)/lineLen * tOverlap*float2(0.5,0.5);
-            float4 bl = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3(-0.5,0,-bCapWidth.x) , bltw ) ) );
-            float4 br = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3( 0.5,0,-bCapWidth.x) , bltw ) ) );
-            float4 tl = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3(-0.5,0,1+tCapWidth.y) , tltw ) ) );
-            float4 tr = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3( 0.5,0,1+tCapWidth.y) , tltw ) ) );
+            float bCapWidth = 1.0f/lineLen * bWidth*0.5f;
+            float tCapWidth = 1.0f/lineLen * tWidth*0.5f;
+            float4 bl = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3(-0.5,0,-bCapWidth) , bltw ) ) );
+            float4 br = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3( 0.5,0,-bCapWidth) , bltw ) ) );
+            float4 tl = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3(-0.5,0,1+tCapWidth) , tltw ) ) );
+            float4 tr = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3( 0.5,0,1+tCapWidth) , tltw ) ) );
             
             geomOut vertex;
 
             // bottom right
             vertex.vertexHC = br;
             vertex.color = IN0.color;
-            vertex.uv = float3( 1 , 0 , bAspect.x );
+            vertex.uv = float3( 1 , 0 , bAspect );
             vertex.screenPos = ComputeScreenPos(br);
             vertex.worldDepth = IN0.worldDepth;
             STREAM.Append(vertex);
@@ -244,7 +242,7 @@ SubShader
             // bottom left
             vertex.vertexHC = bl;
             vertex.color = IN0.color;
-            vertex.uv = float3( 0 , 0 , bAspect.x );
+            vertex.uv = float3( 0 , 0 , bAspect );
             vertex.screenPos = ComputeScreenPos(bl);
             vertex.worldDepth = IN0.worldDepth;
             STREAM.Append(vertex);
@@ -252,7 +250,7 @@ SubShader
             // top right
             vertex.vertexHC = tr;
             vertex.color = IN1.color;
-            vertex.uv = float3( 1 , 1 , tAspect.y );
+            vertex.uv = float3( 1 , 1 , tAspect );
             vertex.screenPos = ComputeScreenPos(tr);
             vertex.worldDepth = IN1.worldDepth;
             STREAM.Append(vertex);
@@ -260,7 +258,7 @@ SubShader
             // top left
             vertex.vertexHC = tl;
             vertex.color = IN1.color;
-            vertex.uv = float3( 0 , 1 , tAspect.y );
+            vertex.uv = float3( 0 , 1 , tAspect );
             vertex.screenPos = ComputeScreenPos(tl);
             vertex.worldDepth = IN1.worldDepth;
             STREAM.Append(vertex);
