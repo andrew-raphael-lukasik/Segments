@@ -1,4 +1,4 @@
-Shader "Segments/Rounded Rectangle" {
+Shader "Segments/World" {
 Properties
 {
     _Roundness ( "Shape Roundness" , Range(0,1) ) = 1.0
@@ -121,48 +121,13 @@ SubShader
         float2 inverselerp ( float2 from , float2 to , float2 x ) { return remap(from,to,x); }
 
         float lengthSq ( float2 vec ) { return dot( vec , vec ); }
-
         
         float easeOutCirc ( float x ) { return sqrt( 1.0 - pow(x-1.0,2.0) ); }// src: https://easings.net/#easeOutCirc
         float easeOutQuad( float x ) { return 1 - (1 - x) * (1 - x); }// src: https://easings.net/#easeOutQuad
 
-        // src: https://github.com/Unity-Technologies/Unity.Mathematics/blob/7da8f190d976ab687187eaeb3d42408e7f606667/src/Unity.Mathematics/matrix.cs#L436
-        float3x3 LookRotation ( float3 forward , float3 up )
-        {
-            float3 t = normalize( cross(up,forward) );
-            return float3x3( t , cross(forward,t) , forward );
-        }
-
-        // src: https://github.com/Unity-Technologies/Unity.Mathematics/blob/7da8f190d976ab687187eaeb3d42408e7f606667/src/Unity.Mathematics/matrix.cs#L1009
-        float4x4 TRS ( float3 translation , float3x3 rotation , float3 scale )
-        {
-            return float4x4(
-                float4( rotation[0]*scale.x , 0.0 ) ,
-                float4( rotation[1]*scale.y , 0.0 ) ,
-                float4( rotation[2]*scale.z , 0.0 ) ,
-                float4( translation , 1.0 )
-            );
-        }
-        float3x3 RS ( float3x3 rotation , float3 scale )
-        {
-            return float3x3(
-                float3( rotation[0]*scale.x ) ,
-                float3( rotation[1]*scale.y ) ,
-                float3( rotation[2]*scale.z )
-            );
-        }
-        float3x3 S ( float3 scale )
-        {
-            return float3x3(
-                float3( scale.x , scale.x , scale.x ) ,
-                float3( scale.y , scale.y , scale.y ) ,
-                float3( scale.z , scale.z , scale.z )
-            );
-        }
-
         // dithering (Bayer matrix 4x4)
         // src: https://github.com/Unity-Technologies/UnityCsSamples/blob/master/HDRPCustomPasses/Assets/Shaders/Dither.hlsl
-        float GetBayerValue(float2 screenUV)
+        float getbayervalue(float2 screenUV)
         {
             const float bayerMatrix[16] = {
                 0.0 / 16.0,  8.0 / 16.0,  2.0 / 16.0, 10.0 / 16.0,
@@ -200,69 +165,69 @@ SubShader
         [maxvertexcount(4)]
         void geom ( line Varyings IN[2] , inout TriangleStream<geomOut> STREAM )
         {
-            Varyings IN0 = IN[0];
-            Varyings IN1 = IN[1];
+            Varyings bottom = IN[0];
+            Varyings top = IN[1];
 
-            float3 lineVec = IN1.vertexW.xyz - IN0.vertexW.xyz;
+            float3 lineVec = top.vertexW.xyz - bottom.vertexW.xyz;
             float3 lineDir = normalize(lineVec);
-            float2 lineLen = (float2) length(lineVec);
+            float lineLen = length(lineVec);
 
-            float2 bWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,IN0.worldDepth) );
-            float2 tWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,IN1.worldDepth) );
+            float bWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,bottom.worldDepth) ) * 0.5f;
+            float tWidth = lerp( _NearWidth , _FarWidth , remap01(_NearWidthDistance,_FarWidthDistance,top.worldDepth) ) * 0.5f;
 
-            float2 bOverlap = bWidth;
-            float2 tOverlap = tWidth;
-            float2 bAspect = bWidth / ( lineLen + bOverlap );
-            float2 tAspect = tWidth / ( lineLen + tOverlap );
-            float3 bScale = float3( bWidth.x , 1 , lineLen.x );
-            float3 tScale = float3( tWidth.y , 1 , lineLen.y );
-            float3x3 rot = LookRotation(
-                lineDir ,
-                normalize(_WorldSpaceCameraPos-IN0.vertexW.xyz)
-            );
-            float3x3 bltw = rot * S(bScale);
-            float3x3 tltw = rot * S(tScale);
+            float bAspect = bWidth / ( lineLen + bWidth );
+            float tAspect = tWidth / ( lineLen + tWidth );
 
+            float3 widthDir = normalize(cross(normalize(_WorldSpaceCameraPos-bottom.vertexW.xyz), lineDir));
+            float3 bWidthVec = widthDir * bWidth;
+            float3 tWidthVec = widthDir * tWidth;
+            
             // quad 1x1, pivot at bottom center
-            float2 bCapWidth = float2(1,1)/lineLen * bOverlap*float2(0.5,0.5);
-            float2 tCapWidth = float2(1,1)/lineLen * tOverlap*float2(0.5,0.5);
-            float4 bl = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3(-0.5,0,-bCapWidth.x) , bltw ) ) );
-            float4 br = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3( 0.5,0,-bCapWidth.x) , bltw ) ) );
-            float4 tl = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3(-0.5,0,1+tCapWidth.y) , tltw ) ) );
-            float4 tr = TransformWorldToHClip( IN0.vertexW.xyz + float3( mul( float3( 0.5,0,1+tCapWidth.y) , tltw ) ) );
+            float bCapWidth = 1.0f/lineLen * bWidth;
+            float tCapWidth = 1.0f/lineLen * tWidth;
+
+            float3 blWS = bottom.vertexW.xyz - bWidthVec - lineVec*bCapWidth;
+            float3 brWS = bottom.vertexW.xyz + bWidthVec - lineVec*bCapWidth;
+            float3 tlWS = top.vertexW.xyz - tWidthVec + lineVec*tCapWidth;
+            float3 trWS = top.vertexW.xyz + tWidthVec + lineVec*tCapWidth;
+
+            float4 blCS = TransformWorldToHClip(blWS);
+            float4 brCS = TransformWorldToHClip(brWS);
+            float4 tlCS = TransformWorldToHClip(tlWS);
+            float4 trCS = TransformWorldToHClip(trWS);
             
             geomOut vertex;
 
             // bottom right
-            vertex.vertexHC = br;
-            vertex.color = IN0.color;
-            vertex.uv = float3( 1 , 0 , bAspect.x );
-            vertex.screenPos = ComputeScreenPos(br);
-            vertex.worldDepth = IN0.worldDepth;
+            vertex.vertexHC = brCS;
+            vertex.color = bottom.color;
+            vertex.uv = float3( 1 , 0 , bAspect );
+            vertex.screenPos = ComputeScreenPos(brCS);
+            vertex.worldDepth = bottom.worldDepth;
             STREAM.Append(vertex);
 
             // bottom left
-            vertex.vertexHC = bl;
-            vertex.color = IN0.color;
-            vertex.uv = float3( 0 , 0 , bAspect.x );
-            vertex.screenPos = ComputeScreenPos(bl);
-            vertex.worldDepth = IN0.worldDepth;
+            vertex.vertexHC = blCS;
+            vertex.color = bottom.color;
+            vertex.uv = float3( 0 , 0 , bAspect );
+            vertex.screenPos = ComputeScreenPos(blCS);
+            vertex.worldDepth = bottom.worldDepth;
             STREAM.Append(vertex);
 
             // top right
-            vertex.vertexHC = tr;
-            vertex.color = IN1.color;
-            vertex.uv = float3( 1 , 1 , tAspect.y );
-            vertex.screenPos = ComputeScreenPos(tr);
-            vertex.worldDepth = IN1.worldDepth;
+            vertex.vertexHC = trCS;
+            vertex.color = top.color;
+            vertex.uv = float3( 1 , 1 , tAspect );
+            vertex.screenPos = ComputeScreenPos(trCS);
+            vertex.worldDepth = top.worldDepth;
             STREAM.Append(vertex);
 
             // top left
-            vertex.vertexHC = tl;
-            vertex.color = IN1.color;
-            vertex.uv = float3( 0 , 1 , tAspect.y );
-            vertex.screenPos = ComputeScreenPos(tl);
-            vertex.worldDepth = IN1.worldDepth;
+            vertex.vertexHC = tlCS;
+            vertex.color = top.color;
+            vertex.uv = float3( 0 , 1 , tAspect );
+            vertex.screenPos = ComputeScreenPos(tlCS);
+            vertex.worldDepth = top.worldDepth;
             STREAM.Append(vertex);
         }
 
@@ -313,7 +278,7 @@ SubShader
                 col.a *= easeOutQuad(remap01( _FarCutoffDistaneEnd , _FarCutoffDistaneStart , depth ));
             }
 
-            float ditherValue = GetBayerValue(IN.screenPos.xy / IN.screenPos.w);
+            float ditherValue = getbayervalue(IN.screenPos.xy / IN.screenPos.w);
             col.a -= (1-col.a) * ditherValue * _DitherStrength;
 
             clip(col.a - _AlphaCutoff);//if( alpha<=0 ) discard;
