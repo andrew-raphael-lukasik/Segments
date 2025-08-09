@@ -1,4 +1,4 @@
-Shader "Segments/Rounded Rectangle" {
+Shader "Segments/World" {
 Properties
 {
     _Roundness ( "Shape Roundness" , Range(0,1) ) = 1.0
@@ -162,7 +162,7 @@ SubShader
 
         // dithering (Bayer matrix 4x4)
         // src: https://github.com/Unity-Technologies/UnityCsSamples/blob/master/HDRPCustomPasses/Assets/Shaders/Dither.hlsl
-        float GetBayerValue(float2 screenUV)
+        float getbayervalue(float2 screenUV)
         {
             const float bayerMatrix[16] = {
                 0.0 / 16.0,  8.0 / 16.0,  2.0 / 16.0, 10.0 / 16.0,
@@ -311,7 +311,7 @@ SubShader
                 col.a *= easeOutQuad(remap01( _FarCutoffDistaneEnd , _FarCutoffDistaneStart , depth ));
             }
 
-            float ditherValue = GetBayerValue(IN.screenPos.xy / IN.screenPos.w);
+            float ditherValue = getbayervalue(IN.screenPos.xy / IN.screenPos.w);
             col.a -= (1-col.a) * ditherValue * _DitherStrength;
 
             clip(col.a - _AlphaCutoff);//if( alpha<=0 ) discard;
