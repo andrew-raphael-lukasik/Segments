@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: default
-  m_Shader: {fileID: 4800000, guid: f08c904251499354b8cf48315e30760e, type: 3}
+  m_Shader: {fileID: 4800000, guid: a14165d0e0e28f2c59e6419b179ba853, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -44,6 +44,7 @@ Material:
     - _Roundness: 1
     - _Smoothness: 1
     - _Texture: 0
+    - _WidthPx: 1
     m_Colors:
     - _Color: {r: 1, g: 0.8533139, b: 0, a: 1}
     - _ColorFar: {r: 1, g: 0.85490197, b: 0, a: 1}
