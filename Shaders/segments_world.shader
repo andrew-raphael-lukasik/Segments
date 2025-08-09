@@ -125,40 +125,6 @@ SubShader
         float easeOutCirc ( float x ) { return sqrt( 1.0 - pow(x-1.0,2.0) ); }// src: https://easings.net/#easeOutCirc
         float easeOutQuad( float x ) { return 1 - (1 - x) * (1 - x); }// src: https://easings.net/#easeOutQuad
 
-        // src: https://github.com/Unity-Technologies/Unity.Mathematics/blob/7da8f190d976ab687187eaeb3d42408e7f606667/src/Unity.Mathematics/matrix.cs#L436
-        float3x3 lookrotation ( float3 z , float3 y )
-        {
-            float3 x = normalize(cross(y, z));
-            return float3x3(x, cross(z, x), z);
-        }
-
-        // src: https://github.com/Unity-Technologies/Unity.Mathematics/blob/7da8f190d976ab687187eaeb3d42408e7f606667/src/Unity.Mathematics/matrix.cs#L1009
-        float4x4 TRS ( float3 translation , float3x3 rotation , float3 scale )
-        {
-            return float4x4(
-                float4( rotation[0]*scale.x , 0.0 ) ,
-                float4( rotation[1]*scale.y , 0.0 ) ,
-                float4( rotation[2]*scale.z , 0.0 ) ,
-                float4( translation , 1.0 )
-            );
-        }
-        float3x3 RS ( float3x3 rotation , float3 scale )
-        {
-            return float3x3(
-                float3( rotation[0]*scale.x ) ,
-                float3( rotation[1]*scale.y ) ,
-                float3( rotation[2]*scale.z )
-            );
-        }
-        float3x3 S (float sx, float sy, float sz)
-        {
-            return float3x3(
-                float3( sx , sx , sx ) ,
-                float3( sy , sy , sy ) ,
-                float3( sz , sz , sz )
-            );
-        }
-
         // dithering (Bayer matrix 4x4)
         // src: https://github.com/Unity-Technologies/UnityCsSamples/blob/master/HDRPCustomPasses/Assets/Shaders/Dither.hlsl
         float getbayervalue(float2 screenUV)
