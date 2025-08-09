@@ -178,7 +178,6 @@ SubShader
             float bAspect = bWidth / ( lineLen + bWidth );
             float tAspect = tWidth / ( lineLen + tWidth );
 
-            // float3 widthDir = cross(lineDir, normalize(_WorldSpaceCameraPos-bottom.vertexW.xyz));
             float3 widthDir = normalize(cross(normalize(_WorldSpaceCameraPos-bottom.vertexW.xyz), lineDir));
             float3 bWidthVec = widthDir * bWidth;
             float3 tWidthVec = widthDir * tWidth;
@@ -187,8 +186,8 @@ SubShader
             float bCapWidth = 1.0f/lineLen * bWidth;
             float tCapWidth = 1.0f/lineLen * tWidth;
 
-            float3 blWS = bottom.vertexW.xyz - bWidthVec + lineVec*-bCapWidth;
-            float3 brWS = bottom.vertexW.xyz + bWidthVec + lineVec*-bCapWidth;
+            float3 blWS = bottom.vertexW.xyz - bWidthVec - lineVec*bCapWidth;
+            float3 brWS = bottom.vertexW.xyz + bWidthVec - lineVec*bCapWidth;
             float3 tlWS = top.vertexW.xyz - tWidthVec + lineVec*tCapWidth;
             float3 trWS = top.vertexW.xyz + tWidthVec + lineVec*tCapWidth;
 
