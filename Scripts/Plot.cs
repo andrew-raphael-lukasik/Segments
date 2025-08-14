@@ -26,7 +26,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
             
-            Ellipse( segments.AsNativeArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+            Ellipse( segments.AsNativeArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -41,7 +41,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) return;
             
-            Ellipse( segments.Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+            Ellipse( segments.Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
         
@@ -49,10 +49,10 @@ namespace Segments
         public static void Ellipse (
             NativeSlice<float3x2> segments ,
             float rx , float ry ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
+            int numSegments = segments.Length;
             float theta = ( 2f * math.PI ) / (float)numSegments;
             int index = 0;
             for( ; index<numSegments ; )
@@ -124,7 +124,9 @@ namespace Segments
                 index = bufferSizeRequired;
             }
             void IJob.Execute ()
-                => Ellipse( segments:segments , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+            {
+                Ellipse( segments:segments , rx:rx , ry:ry , pos:pos , rot:rot );
+            }
         }
 
 
@@ -141,7 +143,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            EllipseAtFoci( segments.AsNativeArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+            EllipseAtFoci( segments.AsNativeArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -156,7 +158,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) return;
 
-            EllipseAtFoci( segments.Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot , numSegments:numSegments );
+            EllipseAtFoci( segments.Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -164,10 +166,10 @@ namespace Segments
         public static void EllipseAtFoci (
             NativeSlice<float3x2> segments ,
             float rx , float ry ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
+            int numSegments = segments.Length;
             float a = math.max(rx,ry);
             float b = math.min(rx,ry);
             float ecc = math.sqrt( 1f - (b*b)/(a*a) );
@@ -205,7 +207,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            Circle( segments.AsNativeArray().Slice(index,numSegments) , r , pos , rot , numSegments );
+            Circle( segments.AsNativeArray().Slice(index,numSegments) , r , pos , rot );
             index = bufferSizeRequired;
         }
 
@@ -219,17 +221,17 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) return;
 
-            Circle( segments.Slice(index,numSegments) , r , pos , rot , numSegments );
+            Circle( segments.Slice(index,numSegments) , r , pos , rot );
             index = bufferSizeRequired;
         }
 
         /// <inheritdoc/> <remarks> Will throw exception if length < numSegments. </remarks>
         public static void Circle (
             NativeSlice<float3x2> segments ,
-            float r , float3 pos , quaternion rot ,
-            int numSegments
+            float r , float3 pos , quaternion rot
         )
         {
+            int numSegments = segments.Length;
             float theta = ( 2f * math.PI ) / (float)numSegments;
             for( int i=0 ; i<numSegments ; i++ )
             {
@@ -285,7 +287,9 @@ namespace Segments
             }
             
             void IJob.Execute ()
-                => Circle( segments:segments , r:r , pos:pos , rot:rot , numSegments:numSegments );
+            {
+                Circle( segments:segments , r:r , pos:pos , rot:rot );
+            }
         }
 
 
@@ -321,8 +325,13 @@ namespace Segments
         }
 
         /// <inheritdoc/> <remarks> Will throw exception if length < 1. </remarks>
-        public static void Line ( NativeSlice<float3x2> segments , float3 start , float3 end )
-            => segments[0] = new float3x2{ c0=start , c1=end };
+        public static void Line (
+            NativeSlice<float3x2> segments ,
+            float3 start , float3 end
+        )
+        {
+            segments[0] = new float3x2{ c0=start , c1=end };
+        }
 
 
 
@@ -335,7 +344,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            DashedLine( segments.AsNativeArray().Slice(index,numSegments) , start:start , end:end , numSegments:numSegments );
+            DashedLine( segments.AsNativeArray().Slice(index,numSegments) , start:start , end:end );
             index = bufferSizeRequired;
         }
 
@@ -348,16 +357,17 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) return;
 
-            DashedLine( segments.Slice(index,numSegments) , start:start , end:end , numSegments:numSegments );
+            DashedLine( segments.Slice(index,numSegments) , start:start , end:end );
             index = bufferSizeRequired;
         }
 
         /// <inheritdoc/> <remarks> Will throw exception if length < numDashes. </remarks>
         public static void DashedLine (
             NativeSlice<float3x2> segments ,
-            float3 start , float3 end , int numSegments
+            float3 start , float3 end
         )
         {
+            int numSegments = segments.Length;
             int index = 0;
             int max = math.max( numSegments*2-1 , 0 );
             for( int i=0 ; i<max ; i+=2 )
@@ -479,7 +489,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            HyperbolaAtFoci( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+            HyperbolaAtFoci( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -494,7 +504,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) return;
 
-            HyperbolaAtFoci( segments.Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+            HyperbolaAtFoci( segments.Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -502,10 +512,10 @@ namespace Segments
         public static void HyperbolaAtFoci (
             NativeSlice<float3x2> segments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
+            int numSegments = segments.Length;
             float c = math.sqrt( a*a + b*b );
             float2 vertex = new float2{ y=a };
             float3 focus = new float3{ x=0 , y=c };
@@ -537,7 +547,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            Hyperbola( segments.AsNativeArray().Slice(index,bufferSizeRequired) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+            Hyperbola( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -552,7 +562,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) return;
 
-            Hyperbola( segments.Slice(index,bufferSizeRequired) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+            Hyperbola( segments.Slice(index,bufferSizeRequired) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -560,10 +570,10 @@ namespace Segments
         public static void Hyperbola (
             NativeSlice<float3x2> segments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
+            int numSegments = segments.Length;
             float c = math.sqrt( a*a + b*b );
             float2 vertex = new float2{ y=a };
             float3 focus = new float3{ y=c };
@@ -634,7 +644,9 @@ namespace Segments
                 index = bufferSizeRequired;
             }
             void IJob.Execute ()
-                => Hyperbola( segments:segments , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+            {
+                Hyperbola( segments:segments , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
+            }
         }
 
         public static void HyperbolaAsymptotes (
@@ -680,7 +692,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            Parabola( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot , numSegments:numSegments );
+            Parabola( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -696,7 +708,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) return;
 
-            Parabola( segments.Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot , numSegments:numSegments );
+            Parabola( segments.Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -705,10 +717,10 @@ namespace Segments
             NativeSlice<float3x2> segments ,
             float a , float b ,
             float xmin , float xmax ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
+            int numSegments = segments.Length;
             const float c = 0;
             // float2 vertex = new float2{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b)) / (4 * a) };
             // float3 focus = new float3{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b) + 1) / (4 * a) };
@@ -791,7 +803,9 @@ namespace Segments
                 index = bufferSizeRequired;
             }
             void IJob.Execute ()
-                => Parabola( segments:segments , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot , numSegments:numSegments );
+            {
+                Parabola( segments:segments , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot );
+            }
         }
 
 
@@ -810,7 +824,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            ParabolaAtFoci( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+            ParabolaAtFoci( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -825,7 +839,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) return;
 
-            ParabolaAtFoci( segments.Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot , numSegments:numSegments );
+            ParabolaAtFoci( segments.Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -833,10 +847,10 @@ namespace Segments
         public static void ParabolaAtFoci (
             NativeSlice<float3x2> segments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
+            int numSegments = segments.Length;
             const float c = 0;
             float2 vertex = new float2{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b)) / (4 * a) };
             float3 focus = new float3{ x = -b / (2 * a) , y = ((4 * a * c) - (b * b) + 1) / (4 * a) };
