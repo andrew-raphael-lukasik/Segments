@@ -274,14 +274,13 @@ SubShader
             if( depth < _NearCutoffDistane )
             {
                 col.a *= remap01( 0 , _NearCutoffDistane , depth );
+                col.a -= (1-col.a) * getbayervalue(IN.screenPos.xy/IN.screenPos.w) * _DitherStrength;
             }
             else if( depth > _FarCutoffDistaneStart )
             {
                 col.a *= easeOutQuad(remap01( _FarCutoffDistaneEnd , _FarCutoffDistaneStart , depth ));
+                col.a -= (1-col.a) * getbayervalue(IN.screenPos.xy/IN.screenPos.w) * _DitherStrength;
             }
-
-            float ditherValue = getbayervalue(IN.screenPos.xy / IN.screenPos.w);
-            col.a -= (1-col.a) * ditherValue * _DitherStrength;
 
             clip(col.a - _AlphaCutoff);//if( alpha<=0 ) discard;
 
