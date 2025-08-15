@@ -31,6 +31,7 @@ namespace Segments
         NativeArray<uint> _predefinedIndexBuffer;
         NativeList<( Mesh.MeshDataArray meshDataArray , Mesh.MeshData meshData , int numVertices , JobHandle boundsJobHandle , JobHandle copyVerticesJobHandle , JobHandle copyIndicesJobHandle )> _midUpdateData;
         EntityQuery _query;
+        BufferLookup<Segment> _segmentBufferLookup;
 
         [Unity.Burst.BurstCompile]
         public void OnCreate ( ref SystemState state )
@@ -45,6 +46,7 @@ namespace Segments
 
             _midUpdateData = new( Allocator.Persistent );
             _query = state.GetEntityQuery( new NativeList<ComponentType>(1,Allocator.Temp){ ComponentType.ReadWrite<Segment>() , ComponentType.ReadWrite<MaterialMeshInfo>() , ComponentType.ReadWrite<RenderBounds>() }.AsArray() );
+            _segmentBufferLookup = state.GetBufferLookup<Segment>( isReadOnly:true );
         }
 
         [Unity.Burst.BurstCompile]
@@ -58,7 +60,7 @@ namespace Segments
         public void OnUpdate ( ref SystemState state )
         {
             int numEntities = _query.CalculateEntityCount();
-            var segmentBufferLookup = state.GetBufferLookup<Segment>( isReadOnly:true );
+            _segmentBufferLookup.Update( ref state );
             NativeArray<AABB> bounds = new ( numEntities , Allocator.TempJob );
             _midUpdateData.Clear();
             int i = 0;
@@ -75,7 +77,7 @@ namespace Segments
                 Mesh.MeshData meshData = meshDataArray[0];
                 ___allocate_writable_mesh_data.End();
                 
-                var segmentBuffer = segmentBufferLookup[entity];
+                var segmentBuffer = _segmentBufferLookup[entity];
                 int numSegments = segmentBuffer.Length;
                 int numVertices = numSegments * 2;
                 
