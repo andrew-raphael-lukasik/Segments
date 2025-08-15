@@ -80,6 +80,16 @@ namespace Segments
                 var segmentBuffer = _segmentBufferLookup[entity];
                 int numSegments = segmentBuffer.Length;
                 int numVertices = numSegments * 2;
+
+                // upsize index buffer when necessary
+                if( numVertices>_predefinedIndexBuffer.Length )
+                {
+                    Debug.LogWarning($"_predefinedIndexBuffer upsized to {_predefinedIndexBuffer.Length}");
+                    foreach( var item in _midUpdateData )
+                        item.copyIndicesJobHandle.Complete();
+                    _predefinedIndexBuffer.Dispose();
+                    _predefinedIndexBuffer = new ( numVertices , Allocator.Persistent );
+                }
                 
                 ___set_vertex_buffer_params.Begin();
                 meshData.SetVertexBufferParams( numVertices , new VertexAttributeDescriptor(VertexAttribute.Position) );
