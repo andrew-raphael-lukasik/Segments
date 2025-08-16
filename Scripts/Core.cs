@@ -16,7 +16,7 @@ namespace Segments
         static EntityQuery _query;
         public static EntityQuery Query => _query;
 
-        static Material _default_material;
+        internal static Material _default_material;
         internal static World _world;
 
         internal static World GetWorld ()

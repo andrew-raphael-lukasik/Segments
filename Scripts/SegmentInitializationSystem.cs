@@ -34,24 +34,35 @@ namespace Segments
             
             foreach( Entity entity in _query.ToEntityArray(Allocator.Temp) )
             {
-                var mesh = new Mesh();
-                string label = $"Segments mesh {mesh.GetHashCode()}";
-                mesh.name = label;
-                mesh.MarkDynamic();
-                mesh.hideFlags = HideFlags.DontSave;
-                BatchMeshID batchMeshID = entitiesGraphicsSystem.RegisterMesh( mesh );
+                // replace request with components:
+                {
+                    var mesh = new Mesh();
+                    string label = $"Segments mesh {mesh.GetHashCode()}";
+                    mesh.name = label;
+                    mesh.MarkDynamic();
+                    mesh.hideFlags = HideFlags.DontSave;
 
-                var data = entityManager.GetSharedComponentManaged<SegmentCreationRequestData>( entity );
-                BatchMaterialID batchMaterialID = entitiesGraphicsSystem.RegisterMaterial( data.material );
-                var renderMeshDescription = new RenderMeshDescription( shadowCastingMode:ShadowCastingMode.On , receiveShadows:true , renderingLayerMask:1 );
-                var materialMeshInfo = new MaterialMeshInfo( batchMaterialID , batchMeshID );
-                RenderMeshUtility.AddComponents( entity , entityManager , renderMeshDescription , materialMeshInfo );
+                    var data = entityManager.GetSharedComponentManaged<SegmentCreationRequestData>( entity );
+                    Material mat = data.material!=null ? data.material : Core._default_material;
+                    BatchMaterialID batchMaterialID = entitiesGraphicsSystem.RegisterMaterial( mat );
+                    var renderMeshDescription = new RenderMeshDescription( shadowCastingMode:ShadowCastingMode.On , receiveShadows:true , renderingLayerMask:1 );
+                    BatchMeshID batchMeshID = entitiesGraphicsSystem.RegisterMesh( mesh );
+                    var materialMeshInfo = new MaterialMeshInfo( batchMaterialID , batchMeshID );
+                    RenderMeshUtility.AddComponents( entity , entityManager , renderMeshDescription , materialMeshInfo );
 
+                    #if UNITY_EDITOR
+                    entityManager.SetName( entity , label );
+                    #endif
+                }
                 entityManager.RemoveComponent<SegmentCreationRequestData>( entity );
 
-                #if UNITY_EDITOR
-                entityManager.SetName( entity , label );
-                #endif
+                // add LTW if not added already:
+                if( !entityManager.HasComponent<LocalToWorld>(entity) )
+                {
+                    entityManager.AddComponentData( entity , new LocalToWorld{
+                        Value = float4x4.identity
+                    } );
+                }
             }
         }
     }
