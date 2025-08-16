@@ -40,7 +40,7 @@ namespace Segments
 
                 if( _default_material==null )
                 {
-                    const string path = "packages/com.andrewraphaellukasik.segments/default";
+                    const string path = "packages/com.andrewraphaellukasik.segments/segments--default-line-material";
                     _default_material = Resources.Load<Material>( path );
                     if( _default_material!=null )
                         _default_material.hideFlags = HideFlags.DontUnloadUnusedAsset;
