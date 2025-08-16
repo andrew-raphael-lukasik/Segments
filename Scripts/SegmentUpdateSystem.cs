@@ -8,6 +8,7 @@ using Unity.Collections;
 using Unity.Rendering;
 using Unity.Transforms;
 using Unity.Mathematics;
+using Segments.Jobs;
 
 namespace Segments
 {

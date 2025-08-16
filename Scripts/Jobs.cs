@@ -9,7 +9,7 @@ using Unity.Entities;
 using Unity.Rendering;
 using Unity.Jobs;
 
-namespace Segments
+namespace Segments.Jobs
 {
 
     // [Unity.Burst.BurstCompile]
@@ -62,7 +62,7 @@ namespace Segments
         }
     }
 
-    // partial struct PushMeshDataJob : IJob
+    // struct PushMeshDataJob : IJob
     // {
     //     [ReadOnly] public Mesh.MeshDataArray MeshDataArray;
     //     public Mesh MeshObject;
