@@ -20,14 +20,14 @@ namespace Samples
         void Update()
         {
             // accesses the Segment beffer component of our Entity where every Segment is a pair of float3 values (start & end of a line segment)
-            var segments = Segments.Core.GetBuffer( _segments );
+            var buffer = Segments.Core.GetBuffer(_segments);
 
             // we already know ahead of time that we want 3 segments here
-            segments.Length = 3;
+            buffer.Length = 3;
 
             var jobHandle = new MyBasicJob{
-                SegmentBuffer   = segments.AsArray() ,
-                LocalToWorld    = transform.localToWorldMatrix// this matrix holds directions (scale per axis) and position of the transform
+                buffer          = buffer.AsArray() ,
+                localToWorld    = transform.localToWorldMatrix// this matrix holds directions (scale per axis) and position of the transform
             }.Schedule();
             
             Segments.Core.AddDependency(jobHandle);
@@ -36,15 +36,15 @@ namespace Samples
         [Unity.Burst.BurstCompile]
         struct MyBasicJob : IJob
         {
-            [WriteOnly] public NativeArray<float3x2> SegmentBuffer;
-            public float4x4 LocalToWorld;
+            [WriteOnly] public NativeArray<float3x2> buffer;
+            public float4x4 localToWorld;// transform
             void IJob.Execute()
             {
                 // chops the matrix up into separate collumns
-                float4 c0 = LocalToWorld.c0;// stores x direction
-                float4 c1 = LocalToWorld.c1;// stores y direction
-                float4 c2 = LocalToWorld.c2;// stores z direction
-                float4 c3 = LocalToWorld.c3;// stores position
+                float4 c0 = localToWorld.c0;// stores x direction
+                float4 c1 = localToWorld.c1;// stores y direction
+                float4 c2 = localToWorld.c2;// stores z direction
+                float4 c3 = localToWorld.c3;// stores position
 
                 // converts float4s to float3s, names for convenience
                 float3 pos      = new float3(c3.x, c3.y, c3.z);
@@ -53,9 +53,9 @@ namespace Samples
                 float3 forward  = new float3(c2.x, c2.y, c2.z);
 
                 // set points where all these segments will start and end
-                SegmentBuffer[0] = new float3x2(pos, pos+right);
-                SegmentBuffer[1] = new float3x2(pos, pos+up);
-                SegmentBuffer[2] = new float3x2(pos, pos+forward);
+                buffer[0] = new float3x2(pos, pos+right);
+                buffer[1] = new float3x2(pos, pos+up);
+                buffer[2] = new float3x2(pos, pos+forward);
             }
         }
 
