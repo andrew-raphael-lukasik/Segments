@@ -1,17 +1,16 @@
 using UnityEngine;
-using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Transforms;
 
 namespace Samples
 {
     [ExecuteAlways]
-    class StressTestComponent : MonoBehaviour
+    class StressTestAuthoring : MonoBehaviour
     {
-        [SerializeField] internal Material _srcMaterial = null;
+        [SerializeField] internal Material _srcMaterial;
         [SerializeField] internal int _numSegments = 128;
         [SerializeField] internal float _frequency = 16;
-        [SerializeField] internal bool _everyFrame = false;
+        [SerializeField] internal bool _everyFrame;
 
         Entity _segments;
 

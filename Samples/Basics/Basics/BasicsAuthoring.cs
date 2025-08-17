@@ -8,7 +8,7 @@ namespace Samples
     /// Bare-minimum of code that will result in lines being drawn on screen.
     /// </summary>
     [ExecuteAlways]
-    public class Basics : MonoBehaviour
+    public class BasicsAuthoring : MonoBehaviour
     {
 
         Entity _segments;

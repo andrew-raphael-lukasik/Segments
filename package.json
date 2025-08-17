@@ -14,27 +14,32 @@
     "com.unity.entities.graphics": "1.4.12"
   },
   "keywords": [
-    "segments",
-    "lines",
+    "segment",
+    "line",
     "entities",
-    "hybrid",
-    "rendering"
+    "render",
+    "dots"
   ],
   "samples": [
     {
-      "displayName": "Mesh bounding box",
-      "description": "",
-      "path": "Samples/mesh bounding box"
+      "displayName": "Basics / Basics",
+      "description": "The simplest way to draw lines using a MonoBehaviour",
+      "path": "Samples/Basics/Basics"
     },
     {
-      "displayName": "mesh wireframe",
-      "description": "",
-      "path": "Samples/mesh wireframe"
+      "displayName": "Basics / Bounding boxes",
+      "description": "Draw Mesh bounding boxes using a MonoBehaviour",
+      "path": "Samples/Basics/Bounding-Box-Mesh"
     },
     {
-      "displayName": "stress tests",
-      "description": "",
-      "path": "Samples/stress tests"
+      "displayName": "Basics / Wireframe mesh",
+      "description": "Draw wireframe meshes using a MonoBehaviour",
+      "path": "Samples/Basics/Wireframe-Mesh"
+    },
+    {
+      "displayName": "Stress Tests / 300_000 animated segments",
+      "description": "Artificial scenario to find implementation or hardware bottlenecks",
+      "path": "Samples/Stress-Tests/300_000-Animated-Segments"
     }
   ],
   "hideInEditor": true
