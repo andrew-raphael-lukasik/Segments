@@ -66,7 +66,8 @@ namespace Segments
         {
             _query.CompleteDependency();
             
-            entity = entityManager.CreateEntity( typeof(Segment) );
+            entity = entityManager.CreateEntity(typeof(SegmentsInitializationRequest), typeof(Segment), typeof(LocalToWorld));
+            
             if( material==null )
             {
                 if( _default_material==null )
@@ -81,7 +82,7 @@ namespace Segments
                 
                 material = _default_material;
             }
-            entityManager.AddSharedComponentManaged( entity , new SegmentCreationRequestData{
+            entityManager.AddSharedComponentManaged( entity , new SegmentsInitializationRequest{
                 material = material
             } );
             

@@ -31,46 +31,46 @@ namespace Segments.Jobs
     [Unity.Burst.BurstCompile]
     struct PredefinedIndicesJob : IJobParallelForBatch
     {
-        [WriteOnly] public NativeSlice<uint> Dst;
+        [WriteOnly] public NativeSlice<uint> dst;
         void IJobParallelForBatch.Execute(int startIndex, int count)
         {
             int max = startIndex + count;
             for( int i=startIndex ; i<max ; i++ )
-                Dst[i] = (uint) i;
+                dst[i] = (uint) i;
         }
     }
 
     [Unity.Burst.BurstCompile]
     struct NativeCopyJob<T> : IJob where T : unmanaged
     {
-        [ReadOnly] public NativeSlice<T> Src;
-        [WriteOnly] public NativeSlice<T> Dst;
-        void IJob.Execute() => Dst.CopyFrom(Src);
+        [ReadOnly] public NativeSlice<T> src;
+        [WriteOnly] public NativeSlice<T> dst;
+        void IJob.Execute() => dst.CopyFrom(src);
     }
 
     [Unity.Burst.BurstCompile]
     struct BoundsJob : IJob
     {
-        [ReadOnly] public NativeSlice<float3x2> Segments;
-        [NativeDisableContainerSafetyRestriction][WriteOnly] public NativeSlice<AABB> Bounds;
+        [ReadOnly] public NativeSlice<float3x2> segments;
+        [NativeDisableContainerSafetyRestriction][WriteOnly] public NativeSlice<AABB> bounds;
         void IJob.Execute()
         {
             MinMaxAABB combined = MinMaxAABB.Empty;
-            for( int i=Segments.Length-1 ; i!=-1 ; i-- )
-                combined.Encapsulate( new MinMaxAABB{ Min=Segments[i].c0 , Max=Segments[i].c1 } );
-            Bounds[0] = new Bounds{ min=combined.Min , max=combined.Max }.ToAABB();
+            for( int i=segments.Length-1 ; i!=-1 ; i-- )
+                combined.Encapsulate( new MinMaxAABB{ Min=segments[i].c0 , Max=segments[i].c1 } );
+            bounds[0] = new Bounds{ min=combined.Min , max=combined.Max }.ToAABB();
         }
     }
 
     // struct PushMeshDataJob : IJob
     // {
-    //     [ReadOnly] public Mesh.MeshDataArray MeshDataArray;
-    //     public Mesh MeshObject;
+    //     [ReadOnly] public Mesh.MeshDataArray meshDataArray;
+    //     public Mesh meshObject;
     //     void IJob.Execute()
     //     {
     //         Mesh.ApplyAndDisposeWritableMeshData(
-    //             data: MeshDataArray ,
-    //             mesh: MeshObject ,
+    //             data: meshDataArray ,
+    //             mesh: meshObject ,
     //             flags: MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontResetBoneBounds
     //         );
     //         // mesh.UploadMeshData( false );

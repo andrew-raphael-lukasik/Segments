@@ -39,7 +39,7 @@ namespace Segments
         {
             _predefinedIndexBuffer = new ( 128_000 , Allocator.Persistent );
             var job = new PredefinedIndicesJob{
-                Dst = _predefinedIndexBuffer ,
+                dst = _predefinedIndexBuffer ,
             };
             JobHandle jobHandle = job.Schedule( arrayLength:_predefinedIndexBuffer.Length , indicesPerJobCount:_predefinedIndexBuffer.Length/128 );
             jobHandle.Complete();
@@ -103,18 +103,18 @@ namespace Segments
                 ___schedule_copy_buffer_jobs.Begin();
                 var segmentBufferAsFloat3x2Array = segmentBuffer.AsNativeArray().Reinterpret<float3x2>();
                 var boundsJobHandle = new BoundsJob{
-                    Segments = segmentBufferAsFloat3x2Array ,
-                    Bounds = bounds.Slice(i,1) ,
+                    segments = segmentBufferAsFloat3x2Array ,
+                    bounds = bounds.Slice(i,1) ,
                 }.Schedule();
                 var vertexData = meshData.GetVertexData<float3x2>();
                 var indexData = meshData.GetIndexData<uint>().Slice( 0 , numVertices );
                 JobHandle copyIndicesJobHandle = new NativeCopyJob<uint>{
-                    Src = _predefinedIndexBuffer.Slice( 0 , numVertices ) ,
-                    Dst = indexData ,
+                    src = _predefinedIndexBuffer.Slice( 0 , numVertices ) ,
+                    dst = indexData ,
                 }.Schedule();
                 JobHandle copyVerticesJobHandle = new NativeCopyJob<float3x2>{
-                    Src = segmentBufferAsFloat3x2Array ,
-                    Dst = vertexData ,
+                    src = segmentBufferAsFloat3x2Array ,
+                    dst = vertexData ,
                 }.Schedule( copyIndicesJobHandle );
                 ___schedule_copy_buffer_jobs.End();
 

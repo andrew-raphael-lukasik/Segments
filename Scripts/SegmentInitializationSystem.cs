@@ -7,7 +7,6 @@ using Unity.Collections;
 using Unity.Rendering;
 using Unity.Transforms;
 using Unity.Mathematics;
-using UnityEditor;
 
 namespace Segments
 {
@@ -22,8 +21,10 @@ namespace Segments
         [Unity.Burst.BurstCompile]
         public void OnCreate ( ref SystemState state )
         {
-            _query = new EntityQueryBuilder(Allocator.Temp).WithAll<SegmentCreationRequestData>().Build( ref state );
-            state.RequireForUpdate( _query );
+            _query = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<SegmentsInitializationRequest>()
+                .Build(ref state);
+            state.RequireForUpdate(_query);
         }
 
         // [Unity.Burst.BurstCompile]
@@ -42,7 +43,7 @@ namespace Segments
                     mesh.MarkDynamic();
                     mesh.hideFlags = HideFlags.DontSave;
 
-                    var data = entityManager.GetSharedComponentManaged<SegmentCreationRequestData>( entity );
+                    var data = entityManager.GetSharedComponentManaged<SegmentsInitializationRequest>( entity );
                     Material mat = data.material!=null ? data.material : Core._default_material;
                     BatchMaterialID batchMaterialID = entitiesGraphicsSystem.RegisterMaterial( mat );
                     var renderMeshDescription = new RenderMeshDescription( shadowCastingMode:ShadowCastingMode.On , receiveShadows:true , renderingLayerMask:1 );
@@ -54,7 +55,7 @@ namespace Segments
                     entityManager.SetName( entity , label );
                     #endif
                 }
-                entityManager.RemoveComponent<SegmentCreationRequestData>( entity );
+                entityManager.RemoveComponent<SegmentsInitializationRequest>( entity );
 
                 // add LTW if not added already:
                 if( !entityManager.HasComponent<LocalToWorld>(entity) )
@@ -67,11 +68,11 @@ namespace Segments
         }
     }
 
-    struct SegmentCreationRequestData : ISharedComponentData, System.IEquatable<SegmentCreationRequestData>
+    struct SegmentsInitializationRequest : ISharedComponentData, System.IEquatable<SegmentsInitializationRequest>
     {
         public Material material;
 
-        public bool Equals ( SegmentCreationRequestData other )
+        public bool Equals ( SegmentsInitializationRequest other )
         {
             if( other.material==null ) return false;
             return this.material==other.material;
