@@ -17,7 +17,7 @@ namespace Segments.Jobs
     // {
     //     public Mesh.MeshData meshData;
     //     public int numIndices;
-    //     void IJob.Execute ()
+    //     void IJob.Execute()
     //     {
     //         meshData.subMeshCount = 1;
     //         meshData.SetSubMesh(
@@ -32,7 +32,7 @@ namespace Segments.Jobs
     struct PredefinedIndicesJob : IJobParallelForBatch
     {
         [WriteOnly] public NativeSlice<uint> Dst;
-        void IJobParallelForBatch.Execute ( int startIndex , int count )
+        void IJobParallelForBatch.Execute(int startIndex, int count)
         {
             int max = startIndex + count;
             for( int i=startIndex ; i<max ; i++ )
@@ -45,7 +45,7 @@ namespace Segments.Jobs
     {
         [ReadOnly] public NativeSlice<T> Src;
         [WriteOnly] public NativeSlice<T> Dst;
-        void IJob.Execute () => Dst.CopyFrom( Src );
+        void IJob.Execute() => Dst.CopyFrom(Src);
     }
 
     [Unity.Burst.BurstCompile]
@@ -53,7 +53,7 @@ namespace Segments.Jobs
     {
         [ReadOnly] public NativeSlice<float3x2> Segments;
         [NativeDisableContainerSafetyRestriction][WriteOnly] public NativeSlice<AABB> Bounds;
-        void IJob.Execute ()
+        void IJob.Execute()
         {
             MinMaxAABB combined = MinMaxAABB.Empty;
             for( int i=Segments.Length-1 ; i!=-1 ; i-- )
@@ -66,7 +66,7 @@ namespace Segments.Jobs
     // {
     //     [ReadOnly] public Mesh.MeshDataArray MeshDataArray;
     //     public Mesh MeshObject;
-    //     void IJob.Execute ()
+    //     void IJob.Execute()
     //     {
     //         Mesh.ApplyAndDisposeWritableMeshData(
     //             data: MeshDataArray ,
