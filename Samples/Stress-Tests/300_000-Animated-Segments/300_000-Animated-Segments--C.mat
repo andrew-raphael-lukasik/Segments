@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: stress tests lines C
+  m_Name: 300_000-Animated-Segments--C
   m_Shader: {fileID: 4800000, guid: f08c904251499354b8cf48315e30760e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0

@@ -7,11 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: wireframe lines
-  m_Shader: {fileID: 4800000, guid: a14165d0e0e28f2c59e6419b179ba853, type: 3}
+  m_Name: 300_000-Animated-Segments--A
+  m_Shader: {fileID: 4800000, guid: f08c904251499354b8cf48315e30760e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _TEXTURE_ON
   m_InvalidKeywords:
   - UVCORRECTION_ON
   m_LightmapFlags: 4
@@ -31,25 +32,24 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlphaCutoff: 0
-    - _AlphaPow: 1
+    - _AlphaCutoff: 0.85
+    - _AlphaPow: 5.1
     - _DitherStrength: 1
-    - _FarColorDistance: 3
-    - _FarCutoffDistaneEnd: 100
-    - _FarCutoffDistaneStart: 2
-    - _FarWidth: 0.1
-    - _FarWidthDistance: 10
-    - _NearColorDistance: 1
-    - _NearCutoffDistane: 0.5
-    - _NearWidth: 0.0175
-    - _NearWidthDistance: 1.63
+    - _FarColorDistance: 20
+    - _FarCutoffDistaneEnd: 30
+    - _FarCutoffDistaneStart: 25
+    - _FarWidth: 0.35
+    - _FarWidthDistance: 30
+    - _NearColorDistance: 3
+    - _NearCutoffDistane: 2
+    - _NearWidth: 0.4
+    - _NearWidthDistance: 3
     - _Roundness: 1
     - _Smoothness: 1
-    - _Texture: 0
-    - _WidthPx: 1
+    - _Texture: 1
     m_Colors:
-    - _Color: {r: 1, g: 0.0039215684, b: 0.14657608, a: 1}
-    - _ColorFar: {r: 0.03303706, g: 0.0039215684, b: 1, a: 1}
+    - _Color: {r: 0.008251819, g: 0, b: 0.026554096, a: 1}
+    - _ColorFar: {r: 4, g: 0.37260616, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &1532484212802381824
