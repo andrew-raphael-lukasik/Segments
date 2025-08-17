@@ -17,7 +17,7 @@ namespace Segments
         /// <summary> Plots a ellipse shape. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void Ellipse (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float rx , float ry ,
             float3 pos , quaternion rot ,
             int numSegments
@@ -26,7 +26,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
             
-            Ellipse( segments.AsNativeArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot );
+            Ellipse( segments.AsArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -86,7 +86,7 @@ namespace Segments
             quaternion rot;
             int numSegments;
             public EllipseJob (
-                DynamicBuffer<float3x2> segments , ref int index ,
+                NativeList<float3x2> segments , ref int index ,
                 float rx , float ry ,
                 float3 pos , quaternion rot ,
                 int numSegments
@@ -95,7 +95,7 @@ namespace Segments
                 int bufferSizeRequired = index + numSegments;
                 if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-                this.segments = segments.AsNativeArray().Slice(index,numSegments);
+                this.segments = segments.AsArray().Slice(index,numSegments);
                 this.rx = rx;
                 this.ry = ry;
                 this.pos = pos;
@@ -134,7 +134,7 @@ namespace Segments
         /// <summary> Plots a ellipse shape at foci point. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void EllipseAtFoci (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float rx , float ry ,
             float3 pos , quaternion rot ,
             int numSegments
@@ -143,7 +143,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            EllipseAtFoci( segments.AsNativeArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot );
+            EllipseAtFoci( segments.AsArray().Slice(index,numSegments) , rx:rx , ry:ry , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -199,7 +199,7 @@ namespace Segments
         /// <summary> Plots a circle. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void Circle (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float r , float3 pos , quaternion rot ,
             int numSegments
         )
@@ -207,7 +207,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            Circle( segments.AsNativeArray().Slice(index,numSegments) , r , pos , rot );
+            Circle( segments.AsArray().Slice(index,numSegments) , r , pos , rot );
             index = bufferSizeRequired;
         }
 
@@ -252,7 +252,7 @@ namespace Segments
             quaternion rot;
             int numSegments;
             public CircleJob (
-                DynamicBuffer<float3x2> segments , ref int index ,
+                NativeList<float3x2> segments , ref int index ,
                 float r , float3 pos , quaternion rot ,
                 int numSegments
             )
@@ -260,7 +260,7 @@ namespace Segments
                 int bufferSizeRequired = index + numSegments;
                 if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
                 
-                this.segments = segments.AsNativeArray().Slice( index , numSegments );
+                this.segments = segments.AsArray().Slice( index , numSegments );
                 this.r = r;
                 this.pos = pos;
                 this.rot = rot;
@@ -301,7 +301,7 @@ namespace Segments
 
         /// <summary> Just fills a single segment value. </summary>
         public static void Line (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float3 start , float3 end
         )
         {
@@ -337,14 +337,14 @@ namespace Segments
 
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void DashedLine (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float3 start , float3 end , int numSegments
         )
         {
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            DashedLine( segments.AsNativeArray().Slice(index,numSegments) , start:start , end:end );
+            DashedLine( segments.AsArray().Slice(index,numSegments) , start:start , end:end );
             index = bufferSizeRequired;
         }
 
@@ -383,14 +383,14 @@ namespace Segments
 
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void Arrow (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float3 v1 , float3 v2
         )
         {
             int bufferSizeRequired = index + 4;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
             
-            Arrow( segments.AsNativeArray().Slice(index,4) , v1:v1 , v2:v2 );
+            Arrow( segments.AsArray().Slice(index,4) , v1:v1 , v2:v2 );
             index = bufferSizeRequired;
         }
 
@@ -428,14 +428,14 @@ namespace Segments
 
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void Arrow (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float3 v1 , float3 v2 , float3 cameraPos
         )
         {
             int bufferSizeRequired = index + 4;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            Arrow( segments.AsNativeArray().Slice(index,4) , v1:v1 , v2:v2 , cameraPos:cameraPos );
+            Arrow( segments.AsArray().Slice(index,4) , v1:v1 , v2:v2 , cameraPos:cameraPos );
             index = bufferSizeRequired;
         }
 
@@ -480,7 +480,7 @@ namespace Segments
         /// <param name="a"> +-y = ( b * math.sqrt( **a**^2 + x^2 ) ) / **a** </param>
         /// <param name="b"> +-y = ( **b** * math.sqrt( a^2 + x^2 ) ) / a </param>
         public static void HyperbolaAtFoci (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float a , float b , float xrange ,
             float3 pos , quaternion rot ,
             int numSegments
@@ -489,7 +489,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            HyperbolaAtFoci( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
+            HyperbolaAtFoci( segments.AsArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -538,7 +538,7 @@ namespace Segments
         /// <param name="a"> +-y = ( b * math.sqrt( **a**^2 + x^2 ) ) / **a** </param>
         /// <param name="b"> +-y = ( **b** * math.sqrt( a^2 + x^2 ) ) / a </param>
         public static void Hyperbola (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float a , float b , float xrange ,
             float3 pos , quaternion rot ,
             int numSegments
@@ -547,7 +547,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            Hyperbola( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
+            Hyperbola( segments.AsArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -604,7 +604,7 @@ namespace Segments
             quaternion rot;
             int numSegments;
             public HyperbolaJob (
-                DynamicBuffer<float3x2> segments , ref int index ,
+                NativeList<float3x2> segments , ref int index ,
                 float a , float b , float xrange ,
                 float3 pos , quaternion rot ,
                 int numSegments
@@ -613,7 +613,7 @@ namespace Segments
                 int bufferSizeRequired = index + numSegments;
                 if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
                 
-                this.segments = segments.AsNativeArray().Slice( index , numSegments );
+                this.segments = segments.AsArray().Slice( index , numSegments );
                 this.a = a;
                 this.b = b;
                 this.xrange = xrange;
@@ -682,7 +682,7 @@ namespace Segments
         /// <param name="b"> y = axx + **b**x + c </param>
         /// <param name="c"> y = axx + bx + **c** </param>
         public static void Parabola (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float a , float b ,
             float xmin , float xmax ,
             float3 pos , quaternion rot ,
@@ -692,7 +692,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            Parabola( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot );
+            Parabola( segments.AsArray().Slice(index,numSegments) , a:a , b:b , xmin:xmin , xmax:xmax , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -759,7 +759,7 @@ namespace Segments
             quaternion rot;
             int numSegments;
             public ParabolaJob (
-                DynamicBuffer<float3x2> segments , ref int index ,
+                NativeList<float3x2> segments , ref int index ,
                 float a , float b ,
                 float xmin , float xmax ,
                 float3 pos , quaternion rot ,
@@ -769,7 +769,7 @@ namespace Segments
                 int bufferSizeRequired = index + numSegments;
                 if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
                 
-                this.segments = segments.AsNativeArray().Slice( index , numSegments );
+                this.segments = segments.AsArray().Slice( index , numSegments );
                 this.a = a;
                 this.b = b;
                 this.xmin = xmin;
@@ -815,7 +815,7 @@ namespace Segments
         /// <param name="b"> y = axx + **b**x + c </param>
         /// <param name="c"> y = axx + bx + **c** </param>
         public static void ParabolaAtFoci (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float a , float b , float xrange ,
             float3 pos , quaternion rot ,
             int numSegments
@@ -824,7 +824,7 @@ namespace Segments
             int bufferSizeRequired = index + numSegments;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            ParabolaAtFoci( segments.AsNativeArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
+            ParabolaAtFoci( segments.AsArray().Slice(index,numSegments) , a:a , b:b , xrange:xrange , pos:pos , rot:rot );
             index = bufferSizeRequired;
         }
 
@@ -884,7 +884,7 @@ namespace Segments
 
         /// <summary> Plots a cube with 12 segments. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
-        public static void Cube ( DynamicBuffer<float3x2> segments , ref int index , float a , float3 pos , quaternion rot )
+        public static void Cube ( NativeList<float3x2> segments , ref int index , float a , float3 pos , quaternion rot )
             => Box( segments , ref index , new float3{x=a,y=a,z=a} , pos , rot );
         
         /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
@@ -900,14 +900,14 @@ namespace Segments
         /// <summary> Plots a box with 12 segments. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void Box (
-            DynamicBuffer<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index ,
             float3 size , float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + 12;
             if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-            Box( segments.AsNativeArray().Slice(index,12) , size , pos , rot );
+            Box( segments.AsArray().Slice(index,12) , size , pos , rot );
             index = bufferSizeRequired;
         }
 
@@ -963,14 +963,14 @@ namespace Segments
             float3 size, pos;
             quaternion rot;
             public BoxJob (
-                DynamicBuffer<float3x2> segments , ref int index ,
+                NativeList<float3x2> segments , ref int index ,
                 float3 size , float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + 12;
                 if( segments.Length<bufferSizeRequired ) segments.Length = bufferSizeRequired;
 
-                this.segments = segments.AsNativeArray().Slice(index,12);
+                this.segments = segments.AsArray().Slice(index,12);
                 this.size = size;
                 this.pos = pos;
                 this.rot = rot;
