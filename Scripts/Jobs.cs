@@ -77,17 +77,4 @@ namespace Segments.Jobs
     //     }
     // }
 
-    [Unity.Burst.BurstCompile]
-    public struct BufferLengthJob : IJob
-    {
-        [WriteOnly] public DynamicBuffer<Segment> Buffer;
-        public int Length;
-        public BufferLengthJob ( DynamicBuffer<Segment> buffer , int length )
-        {
-            this.Buffer = buffer;
-            this.Length = length;
-        }
-        void IJob.Execute () => Buffer.Length = Length;
-    }
-
 }
