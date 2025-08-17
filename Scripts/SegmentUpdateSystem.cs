@@ -32,7 +32,7 @@ namespace Segments
         NativeArray<uint> _predefinedIndexBuffer;
         NativeList<( Mesh.MeshDataArray meshDataArray , Mesh.MeshData meshData , int numVertices , JobHandle boundsJobHandle , JobHandle copyVerticesJobHandle , JobHandle copyIndicesJobHandle )> _midUpdateData;
         EntityQuery _query;
-        BufferLookup<Segment> _segmentBufferLookup;
+        ComponentLookup<Segment> _lookupSegments;
 
         [Unity.Burst.BurstCompile]
         public void OnCreate ( ref SystemState state )
@@ -47,7 +47,7 @@ namespace Segments
 
             _midUpdateData = new( Allocator.Persistent );
             _query = state.GetEntityQuery( new NativeList<ComponentType>(1,Allocator.Temp){ ComponentType.ReadWrite<Segment>() , ComponentType.ReadWrite<MaterialMeshInfo>() , ComponentType.ReadWrite<RenderBounds>() }.AsArray() );
-            _segmentBufferLookup = state.GetBufferLookup<Segment>( isReadOnly:true );
+            _lookupSegments = state.GetComponentLookup<Segment>( isReadOnly:true );
         }
 
         [Unity.Burst.BurstCompile]
@@ -61,7 +61,7 @@ namespace Segments
         public void OnUpdate ( ref SystemState state )
         {
             int numEntities = _query.CalculateEntityCount();
-            _segmentBufferLookup.Update( ref state );
+            _lookupSegments.Update( ref state );
             NativeArray<AABB> bounds = new ( numEntities , Allocator.TempJob );
             _midUpdateData.Clear();
             int i = 0;
@@ -78,8 +78,8 @@ namespace Segments
                 Mesh.MeshData meshData = meshDataArray[0];
                 ___allocate_writable_mesh_data.End();
                 
-                var segmentBuffer = _segmentBufferLookup[entity];
-                int numSegments = segmentBuffer.Length;
+                var segment = _lookupSegments[entity];
+                int numSegments = segment.Buffer.Length;
                 int numVertices = numSegments * 2;
 
                 // upsize index buffer when necessary
@@ -101,7 +101,7 @@ namespace Segments
                 ___set_index_buffer_params.End();
 
                 ___schedule_copy_buffer_jobs.Begin();
-                var segmentBufferAsFloat3x2Array = segmentBuffer.AsNativeArray().Reinterpret<float3x2>();
+                var segmentBufferAsFloat3x2Array = segment.Buffer.AsArray();
                 var boundsJobHandle = new BoundsJob{
                     segments = segmentBufferAsFloat3x2Array ,
                     bounds = bounds.Slice(i,1) ,

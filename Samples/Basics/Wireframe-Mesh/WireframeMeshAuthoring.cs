@@ -55,7 +55,7 @@ namespace Samples
                 Edges       = _edges.AsReadOnly(),
                 Vertices    = _vertices.AsReadOnly(),
                 Transform   = transform.localToWorldMatrix,
-                Segments    = buffer.AsNativeArray(),
+                Segments    = buffer.AsArray(),
             }.Schedule(arrayLength:_edges.Length, innerloopBatchCount:128);
             
             Segments.Core.AddDependency(jobHandle);

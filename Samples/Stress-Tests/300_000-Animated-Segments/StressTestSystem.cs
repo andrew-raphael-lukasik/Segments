@@ -2,6 +2,8 @@ using UnityEngine;
 using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Transforms;
+using Unity.Collections;
+using Unity.Jobs;
 
 namespace Samples
 {
@@ -11,12 +13,32 @@ namespace Samples
     [Unity.Burst.BurstCompile]
     partial struct StressTestSystem : ISystem
     {
+        EntityQuery _query;
+
+        [Unity.Burst.BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            _query = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<Segments.Segment, StressTestSettings, LocalToWorld>()
+                .Build(ref state); 
+            state.RequireForUpdate(_query);
+        }
+
         [Unity.Burst.BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            state.Dependency = new StressTestJob{
-                Time = Time.time,// note: picked Time.time here **only** because it happen to change outside play mode where SystemAPI.Time.ElapsedTime is play mode only
-            }.ScheduleParallel(state.Dependency);
+            foreach (var (buffer, settings, ltw) in SystemAPI.Query< RefRW<Segments.Segment> , RefRO<StressTestSettings> , RefRO<LocalToWorld> >())
+            {
+                if (buffer.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
+                    buffer.ValueRW.Buffer.Length = settings.ValueRO.numSegments;
+
+                state.Dependency = new StressTestJob{
+                    ltw = ltw.ValueRO,
+                    settings = settings.ValueRO,
+                    time = Time.time,// note: picked Time.time here **only** because it happen to change outside play mode where SystemAPI.Time.ElapsedTime is play mode only
+                    segments = buffer.ValueRW.Buffer.AsArray(),
+                }.ScheduleParallel(settings.ValueRO.numSegments, 64, state.Dependency);
+            }
         }
     }
 
@@ -24,38 +46,39 @@ namespace Samples
     {
         public int numSegments;
         public float frequency;
-        public bool everyFrame;
+        public byte everyFrame;
     }
 
     [Unity.Burst.BurstCompile]
-    partial struct StressTestJob : IJobEntity
+    struct StressTestJob : IJobParallelForBatch
     {
-        public float Time;
-        void Execute(ref DynamicBuffer<Segments.Segment> buffer, in StressTestSettings settings, in LocalToWorld ltw)
+        public LocalToWorld ltw;
+        public StressTestSettings settings;
+        public float time;
+        [WriteOnly] public NativeArray<float3x2> segments;
+        void IJobParallelForBatch.Execute (int startIndex, int count)
         {
-            if( settings.everyFrame || buffer.Length!=settings.numSegments )
+            float3 mag = new float3(math.length(ltw.Right), math.length(ltw.Up), math.length(ltw.Forward));
+
+            float freqTau = settings.frequency * math.TAU;
+            float freqPiTau = settings.frequency/math.PI * math.TAU;
+            float step = 1f / settings.numSegments;
+            
+            for( int i=0 ; i<count ; i++ )
             {
-                buffer.Length = settings.numSegments;
+                int index = startIndex + i;
 
-                float3 mag = new float3(math.length(ltw.Right), math.length(ltw.Up), math.length(ltw.Forward));
-                float freqTau = settings.frequency * math.TAU;
-                float freqPiTau = settings.frequency/math.PI * math.TAU;
-                float step = 1f / settings.numSegments;
+                float t0 = index * step;
+                float t1 = t0 + step;
 
-                for( int i = 0 ; i<buffer.Length ; i++ )
-                {
-                    float t0 = i * step;
-                    float t1 = t0 + step;
+                float amp0 = math.sin(time + freqTau * t0);
+                float amp1 = math.sin(time + freqTau * t1);
+                float amp2 = math.sin(time + freqPiTau * t0);
+                float amp3 = math.sin(time + freqPiTau * t1);
 
-                    float amp0 = math.sin(Time + freqTau * t0);
-                    float amp1 = math.sin(Time + freqTau * t1);
-                    float amp2 = math.sin(Time + freqPiTau * t0);
-                    float amp3 = math.sin(Time + freqPiTau * t1);
-
-                    float3 p0 = new float3(0,0,mag.z*t0) + new float3(0,mag.y*amp0,0) + new float3(mag.x*amp2,0,0);
-                    float3 p1 = new float3(0,0,mag.z*t1) + new float3(0,mag.y*amp1,0) + new float3(mag.x*amp3,0,0);
-                    buffer[i] = new Segments.Segment(p0, p1);
-                }
+                float3 p0 = new float3(0,0,mag.z*t0) + new float3(0,mag.y*amp0,0) + new float3(mag.x*amp2,0,0);
+                float3 p1 = new float3(0,0,mag.z*t1) + new float3(0,mag.y*amp1,0) + new float3(mag.x*amp3,0,0);
+                segments[index] = new float3x2(p0, p1);
             }
         }
     }

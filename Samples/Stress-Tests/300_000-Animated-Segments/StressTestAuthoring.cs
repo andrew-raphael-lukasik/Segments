@@ -22,7 +22,7 @@ namespace Samples
             entityManager.AddComponentData(_segments, new StressTestSettings{
                 numSegments = _numSegments,
                 frequency   = _frequency,
-                everyFrame  = _everyFrame,
+                everyFrame  = _everyFrame ? (byte)1 : (byte)0,
             } );
             entityManager.AddComponentData(_segments, new LocalToWorld{
                 Value = transform.localToWorldMatrix

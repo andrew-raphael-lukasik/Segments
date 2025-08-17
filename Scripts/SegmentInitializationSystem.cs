@@ -57,6 +57,14 @@ namespace Segments
                 }
                 entityManager.RemoveComponent<SegmentsInitializationRequest>( entity );
 
+                // add segments buffer if not added already:
+                if( !entityManager.HasComponent<Segment>(entity) )
+                {
+                    entityManager.AddComponentData( entity , new Segment{
+                        Buffer = new NativeList<float3x2>(Allocator.Persistent)
+                    } );
+                }
+
                 // add LTW if not added already:
                 if( !entityManager.HasComponent<LocalToWorld>(entity) )
                 {

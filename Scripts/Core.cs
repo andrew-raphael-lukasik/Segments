@@ -85,6 +85,10 @@ namespace Segments
             entityManager.AddSharedComponentManaged( entity , new SegmentsInitializationRequest{
                 material = material
             } );
+
+            entityManager.AddComponentData( entity , new Segment{
+                Buffer = new NativeList<float3x2>(Allocator.Persistent)
+            } );
             
             entityManager.AddComponentData( entity , new LocalToWorld{
                 Value = float4x4.identity
@@ -119,7 +123,7 @@ namespace Segments
         public static void AddDependency ( JobHandle dependency ) => _query.AddDependency( dependency );
 
         /// <summary> Returns a Segment buffer reintepreted as float3x2 for convenience </summary>
-        public static DynamicBuffer<float3x2> GetBuffer ( Entity entity , bool isReadOnly = false ) => _world.EntityManager.GetBuffer<Segment>( entity , isReadOnly ).Reinterpret<float3x2>();
+        public static NativeList<float3x2> GetBuffer ( Entity entity , bool isReadOnly = false ) => _world.EntityManager.GetComponentData<Segment>(entity).Buffer;
 
     }
 }

@@ -22,7 +22,7 @@ namespace Samples
                 settings = new StressTestSettings{
                     numSegments = comp._numSegments,
                     frequency   = comp._frequency,
-                    everyFrame  = comp._everyFrame,
+                    everyFrame  = comp._everyFrame ? (byte)1 : (byte)0,
                 };
                 ltw.Value = comp.transform.localToWorldMatrix;
             }

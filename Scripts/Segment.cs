@@ -1,16 +1,11 @@
 using Unity.Mathematics;
 using Unity.Entities;
+using Unity.Collections;
 
 namespace Segments
 {
-    public struct Segment : IBufferElementData
+    public struct Segment : IComponentData
     {
-        public float3x2 Value;
-        
-        public Segment (float3 a, float3 b) => this.Value = new float3x2(a, b);
-        public Segment (float3x2 ab) => this.Value = ab;
-        
-        public static implicit operator Segment ( float3x2 value ) => new Segment{Value = value};
-        public static implicit operator float3x2 ( Segment value ) => value.Value;
+        public NativeList<float3x2> Buffer;
     }
 }

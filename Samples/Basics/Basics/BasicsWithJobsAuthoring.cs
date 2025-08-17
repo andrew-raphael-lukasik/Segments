@@ -26,7 +26,7 @@ namespace Samples
             segments.Length = 3;
 
             var jobHandle = new MyBasicJob{
-                SegmentBuffer   = segments.AsNativeArray() ,
+                SegmentBuffer   = segments.AsArray() ,
                 LocalToWorld    = transform.localToWorldMatrix// this matrix holds directions (scale per axis) and position of the transform
             }.Schedule();
             
