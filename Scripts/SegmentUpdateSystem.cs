@@ -46,7 +46,11 @@ namespace Segments
             // for( uint i=0 ; i<128_000 ; i++ ) _predefinedIndexBuffer[(int)i] = i;
 
             _midUpdateData = new( Allocator.Persistent );
-            _query = state.GetEntityQuery( new NativeList<ComponentType>(1,Allocator.Temp){ ComponentType.ReadWrite<Segment>() , ComponentType.ReadWrite<MaterialMeshInfo>() , ComponentType.ReadWrite<RenderBounds>() }.AsArray() );
+            _query = state.GetEntityQuery( new NativeList<ComponentType>(1,Allocator.Temp){
+                ComponentType.ReadOnly<Segment>() ,
+                ComponentType.ReadOnly<MaterialMeshInfo>() ,
+                ComponentType.ReadOnly<RenderBounds>()
+            }.AsArray() );
             _lookupSegments = state.GetComponentLookup<Segment>( isReadOnly:true );
         }
 
