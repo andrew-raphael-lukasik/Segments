@@ -52,7 +52,8 @@ namespace Segments
                     RenderMeshUtility.AddComponents( entity , entityManager , renderMeshDescription , materialMeshInfo );
 
                     #if UNITY_EDITOR
-                    entityManager.SetName( entity , label );
+                    if( entityManager.GetName(entity).Length==0 )
+                        entityManager.SetName( entity , label );
                     #endif
                 }
                 entityManager.RemoveComponent<SegmentsInitializationRequest>( entity );
