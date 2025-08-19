@@ -28,6 +28,7 @@ namespace Samples
         public void OnUpdate(ref SystemState state)
         {
             foreach (var (buffer, settings, ltw) in SystemAPI.Query< RefRW<Segments.Segment> , RefRO<StressTestSettings> , RefRO<LocalToWorld> >())
+            if (settings.ValueRO.everyFrame==1 || buffer.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
             {
                 if (buffer.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
                     buffer.ValueRW.Buffer.Length = settings.ValueRO.numSegments;
