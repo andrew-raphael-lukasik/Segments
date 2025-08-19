@@ -30,7 +30,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Ellipse (
             NativeArray<float3x2> segments , ref int index ,
             float rx , float ry ,
@@ -147,7 +147,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void EllipseAtFoci (
             NativeArray<float3x2> segments , ref int index ,
             float rx , float ry ,
@@ -211,7 +211,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Circle (
             NativeArray<float3x2> segments , ref int index ,
             float r , float3 pos , quaternion rot ,
@@ -312,7 +312,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
         
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Line (
             NativeArray<float3x2> segments , ref int index ,
             float3 start , float3 end
@@ -348,7 +348,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void DashedLine (
             NativeArray<float3x2> segments , ref int index ,
             float3 start , float3 end , int numSegments
@@ -394,7 +394,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Arrow (
             NativeArray<float3x2> segments , ref int index ,
             float3 v1 , float3 v2
@@ -439,7 +439,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Arrow (
             NativeArray<float3x2> segments , ref int index ,
             float3 v1 , float3 v2 , float3 cameraPos
@@ -493,7 +493,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void HyperbolaAtFoci (
             NativeArray<float3x2> segments , ref int index ,
             float a , float b , float xrange ,
@@ -551,7 +551,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Hyperbola (
             NativeArray<float3x2> segments , ref int index ,
             float a , float b , float xrange ,
@@ -696,7 +696,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Parabola (
             NativeArray<float3x2> segments , ref int index ,
             float a , float b ,
@@ -828,7 +828,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void ParabolaAtFoci (
             NativeArray<float3x2> segments , ref int index ,
             float a , float b , float xrange ,
@@ -887,7 +887,7 @@ namespace Segments
         public static void Cube ( NativeList<float3x2> segments , ref int index , float a , float3 pos , quaternion rot )
             => Box( segments , ref index , new float3{x=a,y=a,z=a} , pos , rot );
         
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Cube ( NativeArray<float3x2> segments , ref int index , float a , float3 pos , quaternion rot )
             => Box( segments , ref index , new float3{x=a,y=a,z=a} , pos , rot );
         
