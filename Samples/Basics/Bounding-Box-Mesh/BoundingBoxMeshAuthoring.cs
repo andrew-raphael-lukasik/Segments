@@ -48,7 +48,7 @@ namespace Samples
             // update transform (because lines are in local-space):
             var entityManager = Segments.Core.GetWorld().EntityManager;
             entityManager.SetComponentData(_segments, new LocalToWorld{
-                Value = Matrix4x4.Translate(transform.position)
+                Value = Matrix4x4.Translate(transform.position)// translation only because bounds size is world-space already
             });
         }
 
