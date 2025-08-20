@@ -45,11 +45,13 @@ namespace Segments
             // for( uint i=0 ; i<128_000 ; i++ ) _predefinedIndexBuffer[(int)i] = i;
 
             _midUpdateData = new( Allocator.Persistent );
-            _query = state.GetEntityQuery( new NativeList<ComponentType>(1,Allocator.Temp){
+            _query = state.GetEntityQuery( new NativeList<ComponentType>(3,Allocator.Temp){
                 ComponentType.ReadOnly<Segment>() ,
                 ComponentType.ReadOnly<MaterialMeshInfo>() ,
                 ComponentType.ReadOnly<RenderBounds>()
             }.AsArray() );
+
+            state.RequireForUpdate(_query);
         }
 
         [Unity.Burst.BurstCompile]
