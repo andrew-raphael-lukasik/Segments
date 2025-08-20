@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Jobs;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Transforms;
 
 namespace Samples
 {
@@ -14,48 +15,46 @@ namespace Samples
     {
         Entity _segments;
 
-        void OnEnable() => Segments.Core.Create(out _segments);
+        void OnEnable()
+        {
+            Segments.Core.Create(out _segments);
+
+            // create local-space line segments:
+            {
+                // accesses the Segment beffer component of our Entity where every Segment is a pair of float3 values (start & end of a line segment)
+                var buffer = Segments.Core.GetBuffer(_segments);
+
+                // we already know ahead of time that we want 3 segments here
+                buffer.Length = 3;
+
+                var jobHandle = new MyBasicJob{
+                    buffer          = buffer.AsArray() ,
+                }.Schedule();
+
+                // pass the job handle so dependency system knows aobut this job (needed when scheduling from Monobehaviours)
+                Segments.Core.AddDependency(jobHandle);
+            }
+        }
         void OnDisable() => Segments.Core.Destroy(_segments);
 
         void Update()
         {
-            // accesses the Segment beffer component of our Entity where every Segment is a pair of float3 values (start & end of a line segment)
-            var buffer = Segments.Core.GetBuffer(_segments);
-
-            // we already know ahead of time that we want 3 segments here
-            buffer.Length = 3;
-
-            var jobHandle = new MyBasicJob{
-                buffer          = buffer.AsArray() ,
-                localToWorld    = transform.localToWorldMatrix// this matrix holds directions (scale per axis) and position of the transform
-            }.Schedule();
-            
-            Segments.Core.AddDependency(jobHandle);
+            // update transform (because lines are in local-space):
+            var entityManager = Segments.Core.GetWorld().EntityManager;
+            entityManager.SetComponentData(_segments, new LocalToWorld{
+                Value = transform.localToWorldMatrix
+            });
         }
 
         [Unity.Burst.BurstCompile]
         struct MyBasicJob : IJob
         {
             [WriteOnly] public NativeArray<float3x2> buffer;
-            public float4x4 localToWorld;// transform
             void IJob.Execute()
             {
-                // chops the matrix up into separate collumns
-                float4 c0 = localToWorld.c0;// stores x direction
-                float4 c1 = localToWorld.c1;// stores y direction
-                float4 c2 = localToWorld.c2;// stores z direction
-                float4 c3 = localToWorld.c3;// stores position
-
-                // converts float4s to float3s, names for convenience
-                float3 pos      = new float3(c3.x, c3.y, c3.z);
-                float3 right    = new float3(c0.x, c0.y, c0.z);
-                float3 up       = new float3(c1.x, c1.y, c1.z);
-                float3 forward  = new float3(c2.x, c2.y, c2.z);
-
-                // set points where all these segments will start and end
-                buffer[0] = new float3x2(pos, pos+right);
-                buffer[1] = new float3x2(pos, pos+up);
-                buffer[2] = new float3x2(pos, pos+forward);
+                buffer[0] = new float3x2(float3.zero, new float3(1, 0, 0));
+                buffer[1] = new float3x2(float3.zero, new float3(0, 1, 0));
+                buffer[2] = new float3x2(float3.zero, new float3(0, 0, 1));
             }
         }
 
