@@ -122,8 +122,8 @@ namespace Segments
         /// <summary> Adds dependency for the Segment type </summary>
         public static void AddDependency ( JobHandle dependency ) => _query.AddDependency(dependency);
 
-        public static NativeList<float3x2> GetBuffer ( Entity entity , bool isReadOnly = false ) => _world.EntityManager.GetComponentData<Segment>(entity).Buffer;
         /// <summary> Shorthand for `EntityManager.GetComponentData<Segment>(entity).Buffer` </summary>
+        public static NativeList<float3x2> GetBuffer ( Entity entity ) => _world.EntityManager.GetComponentData<Segment>(entity).Buffer;
 
     }
 }
