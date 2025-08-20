@@ -67,10 +67,10 @@ namespace Segments
             _midUpdateData.Clear();
             int i = 0;
 
-                .WithChangeFilter<Segment>()
             foreach( var ( segment , entity ) in SystemAPI
                 .Query< RefRO<Segment> >()
                 .WithAll<RenderBounds,MaterialMeshInfo>()
+                .WithChangeFilter<Segment>()// IMPORTANT: requires RW acceess as RO mode won't trigger this
                 .WithEntityAccess()
             )
             {
@@ -131,7 +131,7 @@ namespace Segments
                     .Query< RefRO<MaterialMeshInfo> , RefRW<RenderBounds> >()
                     .WithEntityAccess()
                     .WithAll<Segment>()
-                    .WithChangeFilter<Segment>()
+                    .WithChangeFilter<Segment>()// IMPORTANT: requires RW acceess as RO mode won't trigger this
             )
             {
                 var next = _midUpdateData[i];
