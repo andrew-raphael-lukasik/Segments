@@ -119,6 +119,9 @@ namespace Segments
             entityManager.DestroyEntity( entity );
         }
 
+        /// <summary> Gets dependency from the Segment type </summary>
+        public static JobHandle GetDependency () => _query.GetDependency();
+        
         /// <summary> Adds dependency for the Segment type </summary>
         public static void AddDependency ( JobHandle dependency ) => _query.AddDependency(dependency);
 
