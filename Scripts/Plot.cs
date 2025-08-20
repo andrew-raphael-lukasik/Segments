@@ -911,7 +911,7 @@ namespace Segments
             index = bufferSizeRequired;
         }
 
-        /// <inheritdoc/> <remarks> Will does nothing if array is too short. </remarks>
+        /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Box (
             NativeArray<float3x2> segments , ref int index ,
             float3 size , float3 pos , quaternion rot
