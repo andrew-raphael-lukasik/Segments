@@ -151,11 +151,6 @@ namespace Segments
                 Mesh mesh = graphicsSystem.GetMesh( materialMeshInfo.ValueRO.MeshID );
                 ___get_mesh.End();
 
-                if( mesh==null )
-                {
-                    Debug.LogError($"{entity} MESH JEST NULL, materialMeshInfo.MeshID: {materialMeshInfo.ValueRO.MeshID.value}");
-                }
-
                 ___push_mesh_data.Begin();
                 Mesh.ApplyAndDisposeWritableMeshData( next.meshDataArray , mesh , MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontResetBoneBounds );
                 ___push_mesh_data.End();
