@@ -157,6 +157,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -178,6 +180,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -284,7 +287,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 1347e42cd0778b9408cd8a7e91ae93e7, type: 2}
   _numSegments: 25000
-  _frequency: 30
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &478996534
 Transform:
@@ -332,7 +335,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 91643007015acfb46bdc20094ec8b561, type: 2}
   _numSegments: 25000
-  _frequency: 15.7
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &588660314
 Transform:
@@ -476,7 +479,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 1347e42cd0778b9408cd8a7e91ae93e7, type: 2}
   _numSegments: 25000
-  _frequency: 30
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &716963683
 Transform:
@@ -524,7 +527,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 1347e42cd0778b9408cd8a7e91ae93e7, type: 2}
   _numSegments: 25000
-  _frequency: 15.7
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &775912628
 Transform:
@@ -572,7 +575,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 1347e42cd0778b9408cd8a7e91ae93e7, type: 2}
   _numSegments: 25000
-  _frequency: 15.7
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &852920736
 Transform:
@@ -718,7 +721,6 @@ MonoBehaviour:
   m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
-  m_Version: 2
   m_TaaSettings:
     m_Quality: 3
     m_FrameInfluence: 0.1
@@ -726,6 +728,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &1434067518
 GameObject:
   m_ObjectHideFlags: 0
@@ -757,7 +760,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 1347e42cd0778b9408cd8a7e91ae93e7, type: 2}
   _numSegments: 25000
-  _frequency: 15.7
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &1434067520
 Transform:
@@ -805,7 +808,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 91643007015acfb46bdc20094ec8b561, type: 2}
   _numSegments: 25000
-  _frequency: 15.7
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &1469519142
 Transform:
@@ -860,6 +863,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -881,6 +886,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -939,7 +945,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 1347e42cd0778b9408cd8a7e91ae93e7, type: 2}
   _numSegments: 25000
-  _frequency: 30
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &1964438891
 Transform:
@@ -987,7 +993,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _srcMaterial: {fileID: 2100000, guid: 91643007015acfb46bdc20094ec8b561, type: 2}
   _numSegments: 25000
-  _frequency: 15.7
+  _frequency: 5
   _everyFrame: 1
 --- !u!4 &2074855885
 Transform:
