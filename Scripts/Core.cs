@@ -128,5 +128,8 @@ namespace Segments
         /// <summary> Shorthand for `EntityManager.GetComponentData<Segment>(entity).Buffer` </summary>
         public static NativeList<float3x2> GetBuffer ( Entity entity ) => _world.EntityManager.GetComponentData<Segment>(entity).Buffer;
 
+        /// <summary> Enables the SegmentUpdateRequest component to trigger AABB recalculation and buffer be copied to the GPU again </summary>
+        public static void SetSegmentChanged ( Entity entity ) => _world.EntityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, true);
+
     }
 }

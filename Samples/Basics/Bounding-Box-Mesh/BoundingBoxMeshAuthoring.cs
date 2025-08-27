@@ -12,39 +12,41 @@ namespace Samples
     class BoundingBoxMeshAuthoring : MonoBehaviour
     {
         [SerializeField] Material _materialOverride = null;
+        MeshRenderer _meshRenderer;
         Entity _segments;
 
         void OnEnable()
         {
+            _meshRenderer = GetComponent<MeshRenderer>();
+            
             // create segment buffer entity:
             Segments.Core.Create(out _segments, _materialOverride);
-
-            // create local-space line segments:
-            {
-                var meshRenderer = GetComponent<MeshRenderer>();
-                var segmentBuffer = Segments.Core.GetBuffer(_segments);
-
-                // schedules a job that plots a bounding box
-                segmentBuffer.Length = 12;// box needs 12 edges
-                var bounds = meshRenderer.bounds;
-                int index = 0;
-                var jobHandle = new Segments.Plot.BoxJob(
-                    segments:   segmentBuffer,
-                    index:      ref index,
-                    size:       bounds.size,
-                    pos:        Vector3.zero,
-                    rot:        quaternion.identity
-                ).Schedule();
-
-                // pass the job handle so dependency system knows aobut this job (needed when scheduling from Monobehaviours)
-                Segments.Core.AddDependency(jobHandle);
-            }
         }
 
         void OnDisable() => Segments.Core.Destroy(_segments);
 
         void Update()
         {
+            // schedules a job that plots a bounding box
+            var segmentBuffer = Segments.Core.GetBuffer(_segments);
+            segmentBuffer.Length = 12;// box needs 12 edges
+            var bounds = _meshRenderer.bounds;
+            int index = 0;
+            var jobHandle = new Segments.Plot.BoxJob(
+                segments:   segmentBuffer,
+                index:      ref index,
+                size:       bounds.size,
+                pos:        Vector3.zero,
+                rot:        quaternion.identity
+            ).Schedule();
+            // note: line segments here are local-space
+
+            // pass the job handle so dependency system knows aobut this job (needed when scheduling from Monobehaviours)
+            Segments.Core.AddDependency(jobHandle);
+
+            // notifies the segment update systems that line buffer changed and needs updating
+            Segments.Core.SetSegmentChanged(_segments);
+
             // update transform (because lines are in local-space):
             var entityManager = Segments.Core.GetWorld().EntityManager;
             entityManager.SetComponentData(_segments, new LocalToWorld{

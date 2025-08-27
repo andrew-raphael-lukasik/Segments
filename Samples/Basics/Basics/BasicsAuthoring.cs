@@ -37,6 +37,9 @@ namespace Samples
             buffer[0] = new float3x2(pos, pos+transform.right);
             buffer[1] = new float3x2(pos, pos+transform.up);
             buffer[2] = new float3x2(pos, pos+transform.forward);
+
+            // notifies the segment update systems that line buffer changed and needs updating
+            Segments.Core.SetSegmentChanged(_segments);
         }
 
         #if UNITY_EDITOR
