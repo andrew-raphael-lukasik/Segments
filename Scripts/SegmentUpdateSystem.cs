@@ -47,8 +47,9 @@ namespace Segments
             _midUpdateData = new( Allocator.Persistent );
             _query = state.GetEntityQuery( new NativeList<ComponentType>(3,Allocator.Temp){
                 ComponentType.ReadOnly<Segment>() ,
+                ComponentType.ReadOnly<SegmentUpdateRequest>() ,
                 ComponentType.ReadOnly<MaterialMeshInfo>() ,
-                ComponentType.ReadOnly<RenderBounds>()
+                ComponentType.ReadWrite<RenderBounds>() ,
             }.AsArray() );
 
             state.RequireForUpdate(_query);
@@ -69,10 +70,9 @@ namespace Segments
             _midUpdateData.Clear();
             int i = 0;
 
-            foreach( var ( segment , entity ) in SystemAPI
-                .Query< RefRO<Segment> >()
-                .WithAll<RenderBounds,MaterialMeshInfo>()
-                .WithChangeFilter<Segment>()// IMPORTANT: requires RW acceess as RO mode won't trigger this
+            foreach( var ( segment , materialMeshInfo , renderBounds , entity ) in SystemAPI
+                .Query< RefRO<Segment> , RefRO<MaterialMeshInfo> , RefRW<RenderBounds> >()
+                .WithAll<SegmentUpdateRequest>()
                 .WithEntityAccess()
             )
             {
@@ -129,11 +129,10 @@ namespace Segments
             var graphicsSystem = state.World.GetExistingSystemManaged<EntitiesGraphicsSystem>();
             i = 0;
 
-            foreach( var ( materialMeshInfo , renderBounds, entity ) in SystemAPI
-                    .Query< RefRO<MaterialMeshInfo> , RefRW<RenderBounds> >()
-                    .WithEntityAccess()
-                    .WithAll<Segment>()
-                    .WithChangeFilter<Segment>()// IMPORTANT: requires RW acceess as RO mode won't trigger this
+            foreach( var ( segment , materialMeshInfo , renderBounds , entity ) in SystemAPI
+                .Query< RefRO<Segment> , RefRO<MaterialMeshInfo> , RefRW<RenderBounds> >()
+                .WithAll<SegmentUpdateRequest>()
+                .WithEntityAccess()
             )
             {
                 var next = _midUpdateData[i];
@@ -161,6 +160,9 @@ namespace Segments
                 ___push_bounds.End();
 
                 i++;
+
+                // flag update request as fulfilled:
+                state.EntityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, false);
             }
         }
 

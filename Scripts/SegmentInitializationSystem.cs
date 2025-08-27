@@ -58,6 +58,9 @@ namespace Segments
                 }
                 entityManager.RemoveComponent<SegmentsInitializationRequest>( entity );
 
+                // add segment update system component:
+                entityManager.AddComponent<SegmentUpdateRequest>( entity );
+
                 // add segments buffer if not added already:
                 if( !entityManager.HasComponent<Segment>(entity) )
                 {
