@@ -27,7 +27,7 @@ namespace Samples
         [Unity.Burst.BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var (buffer, settings, ltw) in SystemAPI.Query< RefRW<Segments.Segment> , RefRO<StressTestSettings> , RefRO<LocalToWorld> >())
+            foreach (var (buffer, settings, ltw, entity) in SystemAPI.Query< RefRW<Segments.Segment> , RefRO<StressTestSettings> , RefRO<LocalToWorld> >().WithEntityAccess())
             if (settings.ValueRO.everyFrame==1 || buffer.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
             {
                 if (buffer.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
@@ -39,6 +39,9 @@ namespace Samples
                     time = Time.time,// note: picked Time.time here **only** because it happen to change outside play mode where SystemAPI.Time.ElapsedTime is play mode only
                     segments = buffer.ValueRW.Buffer.AsArray(),
                 }.ScheduleParallel(settings.ValueRO.numSegments, 64, state.Dependency);
+
+                // request mesh update
+                state.EntityManager.SetComponentEnabled<Segments.SegmentUpdateRequest>(entity, true);
             }
         }
     }
