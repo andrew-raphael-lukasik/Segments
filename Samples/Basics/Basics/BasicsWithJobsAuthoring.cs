@@ -39,9 +39,8 @@ namespace Samples
 
         void Update()
         {
-            // update transform (because lines are in local-space):
-            var entityManager = Segments.Core.GetWorld().EntityManager;
-            entityManager.SetComponentData(_segments, new LocalToWorld{
+            // update transform so lines follow it (because lines are in local-space)
+            Segments.Core.GetWorld().EntityManager.SetComponentData(_segments, new LocalToWorld{
                 Value = transform.localToWorldMatrix
             });
         }

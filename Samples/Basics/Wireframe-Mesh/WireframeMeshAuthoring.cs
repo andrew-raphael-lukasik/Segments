@@ -57,6 +57,8 @@ namespace Samples
 
         void Update()
         {
+            // note: we don't change the lines in Update here because mesh is not changing so no reason to recreate the wireframe more than once
+
             // update transform (because lines are in local-space):
             var entityManager = Segments.Core.GetWorld().EntityManager;
             entityManager.SetComponentData(_segments, new LocalToWorld{
