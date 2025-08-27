@@ -51,14 +51,30 @@ namespace Segments.Jobs
     [Unity.Burst.BurstCompile]
     struct BoundsJob : IJob
     {
-        [ReadOnly] public NativeSlice<float3x2> segments;
-        [NativeDisableContainerSafetyRestriction][WriteOnly] public NativeSlice<AABB> bounds;
+        [ReadOnly] public NativeSlice<float3x2> input;
+        [NativeDisableContainerSafetyRestriction][WriteOnly] public NativeSlice<AABB> output;
         void IJob.Execute()
         {
-            MinMaxAABB combined = MinMaxAABB.Empty;
-            for( int i=segments.Length-1 ; i!=-1 ; i-- )
-                combined.Encapsulate( new MinMaxAABB{ Min=segments[i].c0 , Max=segments[i].c1 } );
-            bounds[0] = new Bounds{ min=combined.Min , max=combined.Max }.ToAABB();
+            var minmax = MinMaxAABB.Empty;
+            foreach(var pair in input) {
+                minmax.Encapsulate(pair.c0);
+                minmax.Encapsulate(pair.c1);
+            }
+            output[0] = new Bounds{min=minmax.Min, max=minmax.Max}.ToAABB();
+        }
+    }
+
+    [Unity.Burst.BurstCompile]
+    struct BoundsCombineJob : IJob
+    {
+        [ReadOnly] public NativeSlice<AABB> input;
+        [NativeDisableContainerSafetyRestriction][WriteOnly] public NativeSlice<AABB> output;
+        void IJob.Execute()
+        {
+            var minmax = MinMaxAABB.Empty;
+            foreach(var next in input)
+                minmax.Encapsulate(next);
+            output[0] = new Bounds{min=minmax.Min, max=minmax.Max}.ToAABB();
         }
     }
 
