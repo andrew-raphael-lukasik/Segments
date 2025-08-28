@@ -49,6 +49,14 @@ namespace Segments.Jobs
     }
 
     [Unity.Burst.BurstCompile]
+    struct NativeCopyNoSafetyChecksJob<T> : IJob where T : unmanaged
+    {
+        [NativeDisableContainerSafetyRestriction][ReadOnly] public NativeSlice<T> src;
+        [NativeDisableContainerSafetyRestriction][WriteOnly] public NativeSlice<T> dst;
+        void IJob.Execute() => dst.CopyFrom(src);
+    }
+
+    [Unity.Burst.BurstCompile]
     struct BoundsJob : IJob
     {
         [ReadOnly] public NativeSlice<float3x2> input;

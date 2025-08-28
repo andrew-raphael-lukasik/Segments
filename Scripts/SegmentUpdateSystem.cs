@@ -104,53 +104,90 @@ namespace Segments
                 ___set_index_buffer_params.End();
 
                 ___schedule_copy_buffer_jobs.Begin();
-                JobHandle boundsJobHandle = default;
+                JobHandle boundsJobHandle, copyVerticesJobHandle, copyIndicesJobHandle;
                 var segmentBufferAsFloat3x2Array = segmentBuffer.AsArray();
                 {
-                    int numItems = segmentBufferAsFloat3x2Array.Length;
+                    var vertexData = meshData.GetVertexData<float3x2>();
+                    var indexData = meshData.GetIndexData<uint>().Slice(0, numVertices);
+
                     const int dispatchSize = 1<<14;
-                    if( numItems<=dispatchSize )
+                    if( numSegments<=dispatchSize )
                     {
                         boundsJobHandle = new BoundsJob{
                             input = segmentBufferAsFloat3x2Array ,
                             output = bounds.Slice(i,1) ,
                         }.Schedule();
+
+                        copyIndicesJobHandle = new NativeCopyJob<uint>{
+                            src = _predefinedIndexBuffer.Slice(0, numVertices),
+                            dst = indexData,
+                        }.Schedule();
+                        copyVerticesJobHandle = new NativeCopyJob<float3x2>{
+                            src = segmentBufferAsFloat3x2Array,
+                            dst = vertexData,
+                        }.Schedule(copyIndicesJobHandle);
                     }
                     else
                     {
-                        int numDispatches = numItems/dispatchSize + math.min(numItems%dispatchSize, 1);
-                        int numItemsPerDispatch = numItems / numDispatches;
-                        var dHandles = new NativeArray<JobHandle>(numDispatches, Allocator.Temp);
-                        var dResults = new NativeArray<AABB>(numDispatches, Allocator.TempJob);
-                        int dLast = numDispatches-1;
-                        for (int d=0; d<dLast; d++)
                         {
-                            dHandles[d] = new BoundsJob{
-                                input = segmentBufferAsFloat3x2Array.Slice(d*numItemsPerDispatch, numItemsPerDispatch) ,
-                                output = dResults.Slice(d,1) ,
+                            int numDispatches = numSegments/dispatchSize + math.min(numSegments%dispatchSize, 1);
+                            int numSegmentsPerDispatch = numSegments / numDispatches;
+                            var dHandles = new NativeArray<JobHandle>(numDispatches, Allocator.Temp);
+                            var dResults = new NativeArray<AABB>(numDispatches, Allocator.TempJob);
+                            int dLast = numDispatches-1;
+                            for (int d=0; d<dLast; d++)
+                            {
+                                dHandles[d] = new BoundsJob{
+                                    input = segmentBufferAsFloat3x2Array.Slice(d*numSegmentsPerDispatch, numSegmentsPerDispatch),
+                                    output = dResults.Slice(d,1),
+                                }.Schedule();
+                            }
+                            int lastDispStart = dLast*numSegmentsPerDispatch;
+                            dHandles[dLast] = new BoundsJob{
+                                input = segmentBufferAsFloat3x2Array.Slice(lastDispStart, numSegments-lastDispStart),
+                                output = dResults.Slice(dLast,1),
                             }.Schedule();
+                            boundsJobHandle = new BoundsCombineJob{
+                                input = dResults,
+                                output = bounds.Slice(i,1),
+                            }.Schedule(JobHandle.CombineDependencies(dHandles));
                         }
-                        int lastDispStart = (dLast)*numItemsPerDispatch;
-                        dHandles[dLast] = new BoundsJob{
-                            input = segmentBufferAsFloat3x2Array.Slice(lastDispStart, numItems-lastDispStart) ,
-                            output = dResults.Slice(dLast,1) ,
-                        }.Schedule();
-                        boundsJobHandle = new BoundsCombineJob{
-                            input = dResults,
-                            output = bounds.Slice(i,1),
-                        }.Schedule(JobHandle.CombineDependencies(dHandles));
+                        {
+                            int numDispatches = numVertices/dispatchSize + math.min(numVertices%dispatchSize, 1);
+                            int numVerticesPerDispatch = numVertices / numDispatches;
+                            int numSegmentsPerDispatch = numSegments / numDispatches;
+                            var copyIndicesJobHandles = new NativeArray<JobHandle>(numDispatches, Allocator.Temp);
+                            var copyVerticesJobHandles = new NativeArray<JobHandle>(numDispatches, Allocator.Temp);
+                            int dLast = numDispatches-1;
+                            for (int d=0; d<dLast; d++)
+                            {
+                                int div = d*numVerticesPerDispatch;
+                                int dis = d*numSegmentsPerDispatch;
+                                copyIndicesJobHandles[d] = new NativeCopyNoSafetyChecksJob<uint>{
+                                    src = _predefinedIndexBuffer.Slice(div, numVerticesPerDispatch),
+                                    dst = indexData.Slice(div, numVerticesPerDispatch),
+                                }.Schedule();
+                                copyVerticesJobHandles[d] = new NativeCopyNoSafetyChecksJob<float3x2>{
+                                    src = segmentBufferAsFloat3x2Array.Slice(dis, numSegmentsPerDispatch),
+                                    dst = vertexData.Slice(dis, numSegmentsPerDispatch),
+                                }.Schedule(copyIndicesJobHandles[d]);
+                            }
+                            int lastVertexDispStart = dLast*numVerticesPerDispatch;
+                            int lastSegmentDispStart = dLast*numSegmentsPerDispatch;
+                            copyIndicesJobHandles[dLast] = new NativeCopyNoSafetyChecksJob<uint>{
+                                src = _predefinedIndexBuffer.Slice(lastVertexDispStart, numVertices-lastVertexDispStart),
+                                dst = indexData.Slice(lastVertexDispStart, numVertices-lastVertexDispStart),
+                            }.Schedule();
+                            copyVerticesJobHandles[dLast] = new NativeCopyNoSafetyChecksJob<float3x2>{
+                                src = segmentBufferAsFloat3x2Array.Slice(lastSegmentDispStart, numSegments-lastSegmentDispStart),
+                                dst = vertexData.Slice(lastSegmentDispStart, numSegments-lastSegmentDispStart),
+                            }.Schedule(copyIndicesJobHandles[dLast]);
+
+                            copyVerticesJobHandle = JobHandle.CombineDependencies(copyVerticesJobHandles);
+                            copyIndicesJobHandle = JobHandle.CombineDependencies(copyIndicesJobHandles);
+                        }
                     }
                 }
-                var vertexData = meshData.GetVertexData<float3x2>();
-                var indexData = meshData.GetIndexData<uint>().Slice( 0 , numVertices );
-                JobHandle copyIndicesJobHandle = new NativeCopyJob<uint>{
-                    src = _predefinedIndexBuffer.Slice( 0 , numVertices ) ,
-                    dst = indexData ,
-                }.Schedule();
-                JobHandle copyVerticesJobHandle = new NativeCopyJob<float3x2>{
-                    src = segmentBufferAsFloat3x2Array ,
-                    dst = vertexData ,
-                }.Schedule( copyIndicesJobHandle );
                 ___schedule_copy_buffer_jobs.End();
 
                 _midUpdateData.Add( ( meshDataArray , meshData , numVertices , boundsJobHandle , copyVerticesJobHandle , copyIndicesJobHandle ) );
