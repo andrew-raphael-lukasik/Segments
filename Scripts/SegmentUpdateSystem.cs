@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Profiling;
@@ -30,6 +29,8 @@ namespace Segments
             ___push_mesh_data = new ProfilerMarker(nameof(___push_mesh_data).TrimStart('_'));
 
         NativeArray<uint> _predefinedIndexBuffer;
+        NativeList<JobHandle> _jobHandles1, _jobHandles2;
+        NativeList<NativeList<AABB>> _aabbBuffers;
         NativeList<( Mesh.MeshDataArray meshDataArray , Mesh.MeshData meshData , int numVertices , JobHandle boundsJobHandle , JobHandle copyVerticesJobHandle , JobHandle copyIndicesJobHandle )> _midUpdateData;
         EntityQuery _query;
 
@@ -43,6 +44,12 @@ namespace Segments
             JobHandle jobHandle = job.Schedule( arrayLength:_predefinedIndexBuffer.Length , indicesPerJobCount:_predefinedIndexBuffer.Length/128 );
             jobHandle.Complete();
             // for( uint i=0 ; i<128_000 ; i++ ) _predefinedIndexBuffer[(int)i] = i;
+
+            _jobHandles1 = new (16, Allocator.Persistent);
+            _jobHandles2 = new (16, Allocator.Persistent);
+            _aabbBuffers = new (16, Allocator.Persistent);
+            for( int i=0 ; i<16 ; i++ )
+                _aabbBuffers.Add(new (16, Allocator.Persistent));
 
             _midUpdateData = new( Allocator.Persistent );
             _query = state.GetEntityQuery( new NativeList<ComponentType>(3,Allocator.Temp){
@@ -59,6 +66,14 @@ namespace Segments
         public void OnDestroy ( ref SystemState state )
         {
             if( _predefinedIndexBuffer.IsCreated ) _predefinedIndexBuffer.Dispose();
+            if( _jobHandles1.IsCreated ) _jobHandles1.Dispose();
+            if( _jobHandles2.IsCreated ) _jobHandles2.Dispose();
+            if( _aabbBuffers.IsCreated )
+            {
+                foreach( var list in _aabbBuffers )
+                    if( list.IsCreated ) list.Dispose();
+                _aabbBuffers.Dispose();
+            }
             if( _midUpdateData.IsCreated ) _midUpdateData.Dispose();
         }
 
@@ -132,32 +147,48 @@ namespace Segments
                         {
                             int numDispatches = numSegments/dispatchSize + math.min(numSegments%dispatchSize, 1);
                             int numSegmentsPerDispatch = numSegments / numDispatches;
-                            var dHandles = new NativeArray<JobHandle>(numDispatches, Allocator.Temp);
-                            var dResults = new NativeArray<AABB>(numDispatches, Allocator.TempJob);
+                            _jobHandles1.Length = numDispatches;
+                            NativeArray<AABB> dResults;
+                            {
+                                if( _aabbBuffers.Length==i )
+                                    _aabbBuffers.Add(new (16, Allocator.Persistent));
+
+                                var list = _aabbBuffers[i];
+                                list.Length = numDispatches;
+                                dResults = list.AsArray();
+                            }
                             int dLast = numDispatches-1;
                             for (int d=0; d<dLast; d++)
                             {
-                                dHandles[d] = new BoundsJob{
+                                _jobHandles1[d] = new BoundsJob{
                                     input = segmentBufferAsFloat3x2Array.Slice(d*numSegmentsPerDispatch, numSegmentsPerDispatch),
                                     output = dResults.Slice(d,1),
                                 }.Schedule();
                             }
                             int lastDispStart = dLast*numSegmentsPerDispatch;
-                            dHandles[dLast] = new BoundsJob{
+                            _jobHandles1[dLast] = new BoundsJob{
                                 input = segmentBufferAsFloat3x2Array.Slice(lastDispStart, numSegments-lastDispStart),
                                 output = dResults.Slice(dLast,1),
                             }.Schedule();
                             boundsJobHandle = new BoundsCombineJob{
                                 input = dResults,
                                 output = bounds.Slice(i,1),
-                            }.Schedule(JobHandle.CombineDependencies(dHandles));
+                            }.Schedule(JobHandle.CombineDependencies(_jobHandles1.AsArray()));
                         }
                         {
                             int numDispatches = numVertices/dispatchSize + math.min(numVertices%dispatchSize, 1);
                             int numVerticesPerDispatch = numVertices / numDispatches;
                             int numSegmentsPerDispatch = numSegments / numDispatches;
-                            var copyIndicesJobHandles = new NativeArray<JobHandle>(numDispatches, Allocator.Temp);
-                            var copyVerticesJobHandles = new NativeArray<JobHandle>(numDispatches, Allocator.Temp);
+                            NativeArray<JobHandle> copyIndicesJobHandles;
+                            {
+                                _jobHandles1.Length = numDispatches;
+                                copyIndicesJobHandles = _jobHandles1.AsArray();
+                            }
+                            NativeArray<JobHandle> copyVerticesJobHandles;
+                            {
+                                _jobHandles2.Length = numDispatches;
+                                copyVerticesJobHandles = _jobHandles2.AsArray();
+                            }
                             int dLast = numDispatches-1;
                             for (int d=0; d<dLast; d++)
                             {
