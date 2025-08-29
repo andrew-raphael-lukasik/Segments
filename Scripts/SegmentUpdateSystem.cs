@@ -48,7 +48,7 @@ namespace Segments
             _jobHandles1 = new (16, Allocator.Persistent);
             _jobHandles2 = new (16, Allocator.Persistent);
             _aabbBuffers = new (16, Allocator.Persistent);
-            for( int i=0 ; i<16 ; i++ )
+            for( int i=0 ; i<_aabbBuffers.Length ; i++ )
                 _aabbBuffers.Add(new (16, Allocator.Persistent));
 
             _midUpdateData = new( Allocator.Persistent );
