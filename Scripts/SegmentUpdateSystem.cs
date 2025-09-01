@@ -103,7 +103,7 @@ namespace Segments
                 // upsize index buffer when necessary
                 if( numVertices>_predefinedIndexBuffer.Length )
                 {
-                    Debug.LogWarning($"_predefinedIndexBuffer upsized to {_predefinedIndexBuffer.Length}");
+                    Debug.LogWarning($"upsizing {nameof(_predefinedIndexBuffer)} from {_predefinedIndexBuffer.Length} to {numVertices}, entity: {entity}");
                     foreach( var item in _midUpdateData )
                         item.copyIndicesJobHandle.Complete();
                     _predefinedIndexBuffer.Dispose();
