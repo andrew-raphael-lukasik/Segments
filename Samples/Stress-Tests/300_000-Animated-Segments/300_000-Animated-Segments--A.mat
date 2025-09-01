@@ -32,17 +32,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlphaCutoff: 0.85
-    - _AlphaPow: 5.1
+    - _AlphaCutoff: 0.3
+    - _AlphaPow: 1
     - _DitherStrength: 1
     - _FarColorDistance: 20
     - _FarCutoffDistaneEnd: 30
     - _FarCutoffDistaneStart: 25
-    - _FarWidth: 0.35
+    - _FarWidth: 0.0875
     - _FarWidthDistance: 30
     - _NearColorDistance: 3
     - _NearCutoffDistane: 2
-    - _NearWidth: 0.4
+    - _NearWidth: 0.1
     - _NearWidthDistance: 3
     - _Roundness: 1
     - _Smoothness: 1
