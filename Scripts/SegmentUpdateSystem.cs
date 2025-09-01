@@ -101,13 +101,25 @@ namespace Segments
                 int numVertices = numSegments * 2;
 
                 // upsize index buffer when necessary
+                JobHandle predefinedIndexBufferChangedJobHandle = default;
                 if( numVertices>_predefinedIndexBuffer.Length )
                 {
-                    Debug.LogWarning($"upsizing {nameof(_predefinedIndexBuffer)} from {_predefinedIndexBuffer.Length} to {numVertices}, entity: {entity}");
+                    // note: to eliminate stalls at undesired times either change _predefinedIndexBuffer's initial size of prewarm this buffer at time of your choice
+
+                    int newIndexBufferSize = math.max(_predefinedIndexBuffer.Length, 1);
+                    while( numVertices>newIndexBufferSize )
+                        newIndexBufferSize *= 2;
+                    Debug.LogWarning($"upsizing {nameof(_predefinedIndexBuffer)} from {_predefinedIndexBuffer.Length} to {newIndexBufferSize}, reason: {entity}");
+
                     foreach( var item in _midUpdateData )
                         item.copyIndicesJobHandle.Complete();
+                    
                     _predefinedIndexBuffer.Dispose();
-                    _predefinedIndexBuffer = new ( numVertices , Allocator.Persistent );
+                    _predefinedIndexBuffer = new ( newIndexBufferSize , Allocator.Persistent );
+
+                    predefinedIndexBufferChangedJobHandle = new PredefinedIndicesJob{
+                        dst = _predefinedIndexBuffer ,
+                    }.Schedule(newIndexBufferSize, 1024, state.Dependency);
                 }
                 
                 ___set_vertex_buffer_params.Begin();
@@ -136,7 +148,7 @@ namespace Segments
                         copyIndicesJobHandle = new NativeCopyJob<uint>{
                             src = _predefinedIndexBuffer.Slice(0, numVertices),
                             dst = indexData,
-                        }.Schedule();
+                        }.Schedule(predefinedIndexBufferChangedJobHandle);
                         copyVerticesJobHandle = new NativeCopyJob<float3x2>{
                             src = segmentBufferAsFloat3x2Array,
                             dst = vertexData,
@@ -197,7 +209,7 @@ namespace Segments
                                 copyIndicesJobHandles[d] = new NativeCopyNoSafetyChecksJob<uint>{
                                     src = _predefinedIndexBuffer.Slice(div, numVerticesPerDispatch),
                                     dst = indexData.Slice(div, numVerticesPerDispatch),
-                                }.Schedule();
+                                }.Schedule(predefinedIndexBufferChangedJobHandle);
                                 copyVerticesJobHandles[d] = new NativeCopyNoSafetyChecksJob<float3x2>{
                                     src = segmentBufferAsFloat3x2Array.Slice(dis, numSegmentsPerDispatch),
                                     dst = vertexData.Slice(dis, numSegmentsPerDispatch),
@@ -208,7 +220,7 @@ namespace Segments
                             copyIndicesJobHandles[dLast] = new NativeCopyNoSafetyChecksJob<uint>{
                                 src = _predefinedIndexBuffer.Slice(lastVertexDispStart, numVertices-lastVertexDispStart),
                                 dst = indexData.Slice(lastVertexDispStart, numVertices-lastVertexDispStart),
-                            }.Schedule();
+                            }.Schedule(predefinedIndexBufferChangedJobHandle);
                             copyVerticesJobHandles[dLast] = new NativeCopyNoSafetyChecksJob<float3x2>{
                                 src = segmentBufferAsFloat3x2Array.Slice(lastSegmentDispStart, numSegments-lastSegmentDispStart),
                                 dst = vertexData.Slice(lastSegmentDispStart, numSegments-lastSegmentDispStart),
