@@ -37,13 +37,12 @@ namespace Segments
         [Unity.Burst.BurstCompile]
         public void OnCreate ( ref SystemState state )
         {
-            _predefinedIndexBuffer = new ( 128_000 , Allocator.Persistent );
+            _predefinedIndexBuffer = new (128_000, Allocator.Persistent);
             var job = new PredefinedIndicesJob{
                 dst = _predefinedIndexBuffer ,
             };
             JobHandle jobHandle = job.Schedule( arrayLength:_predefinedIndexBuffer.Length , indicesPerJobCount:_predefinedIndexBuffer.Length/128 );
             jobHandle.Complete();
-            // for( uint i=0 ; i<128_000 ; i++ ) _predefinedIndexBuffer[(int)i] = i;
 
             _jobHandles1 = new (16, Allocator.Persistent);
             _jobHandles2 = new (16, Allocator.Persistent);
@@ -52,7 +51,7 @@ namespace Segments
                 _aabbBuffers.Add(new (16, Allocator.Persistent));
 
             _midUpdateData = new( Allocator.Persistent );
-            _query = state.GetEntityQuery( new NativeList<ComponentType>(3,Allocator.Temp){
+            _query = state.GetEntityQuery(new NativeList<ComponentType>(3,Allocator.Temp){
                 ComponentType.ReadOnly<Segment>() ,
                 ComponentType.ReadOnly<SegmentUpdateRequest>() ,
                 ComponentType.ReadOnly<MaterialMeshInfo>() ,
@@ -85,8 +84,8 @@ namespace Segments
             _midUpdateData.Clear();
             int i = 0;
 
-            foreach( var ( segment , materialMeshInfo , renderBounds , entity ) in SystemAPI
-                .Query< RefRO<Segment> , RefRO<MaterialMeshInfo> , RefRW<RenderBounds> >()
+            foreach( var (segment, materialMeshInfo, renderBounds, entity) in SystemAPI
+                .Query<RefRO<Segment>, RefRO<MaterialMeshInfo>, RefRW<RenderBounds>>()
                 .WithAll<SegmentUpdateRequest>()
                 .WithEntityAccess()
             )
@@ -241,8 +240,8 @@ namespace Segments
             var graphicsSystem = state.World.GetExistingSystemManaged<EntitiesGraphicsSystem>();
             i = 0;
 
-            foreach( var ( segment , materialMeshInfo , renderBounds , entity ) in SystemAPI
-                .Query< RefRO<Segment> , RefRO<MaterialMeshInfo> , RefRW<RenderBounds> >()
+            foreach( var (segment, materialMeshInfo, renderBounds, entity) in SystemAPI
+                .Query<RefRO<Segment>, RefRO<MaterialMeshInfo>, RefRW<RenderBounds>>()
                 .WithAll<SegmentUpdateRequest>()
                 .WithEntityAccess()
             )
