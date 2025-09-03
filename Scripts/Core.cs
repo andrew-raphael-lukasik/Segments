@@ -102,6 +102,18 @@ namespace Segments
         }
 
         /// <summary> Destroys an entity and it's all Segment data </summary>
+        /// <remarks> Can be called from a Burst-compiled code block </remarks>
+        public static void Destroy ( Entity entity , EntityManager entityManager )
+        {
+            if( entityManager.HasComponent<Segment>(entity) )
+            {
+                Segment seg = entityManager.GetComponentData<Segment>(entity);
+                seg.Dependency.Value.Complete();
+                seg.Buffer.Dispose();
+            }
+            entityManager.DestroyEntity(entity);
+        }
+        /// <summary> Destroys an entity and it's all Segment data </summary>
         /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
         public static void Destroy ( Entity entity )
         {
@@ -118,19 +130,23 @@ namespace Segments
                 _world.EntityManager.DestroyEntity(entity);
             }
         }
-        /// <summary> Destroys an entity and it's all Segment data </summary>
+
+        /// <summary> Destroys all Segment entities and their data </summary>
         /// <remarks> Can be called from a Burst-compiled code block </remarks>
-        public static void Destroy ( Entity entity , EntityManager entityManager )
+        public static void DestroyAll ( EntityManager entityManager )
         {
-            if( entityManager.HasComponent<Segment>(entity) )
+            var query = new EntityQueryBuilder().WithAll<Segment>().Build(entityManager);
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<Segment>());
+            foreach( Entity e in query.ToEntityArray(Allocator.Temp) )
+            if( entityManager.HasComponent<Segment>(e) )
             {
-                Segment seg = entityManager.GetComponentData<Segment>(entity);
+                Segment seg = entityManager.GetComponentData<Segment>(e);
                 seg.Dependency.Value.Complete();
                 seg.Buffer.Dispose();
             }
-            entityManager.DestroyEntity(entity);
-        }
 
+            _world.EntityManager.DestroyEntity(query);
+        }
         /// <summary> Destroys all Segment entities and their data </summary>
         /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
         public static void DestroyAll ()
@@ -151,36 +167,20 @@ namespace Segments
                 _world.EntityManager.DestroyEntity(_query);
             }
         }
-        /// <summary> Destroys all Segment entities and their data </summary>
-        /// <remarks> Can be called from a Burst-compiled code block </remarks>
-        public static void DestroyAll ( EntityManager entityManager )
-        {
-            var query = new EntityQueryBuilder().WithAll<Segment>().Build(entityManager);
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<Segment>());
-            foreach( Entity e in query.ToEntityArray(Allocator.Temp) )
-            if( entityManager.HasComponent<Segment>(e) )
-            {
-                Segment seg = entityManager.GetComponentData<Segment>(e);
-                seg.Dependency.Value.Complete();
-                seg.Buffer.Dispose();
-            }
 
-            _world.EntityManager.DestroyEntity(query);
-        }
-
-        /// <summary> Gets you Segment component data </summary>
-        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
-        public static Segment GetSegment ( Entity entity ) => _world.EntityManager.GetComponentData<Segment>(entity);
         /// <summary> Gets you Segment component data </summary>
         /// <remarks> Can be called from a Burst-compiled code block </remarks>
         public static Segment GetSegment ( Entity entity , EntityManager entityManager ) => entityManager.GetComponentData<Segment>(entity);
-
-        /// <summary> Enables the SegmentUpdateRequest component to trigger AABB recalculation and buffer be copied to the GPU again </summary>
+        /// <summary> Gets you Segment component data </summary>
         /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
-        public static void SetSegmentChanged ( Entity entity ) => _world.EntityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, true);
+        public static Segment GetSegment ( Entity entity ) => _world.EntityManager.GetComponentData<Segment>(entity);
+
         /// <summary> Enables the SegmentUpdateRequest component to trigger AABB recalculation and buffer be copied to the GPU again </summary>
         /// <remarks> Can be called from a Burst-compiled code block </remarks>
         public static void SetSegmentChanged ( Entity entity , EntityManager entityManager ) => entityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, true);
+        /// <summary> Enables the SegmentUpdateRequest component to trigger AABB recalculation and buffer be copied to the GPU again </summary>
+        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
+        public static void SetSegmentChanged ( Entity entity ) => _world.EntityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, true);
 
     }
 }
