@@ -41,7 +41,7 @@ namespace Samples
                 }.ScheduleParallel(settings.ValueRO.numSegments, 64, state.Dependency);
 
                 // request mesh update
-                Segments.Core.SetSegmentChanged(entity);
+                Segments.Core.SetSegmentChanged(entity, state.EntityManager);
             }
         }
     }
