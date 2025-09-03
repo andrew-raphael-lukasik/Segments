@@ -154,6 +154,7 @@ namespace Segments
 
         /// <summary> Enables the SegmentUpdateRequest component to trigger AABB recalculation and buffer be copied to the GPU again </summary>
         public static void SetSegmentChanged ( Entity entity ) => _world.EntityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, true);
+        public static void SetSegmentChanged ( Entity entity , EntityManager entityManager ) => entityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, true);
 
     }
 }
