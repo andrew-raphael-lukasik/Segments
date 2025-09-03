@@ -142,6 +142,22 @@ namespace Segments
                 _world.EntityManager.DestroyEntity(_query);
             }
         }
+        /// <summary> Destroys all Segment entities and their data </summary>
+        /// <remarks> Can be called from a Burst-compiled code block </remarks>
+        public static void DestroyAll ( EntityManager entityManager )
+        {
+            var query = new EntityQueryBuilder().WithAll<Segment>().Build(entityManager);
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<Segment>());
+            foreach( Entity e in query.ToEntityArray(Allocator.Temp) )
+            if( entityManager.HasComponent<Segment>(e) )
+            {
+                Segment seg = entityManager.GetComponentData<Segment>(e);
+                seg.Dependency.Value.Complete();
+                seg.Buffer.Dispose();
+            }
+
+            _world.EntityManager.DestroyEntity(query);
+        }
 
         /// <summary> Gets dependency from the Segment type </summary>
         public static JobHandle GetDependency () => _query.GetDependency();
