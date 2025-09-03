@@ -95,24 +95,7 @@ namespace Segments
             } );
         }
 
-        public static void DestroyAll ()
-        {
-            if( _world.IsCreated )
-            {
-                _query.CompleteDependency();
-
-                var em = _world.EntityManager;
-                foreach( Entity e in _query.ToEntityArray(Allocator.Temp) )
-                if( em.HasComponent<Segment>(e) )
-                {
-                    Segment seg = em.GetComponentData<Segment>(e);
-                    seg.Buffer.Dispose();
-                }
-
-                _world.EntityManager.DestroyEntity(_query);
-            }
-        }
-
+        /// <summary> Can be called from outside ECS (MonoBehaviour etc.) </summary>
         public static void Destroy ( Entity entity )
         {
             if( _world.IsCreated )
@@ -130,8 +113,30 @@ namespace Segments
         /// <summary> Can be called from a Burst-compiled ISystem </summary>
         public static void Destroy ( Entity entity , EntityManager entityManager )
         {
-            entityManager.CreateEntityQuery( new EntityQueryBuilder(Allocator.Temp).WithAll<Segment>() ).CompleteDependency();
-            entityManager.DestroyEntity( entity );
+            if( entityManager.HasComponent<Segment>(entity) )
+            {
+                Segment seg = entityManager.GetComponentData<Segment>(entity);
+                seg.Buffer.Dispose();
+            }
+            entityManager.DestroyEntity(entity);
+        }
+
+        public static void DestroyAll ()
+        {
+            if( _world.IsCreated )
+            {
+                _query.CompleteDependency();
+
+                var em = _world.EntityManager;
+                foreach( Entity e in _query.ToEntityArray(Allocator.Temp) )
+                if( em.HasComponent<Segment>(e) )
+                {
+                    Segment seg = em.GetComponentData<Segment>(e);
+                    seg.Buffer.Dispose();
+                }
+
+                _world.EntityManager.DestroyEntity(_query);
+            }
         }
 
         /// <summary> Gets dependency from the Segment type </summary>
