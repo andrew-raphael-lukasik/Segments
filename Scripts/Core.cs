@@ -96,7 +96,8 @@ namespace Segments
             } );
         }
 
-        /// <summary> Can be called from outside ECS (MonoBehaviour etc.) </summary>
+        /// <summary> Destroys an entity and it's all Segment data </summary>
+        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
         public static void Destroy ( Entity entity )
         {
             if( _world.IsCreated )
@@ -112,7 +113,8 @@ namespace Segments
                 _world.EntityManager.DestroyEntity(entity);
             }
         }
-        /// <summary> Can be called from a Burst-compiled ISystem </summary>
+        /// <summary> Destroys an entity and it's all Segment data </summary>
+        /// <remarks> Can be called from a Burst-compiled code block </remarks>
         public static void Destroy ( Entity entity , EntityManager entityManager )
         {
             if( entityManager.HasComponent<Segment>(entity) )
@@ -124,6 +126,8 @@ namespace Segments
             entityManager.DestroyEntity(entity);
         }
 
+        /// <summary> Destroys all Segment entities and their data </summary>
+        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
         public static void DestroyAll ()
         {
             if( _world.IsCreated )
@@ -160,6 +164,7 @@ namespace Segments
         }
 
         /// <summary> Gets dependency from the Segment type </summary>
+        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
         public static JobHandle GetDependency () => _query.GetDependency();
         
         /// <summary> Adds dependency for the Segment type </summary>
@@ -169,7 +174,10 @@ namespace Segments
         public static NativeList<float3x2> GetBuffer ( Entity entity ) => _world.EntityManager.GetComponentData<Segment>(entity).Buffer;
 
         /// <summary> Enables the SegmentUpdateRequest component to trigger AABB recalculation and buffer be copied to the GPU again </summary>
+        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
         public static void SetSegmentChanged ( Entity entity ) => _world.EntityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, true);
+        /// <summary> Enables the SegmentUpdateRequest component to trigger AABB recalculation and buffer be copied to the GPU again </summary>
+        /// <remarks> Can be called from a Burst-compiled code block </remarks>
         public static void SetSegmentChanged ( Entity entity , EntityManager entityManager ) => entityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, true);
 
     }
