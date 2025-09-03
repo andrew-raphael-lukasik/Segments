@@ -87,7 +87,8 @@ namespace Segments
             } );
 
             entityManager.AddComponentData( entity , new Segment{
-                Buffer = new NativeList<float3x2>(Allocator.Persistent)
+                Buffer = new NativeList<float3x2>(Allocator.Persistent),
+                Dependency = new NativeReference<JobHandle>(Allocator.Persistent),
             } );
             
             entityManager.AddComponentData( entity , new LocalToWorld{
@@ -104,6 +105,7 @@ namespace Segments
                 if( em.HasComponent<Segment>(entity) )
                 {
                     Segment seg = em.GetComponentData<Segment>(entity);
+                    seg.Dependency.Value.Complete();
                     seg.Buffer.Dispose();
                 }
 
@@ -116,6 +118,7 @@ namespace Segments
             if( entityManager.HasComponent<Segment>(entity) )
             {
                 Segment seg = entityManager.GetComponentData<Segment>(entity);
+                seg.Dependency.Value.Complete();
                 seg.Buffer.Dispose();
             }
             entityManager.DestroyEntity(entity);
@@ -132,6 +135,7 @@ namespace Segments
                 if( em.HasComponent<Segment>(e) )
                 {
                     Segment seg = em.GetComponentData<Segment>(e);
+                    seg.Dependency.Value.Complete();
                     seg.Buffer.Dispose();
                 }
 

@@ -95,6 +95,9 @@ namespace Segments
                 Mesh.MeshData meshData = meshDataArray[0];
                 ___allocate_writable_mesh_data.End();
                 
+                // complete explicit segment dependencies:
+                segment.ValueRO.Dependency.AsReadOnly().Value.Complete();
+
                 var segmentBuffer = segment.ValueRO.Buffer;
                 int numSegments = segmentBuffer.Length;
                 int numVertices = numSegments * 2;
