@@ -117,8 +117,6 @@ namespace Segments
         {
             if( _world.IsCreated )
             {
-                _query.CompleteDependency();
-                
                 var em = _world.EntityManager;
                 if( em.HasComponent<Segment>(entity) )
                 {
