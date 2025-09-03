@@ -29,6 +29,8 @@ void Update ()
     buffer[0] = new float3x2( pos , pos+transform.right );
     buffer[1] = new float3x2( pos , pos+transform.up );
     buffer[2] = new float3x2( pos , pos+transform.forward );
+
+    Segments.Core.SetSegmentChanged(_segments);
 }
 ```
 
