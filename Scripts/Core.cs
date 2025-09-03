@@ -14,7 +14,6 @@ namespace Segments
     {
 
         static EntityQuery _query;
-        public static EntityQuery Query => _query;
 
         internal static Material _default_material;
         internal static World _world;
@@ -162,10 +161,6 @@ namespace Segments
 
             _world.EntityManager.DestroyEntity(query);
         }
-
-        /// <summary> Gets dependency from the Segment type </summary>
-        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
-        public static JobHandle GetDependency () => _query.GetDependency();
 
         /// <summary> Gets you Segment component data </summary>
         /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
