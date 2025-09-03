@@ -27,17 +27,17 @@ namespace Samples
         [Unity.Burst.BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var (buffer, settings, ltw, entity) in SystemAPI.Query< RefRW<Segments.Segment> , RefRO<StressTestSettings> , RefRO<LocalToWorld> >().WithEntityAccess())
-            if (settings.ValueRO.everyFrame==1 || buffer.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
+            foreach (var (segment, settings, ltw, entity) in SystemAPI.Query< RefRW<Segments.Segment> , RefRO<StressTestSettings> , RefRO<LocalToWorld> >().WithEntityAccess())
+            if (settings.ValueRO.everyFrame==1 || segment.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
             {
-                if (buffer.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
-                    buffer.ValueRW.Buffer.Length = settings.ValueRO.numSegments;
+                if (segment.ValueRO.Buffer.Length!=settings.ValueRO.numSegments)
+                    segment.ValueRW.Buffer.Length = settings.ValueRO.numSegments;
 
                 state.Dependency = new StressTestJob{
                     ltw = ltw.ValueRO,
                     settings = settings.ValueRO,
                     time = Time.time,// note: picked Time.time here **only** because it happen to change outside play mode where SystemAPI.Time.ElapsedTime is play mode only
-                    segments = buffer.ValueRW.Buffer.AsArray(),
+                    segmentBuffer = segment.ValueRW.Buffer.AsArray(),
                 }.ScheduleParallel(settings.ValueRO.numSegments, 64, state.Dependency);
 
                 // request mesh update
@@ -59,7 +59,7 @@ namespace Samples
         public LocalToWorld ltw;
         public StressTestSettings settings;
         public float time;
-        [WriteOnly] public NativeArray<float3x2> segments;
+        [WriteOnly] public NativeArray<float3x2> segmentBuffer;
         void IJobParallelForBatch.Execute (int startIndex, int count)
         {
             float3 mag = new float3(math.length(ltw.Right), math.length(ltw.Up), math.length(ltw.Forward));
@@ -82,7 +82,7 @@ namespace Samples
 
                 float3 p0 = new float3(0,0,mag.z*t0) + new float3(0,mag.y*amp0,0) + new float3(mag.x*amp2,0,0);
                 float3 p1 = new float3(0,0,mag.z*t1) + new float3(0,mag.y*amp1,0) + new float3(mag.x*amp3,0,0);
-                segments[index] = new float3x2(p0, p1);
+                segmentBuffer[index] = new float3x2(p0, p1);
             }
         }
     }
