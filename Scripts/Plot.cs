@@ -17,10 +17,9 @@ namespace Segments
         /// <summary> Plots a ellipse shape. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void Ellipse (
-            NativeList<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index , int numSegments ,
             float rx , float ry ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -32,10 +31,9 @@ namespace Segments
 
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Ellipse (
-            NativeArray<float3x2> segments , ref int index ,
+            NativeArray<float3x2> segments , ref int index , int numSegments ,
             float rx , float ry ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -86,10 +84,9 @@ namespace Segments
             quaternion rot;
             int numSegments;
             public EllipseJob (
-                NativeList<float3x2> segments , ref int index ,
+                NativeList<float3x2> segments , ref int index , int numSegments ,
                 float rx , float ry ,
-                float3 pos , quaternion rot ,
-                int numSegments
+                float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + numSegments;
@@ -105,10 +102,9 @@ namespace Segments
                 index = bufferSizeRequired;
             }
             public EllipseJob (
-                NativeArray<float3x2> segments , ref int index ,
+                NativeArray<float3x2> segments , ref int index , int numSegments ,
                 float rx , float ry ,
-                float3 pos , quaternion rot ,
-                int numSegments
+                float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + numSegments;
@@ -134,10 +130,9 @@ namespace Segments
         /// <summary> Plots a ellipse shape at foci point. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void EllipseAtFoci (
-            NativeList<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index , int numSegments ,
             float rx , float ry ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -149,10 +144,9 @@ namespace Segments
 
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void EllipseAtFoci (
-            NativeArray<float3x2> segments , ref int index ,
+            NativeArray<float3x2> segments , ref int index , int numSegments ,
             float rx , float ry ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -199,9 +193,8 @@ namespace Segments
         /// <summary> Plots a circle. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void Circle (
-            NativeList<float3x2> segments , ref int index ,
-            float r , float3 pos , quaternion rot ,
-            int numSegments
+            NativeList<float3x2> segments , ref int index , int numSegments ,
+            float r , float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -213,9 +206,8 @@ namespace Segments
 
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Circle (
-            NativeArray<float3x2> segments , ref int index ,
-            float r , float3 pos , quaternion rot ,
-            int numSegments
+            NativeArray<float3x2> segments , ref int index , int numSegments ,
+            float r , float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -252,9 +244,8 @@ namespace Segments
             quaternion rot;
             int numSegments;
             public CircleJob (
-                NativeList<float3x2> segments , ref int index ,
-                float r , float3 pos , quaternion rot ,
-                int numSegments
+                NativeList<float3x2> segments , ref int index , int numSegments ,
+                float r , float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + numSegments;
@@ -269,9 +260,8 @@ namespace Segments
                 index = bufferSizeRequired;
             }
             public CircleJob (
-                NativeArray<float3x2> segments , ref int index ,
-                float r , float3 pos , quaternion rot ,
-                int numSegments
+                NativeArray<float3x2> segments , ref int index , int numSegments ,
+                float r , float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + numSegments;
@@ -337,8 +327,8 @@ namespace Segments
 
         /// <remarks> Will add list elements if necessary. </remarks>
         public static void DashedLine (
-            NativeList<float3x2> segments , ref int index ,
-            float3 start , float3 end , int numSegments
+            NativeList<float3x2> segments , ref int index , int numSegments ,
+            float3 start , float3 end
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -350,8 +340,8 @@ namespace Segments
 
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void DashedLine (
-            NativeArray<float3x2> segments , ref int index ,
-            float3 start , float3 end , int numSegments
+            NativeArray<float3x2> segments , ref int index , int numSegments ,
+            float3 start , float3 end
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -480,10 +470,9 @@ namespace Segments
         /// <param name="a"> +-y = ( b * math.sqrt( **a**^2 + x^2 ) ) / **a** </param>
         /// <param name="b"> +-y = ( **b** * math.sqrt( a^2 + x^2 ) ) / a </param>
         public static void HyperbolaAtFoci (
-            NativeList<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index , int numSegments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -495,10 +484,9 @@ namespace Segments
 
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void HyperbolaAtFoci (
-            NativeArray<float3x2> segments , ref int index ,
+            NativeArray<float3x2> segments , ref int index , int numSegments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -538,10 +526,9 @@ namespace Segments
         /// <param name="a"> +-y = ( b * math.sqrt( **a**^2 + x^2 ) ) / **a** </param>
         /// <param name="b"> +-y = ( **b** * math.sqrt( a^2 + x^2 ) ) / a </param>
         public static void Hyperbola (
-            NativeList<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index , int numSegments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -553,10 +540,9 @@ namespace Segments
 
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Hyperbola (
-            NativeArray<float3x2> segments , ref int index ,
+            NativeArray<float3x2> segments , ref int index , int numSegments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -604,10 +590,9 @@ namespace Segments
             quaternion rot;
             int numSegments;
             public HyperbolaJob (
-                NativeList<float3x2> segments , ref int index ,
+                NativeList<float3x2> segments , ref int index , int numSegments ,
                 float a , float b , float xrange ,
-                float3 pos , quaternion rot ,
-                int numSegments
+                float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + numSegments;
@@ -624,10 +609,9 @@ namespace Segments
                 index = bufferSizeRequired;
             }
             public HyperbolaJob (
-                NativeArray<float3x2> segments , ref int index ,
+                NativeArray<float3x2> segments , ref int index , int numSegments ,
                 float a , float b , float xrange ,
-                float3 pos , quaternion rot ,
-                int numSegments
+                float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + numSegments;
@@ -682,11 +666,10 @@ namespace Segments
         /// <param name="b"> y = axx + **b**x + c </param>
         /// <param name="c"> y = axx + bx + **c** </param>
         public static void Parabola (
-            NativeList<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index , int numSegments ,
             float a , float b ,
             float xmin , float xmax ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -698,11 +681,10 @@ namespace Segments
 
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void Parabola (
-            NativeArray<float3x2> segments , ref int index ,
+            NativeArray<float3x2> segments , ref int index , int numSegments ,
             float a , float b ,
             float xmin , float xmax ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -759,11 +741,10 @@ namespace Segments
             quaternion rot;
             int numSegments;
             public ParabolaJob (
-                NativeList<float3x2> segments , ref int index ,
+                NativeList<float3x2> segments , ref int index , int numSegments ,
                 float a , float b ,
                 float xmin , float xmax ,
-                float3 pos , quaternion rot ,
-                int numSegments
+                float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + numSegments;
@@ -781,11 +762,10 @@ namespace Segments
                 index = bufferSizeRequired;
             }
             public ParabolaJob (
-                NativeArray<float3x2> segments , ref int index ,
+                NativeArray<float3x2> segments , ref int index , int numSegments ,
                 float a , float b ,
                 float xmin , float xmax ,
-                float3 pos , quaternion rot ,
-                int numSegments
+                float3 pos , quaternion rot
             )
             {
                 int bufferSizeRequired = index + numSegments;
@@ -815,10 +795,9 @@ namespace Segments
         /// <param name="b"> y = axx + **b**x + c </param>
         /// <param name="c"> y = axx + bx + **c** </param>
         public static void ParabolaAtFoci (
-            NativeList<float3x2> segments , ref int index ,
+            NativeList<float3x2> segments , ref int index , int numSegments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
@@ -830,10 +809,9 @@ namespace Segments
 
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
         public static void ParabolaAtFoci (
-            NativeArray<float3x2> segments , ref int index ,
+            NativeArray<float3x2> segments , ref int index , int numSegments ,
             float a , float b , float xrange ,
-            float3 pos , quaternion rot ,
-            int numSegments
+            float3 pos , quaternion rot
         )
         {
             int bufferSizeRequired = index + numSegments;
