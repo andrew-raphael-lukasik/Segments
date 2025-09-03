@@ -39,17 +39,14 @@ namespace Samples
 
             // create local-space line segments:
             {
-                var buffer = Segments.Core.GetBuffer(_segments);
-                buffer.Length = edges.Length;
+                var segment = Segments.Core.GetSegment(_segments);
+                segment.Buffer.Length = edges.Length;
 
-                var jobHandle = new UpdateSegmentsJob{
+                segment.Dependency.Value = new UpdateSegmentsJob{
                     Edges       = edges.AsReadOnly(),
                     Vertices    = vertices.AsReadOnly(),
-                    Segments    = buffer.AsArray(),
-                }.Schedule(arrayLength:edges.Length, innerloopBatchCount:128);
-
-                // pass the job handle so dependency system knows aobut this job (needed when scheduling from Monobehaviours)
-                Segments.Core.AddDependency(jobHandle);
+                    Segments    = segment.Buffer.AsArray(),
+                }.Schedule(arrayLength:edges.Length, innerloopBatchCount:128, segment.Dependency.Value);
             }
         }
 

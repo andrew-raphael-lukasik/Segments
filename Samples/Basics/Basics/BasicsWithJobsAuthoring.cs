@@ -21,18 +21,15 @@ namespace Samples
 
             // create local-space line segments:
             {
-                // accesses the Segment beffer component of our Entity where every Segment is a pair of float3 values (start & end of a line segment)
-                var buffer = Segments.Core.GetBuffer(_segments);
+                // accesses the Segment component of our Entity
+                Segments.Segment segment = Segments.Core.GetSegment(_segments);
 
-                // we already know ahead of time that we want 3 segments here
-                buffer.Length = 3;
+                // we already know ahead of time that we want 3 line segments here
+                segment.Buffer.Length = 3;
 
-                var jobHandle = new MyBasicJob{
-                    buffer          = buffer.AsArray() ,
-                }.Schedule();
-
-                // pass the job handle so dependency system knows aobut this job (needed when scheduling from Monobehaviours)
-                Segments.Core.AddDependency(jobHandle);
+                segment.Dependency.Value = new MyBasicJob{
+                    buffer          = segment.Buffer.AsArray() ,
+                }.Schedule(segment.Dependency.Value);
             }
         }
         void OnDisable() => Segments.Core.Destroy(_segments);

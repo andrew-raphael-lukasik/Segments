@@ -26,17 +26,17 @@ namespace Samples
         
         void Update()
         {
-            // accesses the Segment beffer component of our Entity where every Segment is a pair of float3 values (start & end of a line segment)
-            var buffer = Segments.Core.GetBuffer(_segments);
+            // accesses the Segment component of our Entity
+            Segments.Segment segment = Segments.Core.GetSegment(_segments);
             
             // we already know ahead of time that we want 3 segments here
-            buffer.Length = 3;
+            segment.Buffer.Length = 3;
 
             // set points where all these segments will start and end
             Vector3 pos = transform.position;
-            buffer[0] = new float3x2(pos, pos+transform.right);
-            buffer[1] = new float3x2(pos, pos+transform.up);
-            buffer[2] = new float3x2(pos, pos+transform.forward);
+            segment.Buffer[0] = new float3x2(pos, pos+transform.right);
+            segment.Buffer[1] = new float3x2(pos, pos+transform.up);
+            segment.Buffer[2] = new float3x2(pos, pos+transform.forward);
 
             // notifies the segment update systems that line buffer changed and needs updating
             Segments.Core.SetSegmentChanged(_segments);

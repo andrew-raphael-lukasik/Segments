@@ -166,12 +166,13 @@ namespace Segments
         /// <summary> Gets dependency from the Segment type </summary>
         /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
         public static JobHandle GetDependency () => _query.GetDependency();
-        
-        /// <summary> Adds dependency for the Segment type </summary>
-        public static void AddDependency ( JobHandle dependency ) => _query.AddDependency(dependency);
 
-        /// <summary> Shorthand for `EntityManager.GetComponentData<Segment>(entity).Buffer` </summary>
-        public static NativeList<float3x2> GetBuffer ( Entity entity ) => _world.EntityManager.GetComponentData<Segment>(entity).Buffer;
+        /// <summary> Gets you Segment component data </summary>
+        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
+        public static Segment GetSegment ( Entity entity ) => _world.EntityManager.GetComponentData<Segment>(entity);
+        /// <summary> Gets you Segment component data </summary>
+        /// <remarks> Can be called from a Burst-compiled code block </remarks>
+        public static Segment GetSegment ( Entity entity , EntityManager entityManager ) => entityManager.GetComponentData<Segment>(entity);
 
         /// <summary> Enables the SegmentUpdateRequest component to trigger AABB recalculation and buffer be copied to the GPU again </summary>
         /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>

@@ -28,21 +28,18 @@ namespace Samples
         void Update()
         {
             // schedules a job that plots a bounding box
-            var segmentBuffer = Segments.Core.GetBuffer(_segments);
-            segmentBuffer.Length = 12;// box needs 12 edges
+            var segment = Segments.Core.GetSegment(_segments);
             var bounds = _meshRenderer.bounds;
             int index = 0;
-            var jobHandle = new Segments.Plot.BoxJob(
-                segments:   segmentBuffer,
+            segment.Buffer.Length = 12;// box needs 12 edges
+            segment.Dependency.Value = new Segments.Plot.BoxJob(
+                segments:   segment.Buffer,
                 index:      ref index,
                 size:       bounds.size,
                 pos:        Vector3.zero,
                 rot:        quaternion.identity
-            ).Schedule();
+            ).Schedule(segment.Dependency.Value);
             // note: line segments here are local-space
-
-            // pass the job handle so dependency system knows aobut this job (needed when scheduling from Monobehaviours)
-            Segments.Core.AddDependency(jobHandle);
 
             // notifies the segment update systems that line buffer changed and needs updating
             Segments.Core.SetSegmentChanged(_segments);
