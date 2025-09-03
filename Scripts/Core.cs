@@ -100,7 +100,16 @@ namespace Segments
             if( _world.IsCreated )
             {
                 _query.CompleteDependency();
-                _world.EntityManager.DestroyEntity( _query );
+
+                var em = _world.EntityManager;
+                foreach( Entity e in _query.ToEntityArray(Allocator.Temp) )
+                if( em.HasComponent<Segment>(e) )
+                {
+                    Segment seg = em.GetComponentData<Segment>(e);
+                    seg.Buffer.Dispose();
+                }
+
+                _world.EntityManager.DestroyEntity(_query);
             }
         }
 
@@ -109,7 +118,15 @@ namespace Segments
             if( _world.IsCreated )
             {
                 _query.CompleteDependency();
-                _world.EntityManager.DestroyEntity( entity );
+                
+                var em = _world.EntityManager;
+                if( em.HasComponent<Segment>(entity) )
+                {
+                    Segment seg = em.GetComponentData<Segment>(entity);
+                    seg.Buffer.Dispose();
+                }
+
+                _world.EntityManager.DestroyEntity(entity);
             }
         }
         /// <summary> Can be called from a Burst-compiled ISystem </summary>
