@@ -60,13 +60,6 @@ namespace Segments
         }
         /// <summary> Creates a Segment </summary>
         /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
-        public static void Create ( out Entity entity , out EntityManager entityManager , Material material = null )
-        {
-            entityManager = GetWorld().EntityManager;
-            Create( entityManager , out entity , material );
-        }
-        /// <summary> Creates a Segment </summary>
-        /// <remarks> Can be called from outside ECS (MonoBehaviour etc.) </remarks>
         public static void Create ( EntityManager entityManager , out Entity entity , Material material = null )
         {
             _query.CompleteDependency();
