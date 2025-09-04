@@ -109,6 +109,7 @@ namespace Segments
             {
                 Segment seg = entityManager.GetComponentData<Segment>(entity);
                 seg.Dependency.Value.Complete();
+                seg.Dependency.Dispose();
                 seg.Buffer.Dispose();
             }
             entityManager.DestroyEntity(entity);
@@ -124,6 +125,7 @@ namespace Segments
                 {
                     Segment seg = em.GetComponentData<Segment>(entity);
                     seg.Dependency.Value.Complete();
+                    seg.Dependency.Dispose();
                     seg.Buffer.Dispose();
                 }
 
@@ -142,6 +144,7 @@ namespace Segments
             {
                 Segment seg = entityManager.GetComponentData<Segment>(e);
                 seg.Dependency.Value.Complete();
+                seg.Dependency.Dispose();
                 seg.Buffer.Dispose();
             }
 
@@ -161,6 +164,7 @@ namespace Segments
                 {
                     Segment seg = em.GetComponentData<Segment>(e);
                     seg.Dependency.Value.Complete();
+                    seg.Dependency.Dispose();
                     seg.Buffer.Dispose();
                 }
 
