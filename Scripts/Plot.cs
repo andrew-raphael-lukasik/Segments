@@ -862,16 +862,31 @@ namespace Segments
 
         /// <summary> Plots a cube with 12 segments. </summary>
         /// <remarks> Will add list elements if necessary. </remarks>
-        public static void Cube ( NativeList<float3x2> segments , ref int index , float a , float3 pos , quaternion rot )
-            => Box( segments , ref index , new float3{x=a,y=a,z=a} , pos , rot );
+        public static void Cube (
+            NativeList<float3x2> segments, ref int index,
+            float3 size, float3 pos, quaternion rot
+        )
+        {
+            Box(segments, ref index, size, pos, rot);
+        }
         
         /// <inheritdoc/> <remarks> Will do nothing if the buffer is too short. </remarks>
-        public static void Cube ( NativeArray<float3x2> segments , ref int index , float a , float3 pos , quaternion rot )
-            => Box( segments , ref index , new float3{x=a,y=a,z=a} , pos , rot );
+        public static void Cube (
+            NativeArray<float3x2> segments, ref int index,
+            float3 size, float3 pos, quaternion rot
+        )
+        {
+            Box(segments, ref index, size, pos, rot);
+        }
         
         /// <inheritdoc/> <remarks> Will throw exception if length < 12. </remarks>
-        public static void Cube ( NativeSlice<float3x2> segments , float a , float3 pos , quaternion rot )
-            => Box( segments , new float3{x=a,y=a,z=a} , pos , rot );
+        public static void Cube (
+            NativeSlice<float3x2> segments,
+            float3 size, float3 pos, quaternion rot
+        )
+        {
+            Box(segments, size, pos, rot);
+        }
 
 
 
