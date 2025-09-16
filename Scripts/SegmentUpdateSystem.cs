@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Profiling;
@@ -8,6 +7,7 @@ using Unity.Collections;
 using Unity.Rendering;
 using Unity.Transforms;
 using Unity.Mathematics;
+using Segments.Jobs;
 
 namespace Segments
 {
@@ -29,28 +29,50 @@ namespace Segments
             ___push_mesh_data = new ProfilerMarker(nameof(___push_mesh_data).TrimStart('_'));
 
         NativeArray<uint> _predefinedIndexBuffer;
+        NativeList<JobHandle> _jobHandles1, _jobHandles2;
+        NativeList<NativeList<AABB>> _aabbBuffers;
         NativeList<( Mesh.MeshDataArray meshDataArray , Mesh.MeshData meshData , int numVertices , JobHandle boundsJobHandle , JobHandle copyVerticesJobHandle , JobHandle copyIndicesJobHandle )> _midUpdateData;
         EntityQuery _query;
 
         [Unity.Burst.BurstCompile]
         public void OnCreate ( ref SystemState state )
         {
-            _predefinedIndexBuffer = new ( 128_000 , Allocator.Persistent );
+            _predefinedIndexBuffer = new (128_000, Allocator.Persistent);
             var job = new PredefinedIndicesJob{
-                Dst = _predefinedIndexBuffer ,
+                dst = _predefinedIndexBuffer ,
             };
             JobHandle jobHandle = job.Schedule( arrayLength:_predefinedIndexBuffer.Length , indicesPerJobCount:_predefinedIndexBuffer.Length/128 );
             jobHandle.Complete();
-            // for( uint i=0 ; i<128_000 ; i++ ) _predefinedIndexBuffer[(int)i] = i;
+
+            _jobHandles1 = new (16, Allocator.Persistent);
+            _jobHandles2 = new (16, Allocator.Persistent);
+            _aabbBuffers = new (16, Allocator.Persistent);
+            for( int i=0 ; i<_aabbBuffers.Length ; i++ )
+                _aabbBuffers.Add(new (16, Allocator.Persistent));
 
             _midUpdateData = new( Allocator.Persistent );
-            _query = state.GetEntityQuery( new NativeList<ComponentType>(1,Allocator.Temp){ ComponentType.ReadWrite<Segment>() , ComponentType.ReadWrite<MaterialMeshInfo>() , ComponentType.ReadWrite<RenderBounds>() }.AsArray() );
+            _query = state.GetEntityQuery(new NativeList<ComponentType>(3,Allocator.Temp){
+                ComponentType.ReadOnly<Segment>() ,
+                ComponentType.ReadOnly<SegmentUpdateRequest>() ,
+                ComponentType.ReadOnly<MaterialMeshInfo>() ,
+                ComponentType.ReadWrite<RenderBounds>() ,
+            }.AsArray() );
+
+            state.RequireForUpdate(_query);
         }
 
         [Unity.Burst.BurstCompile]
         public void OnDestroy ( ref SystemState state )
         {
             if( _predefinedIndexBuffer.IsCreated ) _predefinedIndexBuffer.Dispose();
+            if( _jobHandles1.IsCreated ) _jobHandles1.Dispose();
+            if( _jobHandles2.IsCreated ) _jobHandles2.Dispose();
+            if( _aabbBuffers.IsCreated )
+            {
+                foreach( var list in _aabbBuffers )
+                    if( list.IsCreated ) list.Dispose();
+                _aabbBuffers.Dispose();
+            }
             if( _midUpdateData.IsCreated ) _midUpdateData.Dispose();
         }
 
@@ -58,15 +80,13 @@ namespace Segments
         public void OnUpdate ( ref SystemState state )
         {
             int numEntities = _query.CalculateEntityCount();
-            var segmentBufferLookup = state.GetBufferLookup<Segment>( isReadOnly:true );
             NativeArray<AABB> bounds = new ( numEntities , Allocator.TempJob );
             _midUpdateData.Clear();
             int i = 0;
 
-            foreach( var ( _ , entity ) in SystemAPI
-                .Query< RefRO<MaterialMeshInfo> >()
-                .WithAll<RenderBounds,Segment>()
-                .WithChangeFilter<Segment>()
+            foreach( var (segment, materialMeshInfo, renderBounds, entity) in SystemAPI
+                .Query<RefRO<Segment>, RefRO<MaterialMeshInfo>, RefRW<RenderBounds>>()
+                .WithAll<SegmentUpdateRequest>()
                 .WithEntityAccess()
             )
             {
@@ -75,9 +95,34 @@ namespace Segments
                 Mesh.MeshData meshData = meshDataArray[0];
                 ___allocate_writable_mesh_data.End();
                 
-                var segmentBuffer = segmentBufferLookup[entity];
+                // complete explicit segment dependencies:
+                segment.ValueRO.Dependency.AsReadOnly().Value.Complete();
+
+                var segmentBuffer = segment.ValueRO.Buffer;
                 int numSegments = segmentBuffer.Length;
                 int numVertices = numSegments * 2;
+
+                // upsize index buffer when necessary
+                JobHandle predefinedIndexBufferChangedJobHandle = default;
+                if( numVertices>_predefinedIndexBuffer.Length )
+                {
+                    // note: to eliminate stalls at undesired times either change _predefinedIndexBuffer's initial size of prewarm this buffer at time of your choice
+
+                    int newIndexBufferSize = math.max(_predefinedIndexBuffer.Length, 1);
+                    while( numVertices>newIndexBufferSize )
+                        newIndexBufferSize *= 2;
+                    Debug.LogWarning($"upsizing {nameof(_predefinedIndexBuffer)} from {_predefinedIndexBuffer.Length} to {newIndexBufferSize}, reason: {entity}");
+
+                    foreach( var item in _midUpdateData )
+                        item.copyIndicesJobHandle.Complete();
+                    
+                    _predefinedIndexBuffer.Dispose();
+                    _predefinedIndexBuffer = new ( newIndexBufferSize , Allocator.Persistent );
+
+                    predefinedIndexBufferChangedJobHandle = new PredefinedIndicesJob{
+                        dst = _predefinedIndexBuffer ,
+                    }.Schedule(newIndexBufferSize, 1024, state.Dependency);
+                }
                 
                 ___set_vertex_buffer_params.Begin();
                 meshData.SetVertexBufferParams( numVertices , new VertexAttributeDescriptor(VertexAttribute.Position) );
@@ -88,21 +133,106 @@ namespace Segments
                 ___set_index_buffer_params.End();
 
                 ___schedule_copy_buffer_jobs.Begin();
-                var segmentBufferAsFloat3x2Array = segmentBuffer.AsNativeArray().Reinterpret<float3x2>();
-                var boundsJobHandle = new BoundsJob{
-                    Segments = segmentBufferAsFloat3x2Array ,
-                    Bounds = bounds.Slice(i,1) ,
-                }.Schedule();
-                var vertexData = meshData.GetVertexData<float3x2>();
-                var indexData = meshData.GetIndexData<uint>().Slice( 0 , numVertices );
-                JobHandle copyIndicesJobHandle = new NativeCopyJob<uint>{
-                    Src = _predefinedIndexBuffer.Slice( 0 , numVertices ) ,
-                    Dst = indexData ,
-                }.Schedule();
-                JobHandle copyVerticesJobHandle = new NativeCopyJob<float3x2>{
-                    Src = segmentBufferAsFloat3x2Array ,
-                    Dst = vertexData ,
-                }.Schedule( copyIndicesJobHandle );
+                JobHandle boundsJobHandle, copyVerticesJobHandle, copyIndicesJobHandle;
+                var segmentBufferAsFloat3x2Array = segmentBuffer.AsArray();
+                {
+                    var vertexData = meshData.GetVertexData<float3x2>();
+                    var indexData = meshData.GetIndexData<uint>().Slice(0, numVertices);
+
+                    const int dispatchSize = 1<<14;
+                    if( numSegments<=dispatchSize )
+                    {
+                        boundsJobHandle = new BoundsJob{
+                            input = segmentBufferAsFloat3x2Array ,
+                            output = bounds.Slice(i,1) ,
+                        }.Schedule();
+
+                        copyIndicesJobHandle = new NativeCopyJob<uint>{
+                            src = _predefinedIndexBuffer.Slice(0, numVertices),
+                            dst = indexData,
+                        }.Schedule(predefinedIndexBufferChangedJobHandle);
+                        copyVerticesJobHandle = new NativeCopyJob<float3x2>{
+                            src = segmentBufferAsFloat3x2Array,
+                            dst = vertexData,
+                        }.Schedule(copyIndicesJobHandle);
+                    }
+                    else
+                    {
+                        {
+                            int numDispatches = numSegments/dispatchSize + math.min(numSegments%dispatchSize, 1);
+                            int numSegmentsPerDispatch = numSegments / numDispatches;
+                            _jobHandles1.Length = numDispatches;
+                            NativeArray<AABB> dResults;
+                            {
+                                if( _aabbBuffers.Length==i )
+                                    _aabbBuffers.Add(new (16, Allocator.Persistent));
+
+                                var list = _aabbBuffers[i];
+                                list.Length = numDispatches;
+                                dResults = list.AsArray();
+                            }
+                            int dLast = numDispatches-1;
+                            for (int d=0; d<dLast; d++)
+                            {
+                                _jobHandles1[d] = new BoundsJob{
+                                    input = segmentBufferAsFloat3x2Array.Slice(d*numSegmentsPerDispatch, numSegmentsPerDispatch),
+                                    output = dResults.Slice(d,1),
+                                }.Schedule();
+                            }
+                            int lastDispStart = dLast*numSegmentsPerDispatch;
+                            _jobHandles1[dLast] = new BoundsJob{
+                                input = segmentBufferAsFloat3x2Array.Slice(lastDispStart, numSegments-lastDispStart),
+                                output = dResults.Slice(dLast,1),
+                            }.Schedule();
+                            boundsJobHandle = new BoundsCombineJob{
+                                input = dResults,
+                                output = bounds.Slice(i,1),
+                            }.Schedule(JobHandle.CombineDependencies(_jobHandles1.AsArray()));
+                        }
+                        {
+                            int numDispatches = numVertices/dispatchSize + math.min(numVertices%dispatchSize, 1);
+                            int numVerticesPerDispatch = numVertices / numDispatches;
+                            int numSegmentsPerDispatch = numSegments / numDispatches;
+                            NativeArray<JobHandle> copyIndicesJobHandles;
+                            {
+                                _jobHandles1.Length = numDispatches;
+                                copyIndicesJobHandles = _jobHandles1.AsArray();
+                            }
+                            NativeArray<JobHandle> copyVerticesJobHandles;
+                            {
+                                _jobHandles2.Length = numDispatches;
+                                copyVerticesJobHandles = _jobHandles2.AsArray();
+                            }
+                            int dLast = numDispatches-1;
+                            for (int d=0; d<dLast; d++)
+                            {
+                                int div = d*numVerticesPerDispatch;
+                                int dis = d*numSegmentsPerDispatch;
+                                copyIndicesJobHandles[d] = new NativeCopyNoSafetyChecksJob<uint>{
+                                    src = _predefinedIndexBuffer.Slice(div, numVerticesPerDispatch),
+                                    dst = indexData.Slice(div, numVerticesPerDispatch),
+                                }.Schedule(predefinedIndexBufferChangedJobHandle);
+                                copyVerticesJobHandles[d] = new NativeCopyNoSafetyChecksJob<float3x2>{
+                                    src = segmentBufferAsFloat3x2Array.Slice(dis, numSegmentsPerDispatch),
+                                    dst = vertexData.Slice(dis, numSegmentsPerDispatch),
+                                }.Schedule(copyIndicesJobHandles[d]);
+                            }
+                            int lastVertexDispStart = dLast*numVerticesPerDispatch;
+                            int lastSegmentDispStart = dLast*numSegmentsPerDispatch;
+                            copyIndicesJobHandles[dLast] = new NativeCopyNoSafetyChecksJob<uint>{
+                                src = _predefinedIndexBuffer.Slice(lastVertexDispStart, numVertices-lastVertexDispStart),
+                                dst = indexData.Slice(lastVertexDispStart, numVertices-lastVertexDispStart),
+                            }.Schedule(predefinedIndexBufferChangedJobHandle);
+                            copyVerticesJobHandles[dLast] = new NativeCopyNoSafetyChecksJob<float3x2>{
+                                src = segmentBufferAsFloat3x2Array.Slice(lastSegmentDispStart, numSegments-lastSegmentDispStart),
+                                dst = vertexData.Slice(lastSegmentDispStart, numSegments-lastSegmentDispStart),
+                            }.Schedule(copyIndicesJobHandles[dLast]);
+
+                            copyVerticesJobHandle = JobHandle.CombineDependencies(copyVerticesJobHandles);
+                            copyIndicesJobHandle = JobHandle.CombineDependencies(copyIndicesJobHandles);
+                        }
+                    }
+                }
                 ___schedule_copy_buffer_jobs.End();
 
                 _midUpdateData.Add( ( meshDataArray , meshData , numVertices , boundsJobHandle , copyVerticesJobHandle , copyIndicesJobHandle ) );
@@ -113,11 +243,10 @@ namespace Segments
             var graphicsSystem = state.World.GetExistingSystemManaged<EntitiesGraphicsSystem>();
             i = 0;
 
-            foreach( var ( materialMeshInfo , renderBounds, entity ) in SystemAPI
-                    .Query< RefRO<MaterialMeshInfo> , RefRW<RenderBounds> >()
-                    .WithEntityAccess()
-                    .WithAll<Segment>()
-                    .WithChangeFilter<Segment>()
+            foreach( var (segment, materialMeshInfo, renderBounds, entity) in SystemAPI
+                .Query<RefRO<Segment>, RefRO<MaterialMeshInfo>, RefRW<RenderBounds>>()
+                .WithAll<SegmentUpdateRequest>()
+                .WithEntityAccess()
             )
             {
                 var next = _midUpdateData[i];
@@ -135,11 +264,6 @@ namespace Segments
                 Mesh mesh = graphicsSystem.GetMesh( materialMeshInfo.ValueRO.MeshID );
                 ___get_mesh.End();
 
-                if( mesh==null )
-                {
-                    Debug.LogError($"{entity} MESH JEST NULL, materialMeshInfo.MeshID: {materialMeshInfo.ValueRO.MeshID.value}");
-                }
-
                 ___push_mesh_data.Begin();
                 Mesh.ApplyAndDisposeWritableMeshData( next.meshDataArray , mesh , MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontResetBoneBounds );
                 ___push_mesh_data.End();
@@ -150,6 +274,9 @@ namespace Segments
                 ___push_bounds.End();
 
                 i++;
+
+                // flag update request as fulfilled:
+                state.EntityManager.SetComponentEnabled<SegmentUpdateRequest>(entity, false);
             }
         }
 

@@ -262,26 +262,18 @@ SubShader
             float depth_t = remap01( _NearColorDistance , _FarColorDistance , depth );
             float4 col = saturate( IN.color * lerp(_Color, _ColorFar, depth_t) * float4(1,1,1,alpha_mul) );
 
-            // if( depth > _FarCutoffDistaneStart )// attempt to make lines disappear in less noisy way when very thin
-            // {
-            //     float t = easeOutQuad(remap01(_FarCutoffDistaneStart,_FarCutoffDistaneEnd,depth));
-            //     _AlphaPow = lerp( _AlphaPow , 1 , t );
-            //     _DitherStrength = lerp( _DitherStrength , 0.1 , t );
-            // }
-
             col.a = pow( col.a , _AlphaPow );
 
             if( depth < _NearCutoffDistane )
             {
                 col.a *= remap01( 0 , _NearCutoffDistane , depth );
+                col.a -= (1-col.a) * getbayervalue(IN.screenPos.xy/IN.screenPos.w) * _DitherStrength;
             }
             else if( depth > _FarCutoffDistaneStart )
             {
                 col.a *= easeOutQuad(remap01( _FarCutoffDistaneEnd , _FarCutoffDistaneStart , depth ));
+                col.a -= (1-col.a) * getbayervalue(IN.screenPos.xy/IN.screenPos.w) * _DitherStrength;
             }
-
-            float ditherValue = getbayervalue(IN.screenPos.xy / IN.screenPos.w);
-            col.a -= (1-col.a) * ditherValue * _DitherStrength;
 
             clip(col.a - _AlphaCutoff);//if( alpha<=0 ) discard;
 
