@@ -1,10 +1,13 @@
 using Unity.Mathematics;
 using Unity.Entities;
+using Unity.Collections;
+using Unity.Jobs;
 
 namespace Segments
 {
-    public struct Segment : IBufferElementData
+    public struct Segment : IComponentData
     {
-        public float3x2 Value;
+        public NativeList<float3x2> Buffer;
+        public NativeReference<JobHandle> Dependency;
     }
 }

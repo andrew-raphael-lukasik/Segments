@@ -21,12 +21,16 @@ void OnEnable () => Segments.Core.Create(out _segments);// creates an Entity tha
 void OnDisable () => Segments.Core.Destroy(_segments);// destroys the entity and all data associated with it
 void Update ()
 {
-    DynamicBuffer<float3x2> segments = Segments.Core.GetBuffer(_segments);
-    segments.Length = 3;
+    Segments.Segment segment = Segments.Core.GetSegment(_segments);
+    NativeList<float3x2> buffer = segment.Buffer;
+
+    buffer.Length = 3;
     Vector3 pos = transform.position;
-    segments[0] = new float3x2( pos , pos+transform.right );
-    segments[1] = new float3x2( pos , pos+transform.up );
-    segments[2] = new float3x2( pos , pos+transform.forward );
+    buffer[0] = new float3x2( pos , pos+transform.right );
+    buffer[1] = new float3x2( pos , pos+transform.up );
+    buffer[2] = new float3x2( pos , pos+transform.forward );
+
+    Segments.Core.SetSegmentChanged(_segments);
 }
 ```
 

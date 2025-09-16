@@ -7,16 +7,15 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: custom lines
+  m_Name: 300_000-Animated-Segments--B
   m_Shader: {fileID: 4800000, guid: f08c904251499354b8cf48315e30760e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
   - UVCORRECTION_ON
-  - _DITHER_ON
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 1
+  m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
@@ -85,9 +84,8 @@ Material:
     - VIGNETTE: 0
     - Vector1_b2bc354c63b94e308403d4683845d983: 0
     - _AlphaClip: 0
-    - _AlphaCutoff: 0.09
-    - _AlphaCutoffEnd: 34.43
-    - _AlphaPow: 2.65
+    - _AlphaCutoff: 0.55
+    - _AlphaPow: 1
     - _AspectRatio: 1
     - _Blend: 0
     - _BorderSize: 0.1
@@ -95,28 +93,24 @@ Material:
     - _Cull: 0
     - _Cutoff: 0.5
     - _DepthEffectPower: 1
-    - _DepthFar: 50
-    - _DepthNear: 1
+    - _DepthFar: 0.561
+    - _DepthNear: 0.26
     - _DetailNormalMapScale: 1
-    - _DistaneAlphaCutoff: 0.5
-    - _DitherMultiplier: 1
     - _DitherStrength: 1
-    - _Dithering: 1
     - _DstBlend: 10
-    - _FarColorDistance: 50
-    - _FarCutoffDistane: 0.5
-    - _FarCutoffDistaneEnd: 1000
-    - _FarCutoffDistaneStart: 200
-    - _FarWidth: 1
-    - _FarWidthDistance: 30
+    - _FarColorDistance: 30
+    - _FarCutoffDistaneEnd: 30
+    - _FarCutoffDistaneStart: 20
+    - _FarWidth: 0.06
+    - _FarWidthDistance: 6
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Metallic: 0
     - _Mode: 0
-    - _NearColorDistance: 1
-    - _NearCutoffDistane: 20.34
-    - _NearWidth: 0.25
+    - _NearColorDistance: 8.81
+    - _NearCutoffDistane: 2
+    - _NearWidth: 0.6
     - _NearWidthDistance: 1
     - _OcclusionStrength: 1
     - _Overlap: 0.1
@@ -145,7 +139,7 @@ Material:
     - _Surface: 1
     - _Texture: 0
     - _UVSec: 0
-    - _Width: 0.25
+    - _Width: 0.02
     - _ZWrite: 0
     m_Colors:
     - Vector2_c80a53d91c7843899933e627e1cebdb1: {r: 0, g: 0, b: 0, a: 0}
@@ -153,9 +147,9 @@ Material:
     - Vector3_f46222195d364048b814f1e578e8a189: {r: 0, g: 0, b: 0, a: 0}
     - Vector4_6fa4853f26784ad581891add898630bb: {r: 0, g: 0, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 0, b: 0.38475227, a: 1}
+    - _Color: {r: 0.000798001, g: 0, b: 0.023529412, a: 1}
     - _Color1: {r: 0, g: 0.021323847, b: 0.11320752, a: 0}
-    - _ColorFar: {r: 0, g: 0.288177, b: 1, a: 1}
+    - _ColorFar: {r: 4.0754724, g: 1.2466502, b: 0, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FadeIn: {r: 0, g: 1, b: 0, a: 0}
     - _FadeInColor: {r: 0, g: 0, b: 0, a: 0}
