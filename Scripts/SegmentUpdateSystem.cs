@@ -80,7 +80,7 @@ namespace Segments
         public void OnUpdate ( ref SystemState state )
         {
             int numEntities = _query.CalculateEntityCount();
-            NativeArray<AABB> bounds = new ( numEntities , Allocator.TempJob );
+            NativeArray<AABB> bounds = CollectionHelper.CreateNativeArray<AABB>(numEntities, state.WorldUpdateAllocator);
             _midUpdateData.Clear();
             int i = 0;
 
